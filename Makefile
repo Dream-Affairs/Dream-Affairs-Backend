@@ -11,10 +11,10 @@ downgrade:
 	alembic downgrade -1
 
 service:
-	python main.py
+	python3 main.py
 
 test:
-	python test.py
+	python3 pytest 
 
 commit:
 	git add .

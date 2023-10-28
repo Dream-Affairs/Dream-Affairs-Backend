@@ -28,7 +28,7 @@ app.add_middleware(
 
 if settings.ENVIRONMENT  == "development":
     
-    create_database()
+  create_database()
 
 @app.get("/health")
 def health():
@@ -40,5 +40,4 @@ app.include_router(v1_router)
 
 if __name__ == "__main__":
     
-
     uvicorn.run(app= 'main:app', port=8000, reload=True)
