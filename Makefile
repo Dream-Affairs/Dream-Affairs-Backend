@@ -1,20 +1,31 @@
-.PHONY: 
+.PHONY:
 
 message ?= "update database"
 
+# Usage message
+help:
+	@echo "Usage: make <target>"
+	@echo "Targets:"
+	@echo "  upgrade      - Upgrade the database"
+	@echo "  downgrade    - Downgrade the database"
+	@echo "  run          - Start the service"
+	@echo "  test         - Run tests"
+	@echo "  commit       - Perform a Git commit"
+	@echo "  fmt          - Format the code with Black"
+	@echo "  pre-commit   - Setup and pre-commit hooks"
 
 upgrade:
-	alembic revision --autogenerate -m {message}
+	alembic revision --autogenerate -m $(message)
 	alembic upgrade head
 
 downgrade:
 	alembic downgrade -1
 
-service:
+run:
 	python3 main.py
 
 test:
-	python3 pytest 
+	pytest
 
 commit:
 	git add .
@@ -22,3 +33,10 @@ commit:
 
 fmt:
 	python -m black .
+
+pre-commit:
+	@echo "Checking if 'pre-commit' is installed..."
+	@which pre-commit > /dev/null || pip install pre-commit
+	pre-commit install
+	pre-commit run --all-files
+
