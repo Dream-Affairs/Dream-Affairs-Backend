@@ -32,11 +32,11 @@ commit:
 	git commit
 
 fmt:
-	python -m black .
+	python3 -m black .
 
 pre-commit:
 	@echo "Checking if 'pre-commit' is installed..."
-	@which pre-commit > /dev/null || pip install pre-commit
+	@which pre-commit > /dev/null || pip3 install pre-commit
 	pre-commit install
 	pre-commit run --all-files
 
