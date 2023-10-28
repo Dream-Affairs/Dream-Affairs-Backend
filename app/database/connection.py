@@ -1,3 +1,4 @@
+"""This file contains the database connection and session."""
 # database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -36,12 +37,13 @@ def get_db_engine():
     database_url = "sqlite:///./database.db"
 
     if db_type == "postgresql":
-        database_url = (
-            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-        )
+        database_url = f"postgresql://{db_user}:{db_password}\
+              @{db_host}:{db_port}/{db_name}"
 
     else:
-        return create_engine(database_url, connect_args={"check_same_thread": False})
+        return create_engine(
+            database_url, connect_args={"check_same_thread": False}
+        )
 
 
 db_engine = get_db_engine()

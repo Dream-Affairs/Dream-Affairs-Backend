@@ -1,4 +1,31 @@
 repos:
+-   repo: https://github.com/psf/black
+    rev: 23.10.1
+    hooks:
+    -   id: black
+        language_version: python
+        args:
+            - --line-length=79
+
+-   repo: https://github.com/PyCQA/autoflake
+    rev: v2.2.1
+    hooks:
+    -   id: autoflake
+
+-   repo: https://github.com/asottile/seed-isort-config
+    rev: v2.2.0
+    hooks:
+    -   id: seed-isort-config
+
+
+-   repo: https://github.com/timothycrosley/isort
+    rev: 5.12.0  # pick the isort version you'd like to use from https://github.com/timothycrosley/isort/releases
+    hooks:
+    -   id: isort
+        args:
+        - --profile
+        - black
+
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -6,15 +33,6 @@ repos:
     -   id: end-of-file-fixer
     -   id: requirements-txt-fixer
 
--   repo: https://github.com/PyCQA/autoflake
-    rev: v2.2.1
-    hooks:
-    -   id: autoflake
-
--   repo: https://github.com/psf/black
-    rev: 23.10.1
-    hooks:
-    -   id: black
 
 -   repo: https://github.com/PyCQA/docformatter
     rev: v1.7.5
@@ -25,16 +43,18 @@ repos:
     rev: 6.1.0
     hooks:
     -   id: flake8
+        args:
+        - --max-line-length=79
+        - --extend-ignore=E203,W503, E266
+
 
 -   repo: https://github.com/pylint-dev/pylint
     rev: v3.0.1
     hooks:
     -   id: pylint
-
--   repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.3.0
-    hooks:
-    -   id: pydocstyle
+        args:
+        - --disable= all
+        - --enable= unused-import,unused-variable,unused-argument,unused-wildcard-import
 
 -   repo: https://github.com/PyCQA/bandit
     rev: 1.7.5

@@ -5,9 +5,8 @@ from sqlalchemy import engine_from_config  # pylint: disable=import-error
 from sqlalchemy import pool  # pylint: disable=import-error
 
 from alembic import context  # pylint: disable=no-name-in-module
-
 from app.api import models  # noqa # pylint: disable=unused-import
-from app.database.connection import get_db_engine, Base
+from app.database.connection import Base, get_db_engine
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
