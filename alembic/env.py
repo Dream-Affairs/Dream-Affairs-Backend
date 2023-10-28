@@ -1,12 +1,12 @@
 """Configures the Alembic environment."""
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config  # pylint: disable=import-error
+from sqlalchemy import pool  # pylint: disable=import-error
 
-from alembic import context
+from alembic import context  # pylint: disable=no-name-in-module
 
-from app.api import models
+from app.api import models  # noqa # pylint: disable=unused-import
 from app.database.connection import get_db_engine, Base
 
 # this is the Alembic Config object, which provides
@@ -46,7 +46,8 @@ def run_migrations_offline() -> None:
     output.
     """
     url = config.get_main_option(
-        "sqlalchemy.url", get_db_engine().url.__to_string__(hide_password=False)
+        "sqlalchemy.url",
+        get_db_engine().url.__to_string__(hide_password=False),
     )
     context.configure(
         url=url,
@@ -72,7 +73,10 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(  # fmt: off
+            connection=connection,
+            target_metadata=target_metadata,
+        )  # fmt: off
 
         with context.begin_transaction():
             context.run_migrations()
