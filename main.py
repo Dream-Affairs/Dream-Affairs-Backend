@@ -1,13 +1,15 @@
-from fastapi import FastAPI, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
-from app.database.connection import create_database
-from app.core.config import settings
+"""Main module for the API."""
 import uvicorn
+from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-####################### add imported routers here ##############################
+from app.core.config import settings
+from app.database.connection import create_database
+
+####################### add imported routers here #######
 
 
-###############################################################################
+#########################################################
 
 v1_router = APIRouter(prefix="/api/v1")
 
@@ -26,18 +28,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if settings.ENVIRONMENT  == "development":
-    
-  create_database()
+if settings.ENVIRONMENT == "development":
+    create_database()
+
 
 @app.get("/health")
 def health():
+    """Health check endpoint."""
     return {"status": "ok"}
+
 
 app.include_router(v1_router)
 
 
-
 if __name__ == "__main__":
-    
-    uvicorn.run(app= 'main:app', port=8000, reload=True)
+    uvicorn.run(app="main:app", port=8000, reload=True)

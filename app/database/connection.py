@@ -1,3 +1,4 @@
+"""This file contains the database connection and session."""
 # database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -33,15 +34,16 @@ def get_db_engine():
     db_host = settings.DB_HOST
     db_port = settings.DB_PORT
 
-    database_url = "sqlite:///./database.db"
-
     if db_type == "postgresql":
-        database_url = (
-            f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+        database_url = f"postgresql://{db_user}:{db_password}\
+              @{db_host}:{db_port}/{db_name}"
+    else:
+        database_url = "sqlite:///./database.db"
+        return create_engine(
+            database_url, connect_args={"check_same_thread": False}
         )
 
-    else:
-        return create_engine(database_url, connect_args={"check_same_thread": False})
+    return create_engine(database_url)
 
 
 db_engine = get_db_engine()
@@ -72,12 +74,12 @@ def get_db():
         It is used in the in any router file to get
         the database session.
     """
-    db = SessionLocal()
+    database = SessionLocal()
     try:
-        yield db
+        yield database
     finally:
-        db.close()
-    return db
+        database.close()
+    return database
 
 
 def get_db_unyield():
@@ -88,5 +90,5 @@ def get_db_unyield():
         from the entire application.
     """
     # create_database()
-    db = SessionLocal()
-    return db
+    database = SessionLocal()
+    return database
