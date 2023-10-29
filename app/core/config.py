@@ -1,7 +1,8 @@
+"""This module is used for configuration of the application."""
 from decouple import config
 
 
-class Settings:
+class Settings:  # pylint: disable=too-few-public-methods
     """
     Settings:
         This class is used to get the environment variables

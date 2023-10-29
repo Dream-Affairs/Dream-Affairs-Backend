@@ -1,11 +1,11 @@
 """Configures the Alembic environment."""
+# pylint: skip-file
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config  # pylint: disable=import-error
-from sqlalchemy import pool  # pylint: disable=import-error
+from sqlalchemy import engine_from_config, pool
 
-from alembic import context  # pylint: disable=no-name-in-module
-from app.api import models  # noqa # pylint: disable=unused-import
+from alembic import context
+from app.api import models  # noqa
 from app.database.connection import Base, get_db_engine
 
 # this is the Alembic Config object, which provides
