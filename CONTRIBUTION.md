@@ -4,41 +4,53 @@ Thank you for considering contributing to this project! We appreciate your inter
 
 Here's how you can get involved and contribute to the project:
 
-## 📖 Code of Conduct
-
-Help team SpitFire be the best. Please read and follow our [Code of Conduct](./CODE-OF-CONDUCT.md)
-
 ## 🧑🏽‍💻 Contribution Workflow.
 
-1. Fork the repository to your GitHub account.
-2. Clone your forked repository to your local machine.
+**1. Clone your repository to your local machine**
 ```
-git clone [url-to-your-fork]
-```
-
-3. Change to the repository directory on your computer:
-
-```
-cd Spitfire-events-backend
+git clone https://github.com/Dream-Affairs/Dream-Affairs-Backend
 ```
 
-4. Create a branch using the `git checkout` command:
+**2. Change to the repository directory on your computer**
+```
+cd Dream-Affairs-Backend
+```
 
+**3. Install Pre commit hook**
+
+   To avoid failed CI checks on Pull requests, use the makefile to install the pre commit hooks.
+   This may take some mins.
+```bash
+make pre-commit
+```
+
+**4. Create a branch using the `git checkout` command**
 ```bash
 git checkout -B feature-name
 ```
 
-5. Make all necessary changes, following our coding style and guidelines.
-**Always sync your branch with the original repo**
-7. Commit your changes and push them to your forked repository:
+**5. Make all necessary changes, following our coding style and guidelines [[Pep 8]](https://peps.python.org/pep-0008/).**
 
-```bash
-    git add .
-    git commit -m "Add feature-name"
-    git push origin feature-name
+**6. If changes were nade to any table, use the makefile to upgrade the database. It's alembic under the hood**
+```
+make upgrade
+```
+   **To go back to a previous version the database, run:**
+```
+make downgrade
 ```
 
-7. Create a Pull Request
+**Always sync your branch with the dev branch**
+
+**7. Commit your changes and push them to your forked repository:**
+
+```bash
+git add .
+git commit -m "Add feature-name"
+git push origin feature-name
+```
+
+**8. Create a Pull Request**
 Go to the Pull Requests section of our repository.
 Click on the "New Pull Request" button.
 Select the branch containing your changes from your forked repository.
