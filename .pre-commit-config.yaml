@@ -51,7 +51,8 @@ repos:
     hooks:
     -   id: pylint
         args:
-        -   --disable=import-error, invalid-name
+        -   '*.py'
+        -   --disable=import-error
 
 -   repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
