@@ -151,7 +151,7 @@ Here are some examples:
 - `chore(clean-up): Remove unused code and files.`
 
 ## License Information
-Any contributions you make will be under the MIT Software License. In short, when you submit code changes, your submissions are understood to be under the same [MIT License](#LICENSE) that covers the project.
+Any contributions you make will be under the MIT Software License. In short, when you submit code changes, your submissions are understood to be under the same [MIT License](LICENSE) that covers the project.
 
 ## Feedback and Discussions
 If you have general questions, suggestions, or want to discuss ideas with the community, you can also participate in discussions in the Discussions section.
