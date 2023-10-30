@@ -29,11 +29,6 @@ repos:
         - --profile
         - black
 
--   repo: https://github.com/sondrelg/pep585-upgrade
-    rev: v1.0.1
-    hooks:
-    -  id: upgrade-type-hints
-
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.2.1
     hooks:
@@ -51,7 +46,6 @@ repos:
         args:
         - --max-line-length=79
         - --extend-ignore=W503, E266
-
 
 -   repo: https://github.com/pylint-dev/pylint
     rev: v3.0.1
