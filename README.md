@@ -1,21 +1,21 @@
-# Dream Affairs API Documentation 📚
+# Dream Affairs API Documentation
 
-## Introduction 📖
+## Introduction
 Welcome to the official Dream Affairs API documentation, the driving force behind our wedding website generator. Our API harness the power of Python, FastAPI, SQLAlchemy, PostgreSQL, and more to effortlessly create stunning wedding websites. In this documentation, you'll discover how to make the most of the API, explore endpoints and responses, learn how to contribute, and find acknowledgments for those who've been a part of this journey.
 
-## Getting Started 🚀
+## Getting Started
 Let's start this adventure with the setup:
 
-### Prerequisites ✅
+### Prerequisites
 Make sure you have these prerequisites installed on your system:
 
-- Python (recommended version 3.6 or higher) 🐍
-- pip (Python package manager) 📦
+- Python (recommended version 3.6 or higher)
+- pip (Python package manager)
 
-### Installation and Usage ⚙️
+### Installation and Usage
 Follow these steps to set up and run the endpoint locally:
 
- 1. **Clone this repository to your local machine. 🖥️**
+ 1. **Clone this repository to your local machine.**
 
     ```bash
     git clone https://github.com/Dream-Affairs/Dream-Affairs-Backend
@@ -82,15 +82,15 @@ Follow these steps to set up and run the endpoint locally:
     make run
     ```
 
- 6. **Ta-da! Your endpoint is now accessible locally at http://localhost:8000/ 🌐.**
+ 6. **Ta-da! Your endpoint is now accessible locally at http://localhost:8000/.**
 
-## Deployment 🌐
+## Deployment
 
 The API has been deployed, and it's now globally accessible! You can access the swagger documentation to access detailed documentation of every endpoint, its request format and response model.
 - [Production URL](#)
 - [Development URL](#)
 
-## Testing 🧪
+## Testing
 
 To test your API, we've set up a flexible approach that allows you to seamlessly switch between local and remote testing with ease. Make sure you're in the `Dream-Affairs` directory.
 
@@ -109,7 +109,7 @@ To test your API, we've set up a flexible approach that allows you to seamlessly
     pip install pytest
     ```
  3. **Run Tests:**
-    You can now run tests based on the environment variable you've set. For local testing, you don't need to set the environment variable as it defaults to the local server. Also ensure you hsve the API running locally. For remite testing, ensure you're connected to the internet 🛜.
+    You can now run tests based on the environment variable you've set. For local testing, you don't need to set the environment variable as it defaults to the local server. Also ensure you hsve the API running locally. For remote testing, ensure you're connected to the internet.
     ```bash
     pytest app/tests/*
     ```
@@ -117,10 +117,10 @@ To test your API, we've set up a flexible approach that allows you to seamlessly
 ## Contributing:
 
 Contributions are welcome from all Backend developers building the Dream Affairs application. You can:
-- Submit a bug report or feature request 🐛
-- Help us write documentation 📖
-- Fix a bug or implement a new feature 🛠️
-- Review code and help us improve 🤔
+- Submit a bug report or feature request
+- Help us write documentation
+- Fix a bug or implement a new feature
+- Review code and help us improve
 
 Ready to jump in? Take a look at our [CONTRIBUTION.md](CONTRIBUTION.md) to get started!
 
