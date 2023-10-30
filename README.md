@@ -1,128 +1,131 @@
-# Dream Affairs API Documentation
+# Dream Affairs API Documentation 📚
 
+## Introduction 📖
 Welcome to the official Dream Affairs API documentation, the driving force behind our wedding website generator. Our API harness the power of Python, FastAPI, SQLAlchemy, PostgreSQL, and more to effortlessly create stunning wedding websites. In this documentation, you'll discover how to make the most of the API, explore endpoints and responses, learn how to contribute, and find acknowledgments for those who've been a part of this journey.
 
-## Table of Contents
+## Getting Started 🚀
+Let's start this adventure with the setup:
 
-- [1. Introduction](#introduction)
-- [2. Features](#features)
-- [3. Technologies Used](#technologies-used)
-- [4. Getting Started](#getting-started)
-  - [4.1 Prerequisites](#prerequisites)
-     - [4.1.1 Clone The Repository](#clone-the-repository)
-     - [4.1.2 Install Dependencies](#install-the-dependencies)
-     - [4.1.3 Configure Environment Variables](#configure-environment-variables)
-  - [4.2 Usage](#usage)
-- [5. API Endpoints](#5-api-endpoints)
-  - [5.1 Shop](#51-shop)
-  - [5.2 Product](#52-product)
-  - [5.3 Health](#53-health)
-  - [5.4 Test](#54-test)
-  - [5.5 Logs](#55-logs)
-  - [5.6 Notifications](#56-notifications)
-- [6. Database Schema](#database-schema)
-- [7. Authentication](#authentication)
-- [8. Error Handling](#error-handling)
-- [9. Testing](#testing)
-- [10. Deployment](#deployment)
-- [11. Contributing](#contributing)
-   -[11.1 Commit Convention](#commit-convention)
-- [12. License](#license)
-- [13. Acknowledgments](#acknowledgments)
+### Prerequisites ✅
+Make sure you have these prerequisites installed on your system:
 
+- Python (recommended version 3.6 or higher) 🐍
+- pip (Python package manager) 📦
 
-## 1. Getting Started
+### Installation and Usage ⚙️
+Follow these steps to set up and run the endpoint locally:
 
-### Prerequisites
-Before getting started, ensure you have Python and the necessary dependencies installed on your system. You can find a list of required dependencies in the 'Requirements' section.
+ 1. **Clone this repository to your local machine. 🖥️**
 
-#### 1.1 Clone The Repository
+    ```bash
+    git clone https://github.com/Dream-Affairs/Dream-Affairs-Backend
+    cd Dream-Affairs-Backend
+    ```
 
-To get started with the local development environment, clone the repository:
+ 2. **Setup Virtual Environment and Install Dependencies.**
 
-```bash
-$ git clone https://github.com/hngx-org/spitfire-super-admin-one.git
-$ cd super_admin_1
-```
+    You can set up the environment using either `virtualenv`, `pipenv` or any other virtual environment management tool of your choice.
+    Here are instructions for both:
 
-#### 1.2 Setup Virtual Environment and Install Dependencies
+    **Using `virtualenv`:**
 
-You can set up the environment using either `virtualenv`, `pipenv` or any other virtual environment management tool of your choice.
-Here are instructions for both:
+    ```bash
+    # Install virtualenv
+    pip install virtualenv
 
-Using `virtualenv`:
+    # Create virtual environment
+    virtualenv venv
 
-```bash
-# Install virtualenv
-pip install virtualenv
+    # Activate the virtual environment
+    source venv/bin/activate
 
-# Create virtual environment
-virtualenv venv
+    # Install dependencies in requirement.txt
+    pip install -r requirements.txt
+    ```
 
-# Activate the virtual environment
-source venv/bin/activate
+    **Using `pipenv`:**
 
-# Install dependencies in requirement.txt
-pip install -r requirements.txt
-```
+    ```bash
+    # Install pipenv
+    pip install pipenv
 
-Using `pipenv`:
+    # Create virtual environment
+    pipenv --python 3.10
 
-```bash
-# Install pipenv
-pip install pipenv
+    # Activate the virtual environment
+    pipenv shell
 
-# Create virtual environment
-pipenv --python 3.10
+    # Install dependencies in requirements.txt or pipfile
+    pipenv install
+    ```
 
-# Activate the virtual environment
-pipenv shell
+ 3. **Configure Environment Variables:**
+    Copy the env.sample file to .env and set values for each of the environment variables.
+    ```bash
+    cp env.sample .env
+    ```
 
-# Install dependencies in requirements.txt or pipfile
-pipenv install
-```
+ 4. **Run the App:**
 
-#### 1.3 Configure Environment Variables
+    Now you have everything setup, you can run the app using python:
+    ```bash
+    python3 main.py
+    ```
 
-Make sure to set the following environment variables:
+    or using unicorn:
+    ```bash
+    uvicorn main:app --port="8000"
+    ```
 
-    SECRET_KEY: [Your Secret Key]
-    SQLALCHEMY_DATABASE_URI: [Your Database URI]
+    if you have `make` installed, to use the `Makefile` run:
+    ```bash
+    make run
+    ```
 
-### 1.2 Usage
+ 6. **Ta-da! Your endpoint is now accessible locally at http://localhost:8000/ 🌐.**
 
-Now you have everything setup, you can run the app using the command:
-```bash
-python3 main.py
-```
-if you have `make` installed, to use the `Makefile` run:
-```bash
-make run
-```
+## Deployment 🌐
 
-## 2. API Endpoints
+The API has been deployed, and it's now globally accessible! You can access the swagger documentation to access detailed documentation of every endpoint, its request format and response model.
+- [Production URL](#)
+- [Development URL](#)
 
+## Testing 🧪
 
+To test your API, we've set up a flexible approach that allows you to seamlessly switch between local and remote testing with ease. Make sure you're in the `Dream-Affairs` directory.
 
-## Testing
+ 1. **Set up Environment Variable:**
+    You can use an environment variable to specify the API URL you want to test. By default, it's set to the local development server.
+    - For local testing:
+      ```bash
+      export API_URL='http://localhost:5000'
+      ```
+    - For remote testing:
+      ```bash
+      export API_URL='#'
+      ```
+ 2. **Install pytest:**
+    ```bash
+    pip install pytest
+    ```
+ 3. **Run Tests:**
+    You can now run tests based on the environment variable you've set. For local testing, you don't need to set the environment variable as it defaults to the local server. Also ensure you hsve the API running locally. For remite testing, ensure you're connected to the internet 🛜.
+    ```bash
+    pytest app/tests/*
+    ```
 
-**Note:** ensure you are connected to the internet before running tests and are in `spitfire-events` directory
+## Contributing:
 
-```bash
-# install test suite and HTTP requests library
-$ pip install requests pytest
+Contributions are welcome from all Backend developers building the Dream Affairs application. You can:
+- Submit a bug report or feature request 🐛
+- Help us write documentation 📖
+- Fix a bug or implement a new feature 🛠️
+- Review code and help us improve 🤔
 
-cd super_admin_1
-$ pytest tests\* -v
-```
-
-## Contributing
-
+Ready to jump in? Take a look at our [CONTRIBUTION.md](CONTRIBUTION.md) to get started!
 
 ## License
-
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
-
 Appreciation and acknowledgments to contributors, libraries, or resources that helped in developing the API.
