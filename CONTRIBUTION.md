@@ -11,7 +11,7 @@ Before considering contributing to the project, ensure you have the following in
 - Python (recommended version 3.6 or higher)
 - pip (Python package manager)
 - make (To run Makefile)
-- nodejs (Recommended version 16 or higher)
+- nodejs (Recommended latest stable version)
 - npm (Required to run commitlint)
 
  1. **Clone your repository to your local machine**
@@ -26,7 +26,7 @@ Before considering contributing to the project, ensure you have the following in
 
  3. **Install Pre commit hook**
     To avoid failed CI checks on Pull requests, use the makefile to install the pre commit hooks.
-    This may take some mins.
+    This may take some minutes since it setups pre commit and commit message hooks.
     ```bash
     make pre-commit
     ```
