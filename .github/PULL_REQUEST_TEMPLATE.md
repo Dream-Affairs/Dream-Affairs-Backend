@@ -3,12 +3,13 @@
 ## Description
 <!--- Describe your changes in detail -->
 ​
-## Related Issue (Link to linear ticket)
+## Related Issue (Link to linear ticket or Github issue)
 <!--- This project only accepts pull requests related to open issues -->
 <!--- If suggesting a new feature or change, please discuss it in an issue first -->
 <!--- If fixing a bug, there should be an issue describing it with steps to reproduce -->
 <!--- Please link to the issue here: -->
-​
+​Fixes #1234 <!--- Replace 1234 with the Issue number -->
+
 ## Motivation and Context
 <!--- Why is this change required? What problem does it solve? -->
 ​
