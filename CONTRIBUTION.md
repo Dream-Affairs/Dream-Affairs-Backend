@@ -56,7 +56,7 @@ Before considering contributing to the project, ensure you have the following in
     git commit -m "category(scope): message"
     git push origin category/description
     ```
-    **Refer to the [Commit Message Convention](#commmit-message) for guidance on commit message format.**
+    **Refer to the [Commit Message Convention](#commit-message) for guidance on commit message format.**
 
  8. **Create a Pull Request**
     Go to the Pull Requests section of our repository.
