@@ -35,7 +35,7 @@ Before considering contributing to the project, ensure you have the following in
     ```bash
     git checkout -B category/description
     ```
-    **Refer to the [Branch Naming Convention](###branch-naming) for appropriate branch naming.**
+    **Refer to the [Branch Naming Convention](#branch-naming) for appropriate branch naming.**
 
  5. **Make all necessary changes, following our coding style and guidelines [[Pep 8]](https://peps.python.org/pep-0008/).**
 
@@ -61,7 +61,7 @@ Before considering contributing to the project, ensure you have the following in
  8. **Create a Pull Request**
     Go to the Pull Requests section of our repository.
     Click on the "New Pull Request" button.
-    Select the branch containing your changes from your forked repository.
+    Select the branch containing your changes.
     Provide a clear and concise description of your changes in the PR description.
     Submit the pull request, and we'll review your changes as soon as possible.
 
@@ -86,7 +86,7 @@ We appreciate your contributions through pull requests! Here's how to create and
 
 ### Creating a Pull Request
 
-1. **Open an Issue**: Before forking the repository and creating a pull request, consider opening an issue to discuss the proposed changes. If no issue exists for your changes, initiate a new discussion to ensure alignment with the project's goals.
+1. **Open an Issue**: Before creating a pull request, consider opening an issue to discuss the proposed changes. If no issue exists for your changes, initiate a new discussion to ensure alignment with the project's goals.
 
 2. **PR Template**: When creating your pull request, please use the provided Pull Request template. This template ensures that essential information is included in your request.
 
