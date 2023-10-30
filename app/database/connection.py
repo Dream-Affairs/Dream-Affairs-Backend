@@ -6,7 +6,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
 
-def get_db_engine():
+def get_db_engine() -> create_engine:
     """
     Get db engine:
         This function returns the database engine based on the database type.
@@ -53,7 +53,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 Base = declarative_base()
 
 
-def create_database():
+def create_database() -> create_engine:
     """
     Create database:
         This function creates the database if it is not present and
@@ -67,7 +67,7 @@ def create_database():
     return Base.metadata.create_all(bind=db_engine)
 
 
-def get_db():
+def get_db() -> object:
     """
     Get db:
         This function returns the database session.
@@ -82,7 +82,7 @@ def get_db():
     return database
 
 
-def get_db_unyield():
+def get_db_unyield() -> object:
     """
     Get db unyield:
         This function returns the database session.

@@ -33,7 +33,7 @@ if settings.ENVIRONMENT == "development":
 
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str]:
     """Health check endpoint."""
     return {"status": "ok"}
 

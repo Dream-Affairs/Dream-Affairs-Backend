@@ -68,6 +68,7 @@ repos:
         args:
         - --strict
         - --ignore-missing-imports
+        - --allow-untyped-decorators
 
 -   repo: https://github.com/PyCQA/bandit
     rev: 1.7.5
