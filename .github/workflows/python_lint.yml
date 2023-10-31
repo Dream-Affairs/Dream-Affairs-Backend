@@ -42,4 +42,5 @@ jobs:
 
       - name: Run pylint
         run: |
-          pylint $(git ls-files '*.py')
+          echo $(find . -type f -name "*.py")
+          pylint $(find . -type f -name "*.py")
