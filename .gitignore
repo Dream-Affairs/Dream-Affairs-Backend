@@ -181,4 +181,7 @@ db.*
 # Config file
 *.cfg
 
+# alembic
+alembic/versions/*.py
+
 # End of https://www.toptal.com/developers/gitignore/api/python
