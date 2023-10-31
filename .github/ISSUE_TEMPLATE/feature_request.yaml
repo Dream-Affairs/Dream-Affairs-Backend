@@ -1,6 +1,6 @@
 name: Feature / Functionality Request
 description: Request a new feature or functionality
-title: "[Feature Request] "
+title: "[FR] Add Title Here"
 body:
   - type: textarea
     id: description
