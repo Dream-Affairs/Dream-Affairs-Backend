@@ -1,9 +1,5 @@
-name: Lint
-
-on:
-  pull_request:
-    paths:
-      - '*.py'
+name: Python lint
+on: [pull_request, push]
 
 jobs:
   common-setup:
