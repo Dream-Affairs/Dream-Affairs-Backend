@@ -6,10 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.connection import create_database
 
-####################### add imported routers here #######
+#============= add imported routers here =============#
 
 
-#########################################################
+#=====================================================#
 
 v1_router = APIRouter(prefix="/api/v1")
 
