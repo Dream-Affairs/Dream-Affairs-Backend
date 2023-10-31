@@ -4,7 +4,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
 
-from alembic import context
+from alembic import context  # type: ignore
 from app.api import models  # noqa
 from app.database.connection import Base, get_db_engine
 

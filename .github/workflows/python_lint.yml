@@ -52,7 +52,7 @@ jobs:
         run: |
           pylint $(find . -type f -name "*.py")
 
-  
+
   mypy:
     runs-on: ubuntu-latest
     steps:
