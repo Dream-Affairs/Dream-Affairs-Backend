@@ -3,12 +3,14 @@
 from typing import Any
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
 
-def get_db_engine() -> Any:
+def get_db_engine() -> Engine:
     """
     Get db engine:
         This function returns the database engine.
@@ -28,13 +30,16 @@ def get_db_engine() -> Any:
     if db_type == "postgresql":
         database_url = f"postgresql://{db_user}:{db_password}\
               @{db_host}:{db_port}/{db_name}"
-    else:
+
+        return create_engine(database_url)
+
+    if db_type == "sqlite":
         database_url = "sqlite:///./database.db"
         return create_engine(
             database_url, connect_args={"check_same_thread": False}
         )
 
-    return create_engine(database_url)
+    raise ValueError("Database type not supported")
 
 
 db_engine = get_db_engine()

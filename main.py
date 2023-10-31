@@ -19,6 +19,8 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/",
 )
+if settings.ENVIRONMENT == "development":
+    create_database()
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,9 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-if settings.ENVIRONMENT == "development":
-    create_database()
 
 
 @app.get("/health")
