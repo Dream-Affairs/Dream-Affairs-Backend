@@ -1,31 +1,21 @@
 """This file contains the database connection and session."""
 # database.py
+from typing import Any
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.core.config import settings
 
 
-def get_db_engine() -> create_engine:
+def get_db_engine() -> Any:
     """
     Get db engine:
-        This function returns the database engine based on the database type.
-        If the database type is sqlite then it returns the
-        sqlite engine else it returns the postgresql engine.
-        it also checks if the database type is sqlite then
-        it checks if the database is present or not.
-        If the database is not present then it creates the database.
-        It's parameters are taken from the config.py file which
-        is gotten from the environment variables.
+        This function returns the database engine.
+        it create a sqlite database if not connected to a
+        postgresql database.
 
-    Parameters:
-    - db_type: This is the type of the database used (sqlite, postgresql).
-    - db_name: This is the name of the database.
-    - db_user: This is the username of the database.
-    - db_password: This is the password of the database.
-    - db_host: This is the hostname of the database.
-    - db_port: This is the port of the database.
-
+    Returns:
+        create_engine: The database engine.
     """
     db_type = settings.DB_TYPE
     db_name = settings.DB_NAME
@@ -53,7 +43,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 Base = declarative_base()
 
 
-def create_database() -> create_engine:
+def create_database() -> Any:
     """
     Create database:
         This function creates the database if it is not present and
