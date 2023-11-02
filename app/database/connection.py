@@ -9,6 +9,13 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 
+db_type = settings.DB_TYPE
+db_name = settings.DB_NAME
+db_user = settings.DB_USER
+db_password = settings.DB_PASSWORD
+db_host = settings.DB_HOST
+db_port = settings.DB_PORT
+
 
 def get_db_engine() -> Engine:
     """
@@ -20,16 +27,10 @@ def get_db_engine() -> Engine:
     Returns:
         create_engine: The database engine.
     """
-    db_type = settings.DB_TYPE
-    db_name = settings.DB_NAME
-    db_user = settings.DB_USER
-    db_password = settings.DB_PASSWORD
-    db_host = settings.DB_HOST
-    db_port = settings.DB_PORT
 
     if db_type == "postgresql":
-        database_url = f"postgresql://{db_user}:{db_password}\
-              @{db_host}:{db_port}/{db_name}"
+        database_url = f"postgresql://{db_user}:{db_password}@\
+            {db_host}:{db_port}/{db_name}"
 
         return create_engine(database_url)
 
@@ -43,6 +44,8 @@ def get_db_engine() -> Engine:
 
 
 db_engine = get_db_engine()
+
+DATABASE_URL = db_engine.url
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db_engine)
 
