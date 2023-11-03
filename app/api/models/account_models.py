@@ -28,4 +28,3 @@ class Account(Base):  # type: ignore # pylint: disable=too-few-public-methods
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
-    is_active = Column(Integer, default=0)
