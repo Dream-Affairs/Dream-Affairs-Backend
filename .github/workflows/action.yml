@@ -16,4 +16,5 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     
     - run: |
-        az webapp list --query "[?state=='Running']"
+        az webapp ssh --resource-group 'Dream-Affairs' -n 'dreamaffairs' --slot 'dev'
+        touch test
