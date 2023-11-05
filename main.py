@@ -3,6 +3,10 @@ import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.responses.custom_responses import (
+    CustomResponse,
+    custom_http_exception_handler,
+)
 from app.core.config import settings
 from app.database.connection import create_database
 
@@ -19,6 +23,9 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/",
 )
+
+app.add_exception_handler(400, custom_http_exception_handler)
+
 if settings.ENVIRONMENT == "development":
     create_database()
 
@@ -34,7 +41,8 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict[str, str]:
     """Health check endpoint."""
-    return {"status": "ok"}
+    # add exception handling here
+    raise CustomResponse(status_code=400, message="Healthy", data={})
 
 
 app.include_router(v1_router)

@@ -54,6 +54,7 @@ repos:
         args:
         -   '*.py'
         -   --disable=import-error
+        -   --disable=too-few-public-methods
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.1
