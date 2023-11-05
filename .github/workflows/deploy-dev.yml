@@ -1,13 +1,16 @@
 name: Deploy Dev API
-
 on:
-  workflow_dispatch:
-
+  push:
+    branches:
+      - dev
+    
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-
+    environment:
+      name: 'dev'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     steps:
     - name: Deploy from Server
       uses: appleboy/ssh-action@v1.0.0
