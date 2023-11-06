@@ -28,12 +28,16 @@ async def custom_http_exception_handler(
         Returns:
             JSONResponse: The custom response
     """
+    if isinstance(exc.detail, str):
+        detail = {"message": exc.detail}
+    else:
+        detail = exc.detail
+
     return JSONResponse(
         status_code=exc.status_code,
         content={
-            "status_code": exc.status_code,
-            "message": exc.detail.get("message", "Bad Request"),
-            "data": exc.detail.get("data", None),
+            "message": detail.get("message", "Bad Request"),
+            "data": detail.get("data", None),
         },
     )
 

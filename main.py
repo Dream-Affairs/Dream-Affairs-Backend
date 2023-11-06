@@ -1,6 +1,6 @@
 """Main module for the API."""
 import uvicorn
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.responses.custom_responses import (
@@ -24,7 +24,7 @@ app = FastAPI(
     docs_url="/",
 )
 
-app.add_exception_handler(400, custom_http_exception_handler)
+app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
 if settings.ENVIRONMENT == "development":
     create_database()
@@ -39,7 +39,7 @@ app.add_middleware(
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
     return CustomResponse(status_code=200, message="Healthy", data={})
