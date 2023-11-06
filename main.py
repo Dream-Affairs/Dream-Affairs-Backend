@@ -42,7 +42,7 @@ app.add_middleware(
 def health() -> dict[str, str]:
     """Health check endpoint."""
     # add exception handling here
-    raise CustomResponse(status_code=400, message="Healthy", data={})
+    return CustomResponse(status_code=200, message="Healthy", data={})
 
 
 app.include_router(v1_router)

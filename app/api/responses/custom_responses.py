@@ -32,8 +32,8 @@ async def custom_http_exception_handler(
         status_code=exc.status_code,
         content={
             "status_code": exc.status_code,
-            "message": exc.detail["message"],
-            "data": exc.detail["data"],
+            "message": exc.detail.get("message", "Bad Request"),
+            "data": exc.detail.get("data", None),
         },
     )
 
