@@ -71,6 +71,7 @@ repos:
     rev: 1.7.5
     hooks:
     -   id: bandit
+        exclude: ^app/test/
 
 -   repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.5.0
