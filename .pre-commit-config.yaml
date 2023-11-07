@@ -26,8 +26,9 @@ repos:
     hooks:
     -   id: isort
         args:
-        - --profile
-        - black
+        - --profile=black
+        - --line-width=79
+
 
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.2.1
