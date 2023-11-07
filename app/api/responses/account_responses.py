@@ -19,6 +19,22 @@ def signup(
     status_code=status.HTTP_201_CREATED,
     response_model=AccountResponse
 ) -> AccountResponse:
+    """
+    Create a new user account.
+
+    Args:
+        user (AccountSchema): The user account information.
+        db (Session): The database session. (Dependency)
+        status_code (int): The HTTP status code to return. (Default: 201)
+        response_model (AccountResponse): The response model for the created account.
+
+    Returns:
+        AccountResponse: The created user account.
+
+    Raises:
+        HTTPException: If the passwords do not match.
+    """
+
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
