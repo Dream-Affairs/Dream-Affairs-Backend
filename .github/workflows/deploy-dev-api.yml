@@ -1,4 +1,4 @@
-name: Deploy Dev API
+name: Deploy Staging API
 on:
   push:
     branches:
