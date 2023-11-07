@@ -9,16 +9,16 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     environment:
-      name: 'dev'
-      url: 'staging.api.dreamaffairs.mooo.com' 
+      name: "dev"
+      url: "staging.api.dreamaffairs.mooo.com"
     steps:
-    - name: Deploy from Server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.SERVER_HOST }}
+      - name: Deploy from Server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
-	cd dreamaffairs-backend
-	./deploy-staging-api
+          cd dreamaffairs-backend
+          ./deploy-staging-api
