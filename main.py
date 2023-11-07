@@ -2,7 +2,7 @@
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-
+from app.api.responses import account_responses
 from app.api.responses.custom_responses import (
     CustomResponse,
     custom_http_exception_handler,
@@ -46,6 +46,7 @@ def health() -> CustomResponse:
 
 
 app.include_router(v1_router)
+app.include_router(account_responses.router)
 
 
 if __name__ == "__main__":
