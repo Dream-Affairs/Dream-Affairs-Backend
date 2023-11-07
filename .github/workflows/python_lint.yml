@@ -50,7 +50,7 @@ jobs:
 
       - name: Run pylint
         run: |
-          pylint $(find . -type f -name "*.py")
+          pylint $(find . -type f -name "*.py") --disable=too-few-public-methods --disable=import-error
 
 
   mypy:
@@ -72,4 +72,5 @@ jobs:
 
       - name: Type checking with mypy
         run: |
-          mypy --ignore-missing-imports --allow-untyped-decorators $(find . -type f -name "*.py")
+          mypy $(find . -type f -name "*.py") --strict --ignore-missing-imports --allow-untyped-decorators
+          

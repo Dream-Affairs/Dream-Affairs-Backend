@@ -28,8 +28,10 @@ def get_db_engine() -> Engine:
     db_port = settings.DB_PORT
 
     if db_type == "postgresql":
-        database_url = f"postgresql://{db_user}:{db_password}\
-              @{db_host}:{db_port}/{db_name}"
+        database_url = (
+            f"postgresql://{db_user}:{db_password}"
+            f"@{db_host}:{db_port}/{db_name}"
+        )
 
         return create_engine(database_url)
 

@@ -26,8 +26,9 @@ repos:
     hooks:
     -   id: isort
         args:
-        - --profile
-        - black
+        - --profile=black
+        - --line-width=79
+
 
 -   repo: https://github.com/PyCQA/autoflake
     rev: v2.2.1
@@ -54,6 +55,7 @@ repos:
         args:
         -   '*.py'
         -   --disable=import-error
+        -   --disable=too-few-public-methods
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.1
@@ -70,6 +72,7 @@ repos:
     rev: 1.7.5
     hooks:
     -   id: bandit
+        exclude: ^app/test/
 
 -   repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
     rev: v9.5.0
