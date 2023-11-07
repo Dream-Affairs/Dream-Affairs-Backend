@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: "dev"
-      url: "staging.api.dreamaffairs.mooo.com"
+      url: "https://staging.api.dreamaffairs.mooo.com"
     steps:
       - name: Deploy from Server
         uses: appleboy/ssh-action@v1.0.0

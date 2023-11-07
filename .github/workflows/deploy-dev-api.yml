@@ -1,4 +1,4 @@
-name: Deploy Staging API
+name: Deploy Dev API
 on:
   push:
     branches:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: "dev"
-      url: "dev.api.dreamaffairs.mooo.com"
+      url: "https://dev.api.dreamaffairs.mooo.com"
     steps:
       - name: Deploy from Server
         uses: appleboy/ssh-action@v1.0.0
