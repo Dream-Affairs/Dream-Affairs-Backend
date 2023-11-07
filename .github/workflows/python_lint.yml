@@ -72,5 +72,5 @@ jobs:
 
       - name: Type checking with mypy
         run: |
-          mypy --strict --ignore-missing-imports --allow-untyped-decorators
+          mypy $(find . -type f -name "*.py") --strict --ignore-missing-imports --allow-untyped-decorators
           
