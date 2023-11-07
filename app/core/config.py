@@ -2,7 +2,7 @@
 from decouple import config
 
 
-class Settings:  # pylint: disable=too-few-public-methods
+class Settings:
     """
     Settings:
         This class is used to get the environment variables
