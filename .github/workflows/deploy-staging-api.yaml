@@ -2,15 +2,15 @@ name: Deploy Dev API
 on:
   push:
     branches:
-      - dev
-    
+      - main
+
 jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
     environment:
       name: 'dev'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+      url: 'staging.api.dreamaffairs.mooo.com' 
     steps:
     - name: Deploy from Server
       uses: appleboy/ssh-action@v1.0.0
@@ -19,4 +19,6 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}
         password: ${{ secrets.SERVER_PASSWORD }}
         port: ${{ secrets.SERVER_PORT }}
-        script: ./deploy-dev-api
+        script: |
+	cd dreamaffairs-backend
+	./deploy-staging-api
