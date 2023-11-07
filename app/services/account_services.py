@@ -1,4 +1,6 @@
-import bcrypt
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     """
@@ -10,10 +12,4 @@ def hash_password(password: str) -> str:
     Returns:
         str: The hashed password.
     """
-    pw_bytes = password.encode("utf-8")
-
-    # generating the salt
-    salt = bcrypt.gensalt()
-
-    # Hashing the password
-    return bcrypt.hashpw(pw_bytes, salt)
+    return pwd_context.hash(password)
