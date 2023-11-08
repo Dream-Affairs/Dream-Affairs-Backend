@@ -1,15 +1,24 @@
 from uuid import uuid4
-from sqlalchemy.orm import Session
-from app.api.models.account_models import Account
-from app.api.schemas.account_schemas import AccountSchema, AccountResponse
-from app.services.account_services import hash_password
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+
+from app.api.models.account_models import Account
+from app.api.schemas.account_schemas import AccountResponse, AccountSchema
 from app.database.connection import get_db
+from app.services.account_services import (
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 
 BASE_URL = "/auth"
 
-router = APIRouter(prefix=BASE_URL)
+router = APIRouter(
+    prefix=BASE_URL,
+    tags=["Auth"]
+)
 
 
 @router.post("/signup/")
@@ -43,11 +52,35 @@ def signup(
     del user_data["password"]
     del user_data["confirm_password"]
     user_data["id"] = str(uuid4())
-    
+
     new_user = Account(**user_data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     return new_user
 
+
+@router.post("/login")
+def login(
+    user_crdentials: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(Account).filter(
+        Account.email == user_crdentials.username).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
+
+    if not verify_password(user_crdentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
+    
+    # create access token
+    access_token = create_access_token(data={"account_id": user.id})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
