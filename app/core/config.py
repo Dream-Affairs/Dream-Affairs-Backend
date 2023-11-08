@@ -15,7 +15,7 @@ class Settings:
     DB_PASSWORD = config("DB_PASSWORD", default="root")
     DB_HOST = config("DB_HOST", default="localhost")
     DB_PORT = config("DB_PORT", default="5432")
-    ENVIRONMENT = config("ENVIRONMENT", default="development")
+    ENVIRONMENT = config("ENVIRONMENT", default="")
     PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
     DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 
