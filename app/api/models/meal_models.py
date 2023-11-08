@@ -1,9 +1,9 @@
 """This file contains the models for the meal table."""
 from datetime import datetime
+from typing import List
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
@@ -31,7 +31,7 @@ class MealCategory(Base):  # type: ignore
     """
 
     __tablename__ = "meal_category"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
@@ -41,7 +41,7 @@ class MealCategory(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="meal_category", lazy=True
+        "Organization", backref="associated_meal_category", lazy="joined"
     )
 
 
@@ -72,7 +72,7 @@ class Meal(Base):  # type: ignore
     """
 
     __tablename__ = "meal"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     image_url = Column(String, nullable=False)
@@ -81,6 +81,10 @@ class Meal(Base):  # type: ignore
     )
     is_hidden = Column(Boolean, default=False)
     quantity = Column(Integer, nullable=False)
-    dieatary_preference = Column(ARRAY(String), nullable=False)
+    dieatary_preference: List[str] = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+    meal_categories = relationship(
+        "MealCategory", backref="associated_meal", lazy="joined"
+    )

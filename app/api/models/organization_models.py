@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
 
-EVENT_TYPE = ENUM("Wedding", name="event_type")
 INVITE_STATUS = ENUM("pending", "accepted", "rejected", name="invite_status")
 
 
@@ -57,32 +56,32 @@ class Organization(Base):  # type: ignore
     """
 
     __tablename__ = "organization"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     owner = Column(String, ForeignKey("account.id"), nullable=False)
-    org_type = Column(EVENT_TYPE, nullable=False)
+    org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
     is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    account = relationship("Account", backref="organization", lazy=True)
+    account = relationship("Account", backref="organization", lazy="joined")
     detail = relationship(
-        "OrganizationDetail", backref="organization", lazy=True
+        "OrganizationDetail",
+        backref="Associated_organization_details",
+        lazy="joined",
     )
     organization_members = relationship(
-        "OrganizationMember", back_populates="organization", lazy=True
+        "OrganizationMember", back_populates="organization", lazy="joined"
     )
     tag = relationship(
-        "OrganizationTag", back_populates="organization", lazy=True
+        "OrganizationTag", back_populates="organization", lazy="joined"
     )
-    gifts = relationship("Gift", backref="organization", lazy=True)
-    budget = relationship(
-        "OrganizationBudget", backref="organization", lazy=True
-    )
+    gifts = relationship("Gift", back_populates="organization", lazy="joined")
+    budget = relationship("Budget", backref="associated_budget", lazy="joined")
     meal_category = relationship(
-        "MealCategory", backref="organization", lazy=True
+        "MealCategory", back_populates="organization", lazy="joined"
     )
 
 
@@ -139,7 +138,7 @@ class OrganizationDetail(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="organization_detail", lazy=True
+        "Organization", backref="associated_detail_organization", lazy="joined"
     )
 
 
@@ -178,8 +177,8 @@ class OrganizationMember(Base):  # type: ignore
         String, ForeignKey("organization.id"), nullable=False
     )
     account_id = Column(String, ForeignKey("account.id"), nullable=False)
-    role_id = Column(
-        String, ForeignKey("organization_role.id"), nullable=False
+    organization_role_id = Column(
+        Integer, ForeignKey("organization_role.id"), nullable=False
     )
 
     is_suspended = Column(Boolean, default=False)
@@ -188,14 +187,55 @@ class OrganizationMember(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="organization_member", lazy=True
+        "Organization", backref="organization_member", lazy="joined"
     )
-    account = relationship("Account", backref="organization_member", lazy=True)
-    role = relationship(
-        "Role",
-        secondary="organization_role",
-        lazy="subquery",
-        backref="organization_member",
+    account = relationship("Account", backref="member_account", lazy="joined")
+    member_role = relationship(
+        "OrganizationRole", back_populates="members", lazy="joined"
+    )
+
+
+class OrganizationRole(Base):  # type: ignore
+    """
+    OrganizationRole:
+      This class is used to create the organization_role table.
+
+    Args:
+      Base: This is the base class from which all the models inherit.
+
+    Attributes:
+      id: This is the primary key of the table.
+      organization_id: This is the foreign key of the organization \
+        table.
+      role_id: This is the foreign key of the role table.
+      created_at: This is the date and time when the organization\
+         role was created.
+      updated_at: This is the date and time when the organization\
+         role was updated.
+
+    Relationships:
+      organization: This is the relationship between the organization \
+        and organization_role table.
+      role: This is the relationship between the role and \
+        organization_role table.
+    """
+
+    __tablename__ = "organization_role"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String, ForeignKey("organization.id"), nullable=False
+    )
+    role_id = Column(String, ForeignKey("role.id"), nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship(
+        "Organization", backref="organization_role", lazy="joined"
+    )
+    role = relationship("Role", backref="organization_role", lazy="joined")
+    members = relationship(
+        "OrganizationMember", back_populates="member_role", lazy="joined"
     )
 
 
@@ -234,65 +274,26 @@ class OrganizationInvite(Base):  # type: ignore
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
     )
-    role_id = Column(
-        String, ForeignKey("organization_role.id"), nullable=False
+    organization_role_id = Column(
+        Integer, ForeignKey("organization_role.id"), nullable=False
     )
     token = Column(String, nullable=False)
     time_sent = Column(DateTime, default=datetime.utcnow)
     time_accepted_or_rejected = Column(DateTime, nullable=True)
-    status = Column(INVITE_STATUS, nullable=False, default="pending")
+    status = Column(ENUM("pending", "accepted", "rejected"), nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    account = relationship("Account", backref="organization_invite", lazy=True)
+    account = relationship(
+        "Account", backref="organization_invite", lazy="joined"
+    )
     organization = relationship(
-        "Organization", backref="organization_invite", lazy=True
+        "Organization", backref="organization_invite", lazy="joined"
     )
     role = relationship(
-        "OrganizationRole", backref="organization_invite", lazy=True
+        "OrganizationRole", backref="organization_invite", lazy="joined"
     )
-
-
-class OrganizationRole(Base):  # type: ignore
-    """
-    OrganizationRole:
-      This class is used to create the organization_role table.
-
-    Args:
-      Base: This is the base class from which all the models inherit.
-
-    Attributes:
-      id: This is the primary key of the table.
-      organization_id: This is the foreign key of the organization \
-        table.
-      role_id: This is the foreign key of the role table.
-      created_at: This is the date and time when the organization\
-         role was created.
-      updated_at: This is the date and time when the organization\
-         role was updated.
-
-    Relationships:
-      organization: This is the relationship between the organization \
-        and organization_role table.
-      role: This is the relationship between the role and \
-        organization_role table.
-    """
-
-    __tablename__ = "organization_role"
-    id = Column(String, primary_key=True, default=uuid4)
-    organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
-    )
-    role_id = Column(String, ForeignKey("role.id"), nullable=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-    organization = relationship(
-        "Organization", backref="organization_role", lazy=True
-    )
-    role = relationship("Role", backref="organization_role", lazy=True)
 
 
 class OrganizationTag(Base):  # type: ignore
@@ -321,16 +322,16 @@ class OrganizationTag(Base):  # type: ignore
     """
 
     __tablename__ = "organization_tag"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
     )
-    title = Column(String, nullable=False)
+    tag = Column(String, nullable=False)
     description = Column(String, nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="organization_tag", lazy=True
+        "Organization", backref="organization_tag", lazy="joined"
     )
