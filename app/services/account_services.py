@@ -1,3 +1,7 @@
+"""
+This module provides functions for handling user account related operations.
+"""
+
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
