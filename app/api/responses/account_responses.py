@@ -18,7 +18,7 @@ router = APIRouter(prefix=BASE_URL, tags=['Auth'])
 def signup(
     user: AccountSchema,
     db: Session = Depends(get_db),
-):
+) -> CustomResponse:
     """
     Create a new user account.
 
