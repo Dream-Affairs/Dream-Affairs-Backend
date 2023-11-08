@@ -1,9 +1,9 @@
 """This file contains the models for the meal table."""
 from datetime import datetime
-from typing import List
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
@@ -81,7 +81,7 @@ class Meal(Base):  # type: ignore
     )
     is_hidden = Column(Boolean, default=False)
     quantity = Column(Integer, nullable=False)
-    dieatary_preference: List[str] = Column(String, nullable=False)
+    dieatary_preference = Column(ARRAY(String), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 

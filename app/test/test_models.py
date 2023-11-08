@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 import pytest
+from decouple import config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -29,8 +30,9 @@ from app.api.models.role_permission_models import (
 )
 from app.database.connection import Base
 
-DATABASE_URL = "sqlite:///test.db"
+DATABASE_URL = config("DATABASE_URL", default="sqlite:///test.db")
 
+print(DATABASE_URL)
 ACCOUNT_ID = "kjwlk324bknb2l3kj4g23k4j2h34k23g2k34g23"
 account = Account(
     id=ACCOUNT_ID,

@@ -178,7 +178,7 @@ class OrganizationMember(Base):  # type: ignore
     )
     account_id = Column(String, ForeignKey("account.id"), nullable=False)
     organization_role_id = Column(
-        Integer, ForeignKey("organization_role.id"), nullable=False
+        String, ForeignKey("organization_role.id"), nullable=False
     )
 
     is_suspended = Column(Boolean, default=False)
@@ -275,12 +275,15 @@ class OrganizationInvite(Base):  # type: ignore
         String, ForeignKey("organization.id"), nullable=False
     )
     organization_role_id = Column(
-        Integer, ForeignKey("organization_role.id"), nullable=False
+        String, ForeignKey("organization_role.id"), nullable=False
     )
     token = Column(String, nullable=False)
     time_sent = Column(DateTime, default=datetime.utcnow)
     time_accepted_or_rejected = Column(DateTime, nullable=True)
-    status = Column(ENUM("pending", "accepted", "rejected"), nullable=False)
+    status = Column(
+        ENUM("pending", "accepted", "rejected", name="invitation_status"),
+        nullable=False,
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
