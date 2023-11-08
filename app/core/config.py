@@ -22,5 +22,11 @@ class Settings:
         "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
     )
 
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+    EMAIL_PORT = config("EMAIL_PORT", default="587")
+    EMAIL_NAME = config("EMAIL_NAME", default="admin")
+    EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="password")
+    EMAIL_ADDRESS = config("EMAIL_ADDRESS", default="")
+
 
 settings = Settings()
