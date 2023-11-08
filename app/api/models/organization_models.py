@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
 
-EVENT_TYPE = ENUM("Wedding", name="event_type")
 INVITE_STATUS = ENUM("pending", "accepted", "rejected", name="invite_status")
 
 
@@ -60,7 +59,7 @@ class Organization(Base):  # type: ignore
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     owner = Column(String, ForeignKey("account.id"), nullable=False)
-    org_type = Column(EVENT_TYPE, nullable=False)
+    org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
     is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -281,7 +280,7 @@ class OrganizationInvite(Base):  # type: ignore
     token = Column(String, nullable=False)
     time_sent = Column(DateTime, default=datetime.utcnow)
     time_accepted_or_rejected = Column(DateTime, nullable=True)
-    status = Column(INVITE_STATUS, nullable=False, default="pending")
+    status = Column(ENUM("pending", "accepted", "rejected"), nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)

@@ -8,8 +8,6 @@ from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
 
-PROVIDER = ENUM("google", "local", name="provider")
-
 
 class Account(Base):  # type: ignore
     """
@@ -43,7 +41,7 @@ class Account(Base):  # type: ignore
     """
 
     __tablename__ = "account"
-    id = id = Column(String, primary_key=True, default=uuid4().hex)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -80,7 +78,7 @@ class Auth(Base):  # type: ignore
     __tablename__ = "auth"
     id = Column(String, primary_key=True, default=uuid4().hex)
     account_id = Column(String, ForeignKey("account.id"), nullable=False)
-    provider = Column(PROVIDER, nullable=False)
+    provider = Column(ENUM("google", "local", name="provider"), nullable=False)
 
     setup_date = Column(DateTime, default=datetime.utcnow)
 
