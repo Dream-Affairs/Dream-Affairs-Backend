@@ -1,3 +1,7 @@
+"""
+This module defines the FastAPI API endpoints for user authentication.
+"""
+
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,7 +30,8 @@ def signup(
         user (AccountSchema): The user account information.
         db (Session): The database session. (Dependency)
         status_code (int): The HTTP status code to return. (Default: 201)
-        response_model (AccountResponse): The response model for the created account.
+        response_model (AccountResponse): The response model for the created
+            account.
 
     Returns:
         AccountResponse: The created user account.

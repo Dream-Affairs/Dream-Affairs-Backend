@@ -1,4 +1,9 @@
+"""
+This module defines Pydantic schemas for user accounts.
+"""
+
 from pydantic import BaseModel, EmailStr
+
 
 class AccountSchema(BaseModel):
     """
