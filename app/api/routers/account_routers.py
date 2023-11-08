@@ -1,5 +1,6 @@
 """This module defines the FastAPI API endpoints for user authentication."""
 
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
