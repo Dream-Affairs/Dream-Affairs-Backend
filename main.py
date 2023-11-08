@@ -7,6 +7,7 @@ from app.api.responses.custom_responses import (
     CustomResponse,
     custom_http_exception_handler,
 )
+from app.api.routers import account_routers
 from app.core.config import settings
 from app.database.connection import create_database
 
@@ -46,6 +47,7 @@ def health() -> CustomResponse:
 
 
 app.include_router(v1_router)
+app.include_router(account_routers.router)
 
 
 if __name__ == "__main__":
