@@ -19,5 +19,11 @@ class Settings:
     PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
     DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+    EMAIL_PORT = config("EMAIL_PORT", default="587")
+    EMAIL_NAME = config("EMAIL_NAME", default="admin")
+    EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="password")
+    EMAIL_ADDRESS = config("EMAIL_ADDRESS", default="")
+
 
 settings = Settings()
