@@ -63,5 +63,4 @@ def signup(
     return CustomResponse(
         status_code=status.HTTP_201_CREATED,
         message="Account created successfully",
-        data=user_data,
     )
