@@ -1,24 +1,24 @@
 from uuid import uuid4
-from sqlalchemy.orm import Session
-from app.api.models.account_models import Account
-from app.api.schemas.account_schemas import AccountSchema, AccountResponse
-from app.services.account_services import hash_password
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.api.models.account_models import Account, Auth
+from app.api.responses.custom_responses import CustomResponse
+from app.api.schemas.account_schemas import AccountSchema
 from app.database.connection import get_db
+from app.services.account_services import hash_password
 
 BASE_URL = "/auth"
 
-router = APIRouter(prefix=BASE_URL)
+router = APIRouter(prefix=BASE_URL, tags=['Auth'])
 
 
 @router.post("/signup/")
 def signup(
     user: AccountSchema,
     db: Session = Depends(get_db),
-    status_code=status.HTTP_201_CREATED,
-    response_model=AccountResponse
-) -> AccountResponse:
+):
     """
     Create a new user account.
 
@@ -43,11 +43,25 @@ def signup(
     del user_data["password"]
     del user_data["confirm_password"]
     user_data["id"] = str(uuid4())
-    
+
     new_user = Account(**user_data)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
-    return new_user
 
+    new_auth = Auth(
+        id=str(uuid4()),
+        account_id=new_user.id,
+        provider="local",
+        setup_date=new_user.created_at
+    )
+
+    db.add(new_auth)
+    db.commit()
+    db.refresh(new_auth)
+
+    return CustomResponse(
+        status_code=status.HTTP_201_CREATED,
+        message="Account created successfully",
+        data=user_data,
+    )
