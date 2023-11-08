@@ -1,7 +1,10 @@
-from pydantic import BaseModel, Field, EmailStr
-from datetime import datetime
+from pydantic import BaseModel, EmailStr
 
 class AccountSchema(BaseModel):
+    """
+    Represents the schema for an account.
+    """
+
     email: EmailStr
     password: str
     confirm_password: str
