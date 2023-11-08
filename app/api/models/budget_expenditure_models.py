@@ -34,7 +34,7 @@ class Budget(Base):  # type: ignore
     """
 
     __tablename__ = "budget"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
     )
@@ -48,8 +48,12 @@ class Budget(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    organization = relationship("Organization", backref="budget", lazy=True)
-    expenditures = relationship("Expenditure", backref="budget", lazy=True)
+    organization = relationship(
+        "Organization", backref="associated_organization", lazy="joined"
+    )
+    expenditures = relationship(
+        "Expenditure", back_populates="budget", lazy="joined"
+    )
 
 
 class Expenditure(Base):  # type: ignore
@@ -76,10 +80,8 @@ class Expenditure(Base):  # type: ignore
     """
 
     __tablename__ = "expenditure"
-    id = Column(String, primary_key=True, default=uuid4)
-    organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
-    )
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    budget_id = Column(String, ForeignKey("budget.id"), nullable=False)
     title = Column(String, nullable=False)
     currency = Column(String, nullable=False)
     amount = Column(Integer, nullable=False)
@@ -90,4 +92,4 @@ class Expenditure(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    budget = relationship("Budget", backref="expenditure", lazy=True)
+    budget = relationship("Budget", backref="expenditure", lazy="joined")

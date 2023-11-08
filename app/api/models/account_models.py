@@ -43,7 +43,7 @@ class Account(Base):  # type: ignore
     """
 
     __tablename__ = "account"
-    id = id = Column(String, primary_key=True, default=uuid4)
+    id = id = Column(String, primary_key=True, default=uuid4().hex)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
@@ -57,8 +57,7 @@ class Account(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    auth = relationship("Auth", backref="account", lazy=True)
-    organizations = relationship("Organization", backref="account", lazy=True)
+    auth = relationship("Auth", back_populates="account", lazy="joined")
 
 
 class Auth(Base):  # type: ignore
@@ -79,10 +78,10 @@ class Auth(Base):  # type: ignore
     """
 
     __tablename__ = "auth"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     account_id = Column(String, ForeignKey("account.id"), nullable=False)
     provider = Column(PROVIDER, nullable=False)
 
     setup_date = Column(DateTime, default=datetime.utcnow)
 
-    account = relationship("Account", backref="auth", lazy=True)
+    account = relationship("Account", back_populates="auth", lazy="joined")

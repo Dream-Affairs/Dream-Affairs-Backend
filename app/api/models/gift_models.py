@@ -55,11 +55,11 @@ class Gift(Base):  # type: ignore
     """
 
     __tablename__ = "gift"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
     )
-    tile = Column(String, nullable=False)
+    title = Column(String, nullable=False)
     description = Column(
         String,
     )
@@ -99,4 +99,6 @@ class Gift(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    organization = relationship("Organization", backref="gift", lazy=True)
+    organization = relationship(
+        "Organization", backref="associated_Organization", lazy="joined"
+    )
