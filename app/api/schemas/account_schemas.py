@@ -1,9 +1,21 @@
+"""This module defines Pydantic schemas for user accounts."""
+
 from typing import Optional
+
 from pydantic import BaseModel, EmailStr
-from datetime import datetime
 
 
-class AccountSchema(BaseModel):
+class AccountSchema(BaseModel):  # type: ignore
+    """Data model for an account.
+
+    Attributes:
+        email (EmailStr): The email address of the account.
+        password (str): The password of the account.
+        confirm_password (str): The confirmation password of the account.
+        first_name (str): The first name of the account holder.
+        last_name (str): The last name of the account holder.
+    """
+
     email: EmailStr
     password: str
     confirm_password: str
@@ -11,22 +23,23 @@ class AccountSchema(BaseModel):
     last_name: str
 
 
-class AccountResponse(BaseModel):
-    id: str
-    email: EmailStr
-    first_name: str
-    last_name: str
-    created_at: datetime
-    updated_at: datetime
+class Token(BaseModel):  # type: ignore
+    """Data model for an access token.
 
-    class Config:
-        from_attributes = True
+    Attributes:
+        access_token (str): The access token string.
+        token_type (str): The type of the access token.
+    """
 
-
-class Token(BaseModel):
     access_token: str
     token_type: str
 
 
-class TokenData(BaseModel):
+class TokenData(BaseModel):  # type: ignore
+    """Data model for an access token.
+
+    Attributes:
+        id (Optional[str]): The ID of the token.
+    """
+
     id: Optional[str] = None

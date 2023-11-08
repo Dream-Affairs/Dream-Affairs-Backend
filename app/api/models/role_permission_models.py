@@ -28,7 +28,7 @@ class Role(Base):  # type: ignore
     """
 
     __tablename__ = "role"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     is_deleted = Column(Boolean, default=False)
@@ -68,7 +68,7 @@ class Permission(Base):  # type: ignore
     """
 
     __tablename__ = "permission"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
     description = Column(String, nullable=False)
     is_deleted = Column(Boolean, default=False)
@@ -103,7 +103,7 @@ class RolePermission(Base):  # type: ignore
     """
 
     __tablename__ = "role_permission"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     role_id = Column(String, ForeignKey("role.id"), nullable=False)
     permission_id = Column(String, ForeignKey("permission.id"), nullable=False)
     is_deleted = Column(Boolean, default=False)

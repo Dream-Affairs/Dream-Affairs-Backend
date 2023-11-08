@@ -16,10 +16,6 @@ from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
 
-GIFT_TYPE = ENUM("physical", "cash", name="gift_type")
-GIFT_STATUS = ENUM("available", "reserved", "purchased", name="gift_status")
-GIFT_AMOUNT_TYPE = ENUM("fixed", "any", name="gift_amount_type")
-
 
 class Gift(Base):  # type: ignore
     """
@@ -55,11 +51,11 @@ class Gift(Base):  # type: ignore
     """
 
     __tablename__ = "gift"
-    id = Column(String, primary_key=True, default=uuid4)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
         String, ForeignKey("organization.id"), nullable=False
     )
-    tile = Column(String, nullable=False)
+    title = Column(String, nullable=False)
     description = Column(
         String,
     )
@@ -87,9 +83,19 @@ class Gift(Base):  # type: ignore
     payment_link = Column(
         String,
     )
-    gift_type = Column(GIFT_TYPE, nullable=False)
-    gift_amount_type = Column(GIFT_AMOUNT_TYPE, nullable=False)
-    gift_status = Column(GIFT_STATUS, nullable=False)
+    gift_type = Column(
+        ENUM("physical", "cash", name="gift_type"), nullable=False
+    )
+    gift_amount_type = Column(
+        ENUM("fixed", "any", name="gift_amount_type"),
+        nullable=False,
+        default="fixed",
+    )
+    gift_status = Column(
+        ENUM("available", "reserved", "purchased", name="gift_status"),
+        nullable=False,
+        default="available",
+    )
     is_gift_hidden = Column(Boolean, default=False)
     is_gift_amount_hidden = Column(Boolean, default=False)
 
@@ -99,4 +105,6 @@ class Gift(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    organization = relationship("Organization", backref="gift", lazy=True)
+    organization = relationship(
+        "Organization", backref="associated_Organization", lazy="joined"
+    )
