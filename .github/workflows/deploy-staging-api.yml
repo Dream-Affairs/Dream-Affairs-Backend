@@ -9,7 +9,7 @@ jobs:
     name: Deploy
     runs-on: ubuntu-latest
     environment:
-      name: "dev"
+      name: "staging"
       url: "https://staging.api.dreamaffairs.mooo.com"
     steps:
       - name: Deploy from Server
