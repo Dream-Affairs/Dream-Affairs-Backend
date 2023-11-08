@@ -14,7 +14,7 @@ BASE_URL = "/auth"
 router = APIRouter(prefix=BASE_URL, tags=['Auth'])
 
 
-@router.post("/signup/")
+@router.post("/signup")
 def signup(
     user: AccountSchema,
     db: Session = Depends(get_db),
