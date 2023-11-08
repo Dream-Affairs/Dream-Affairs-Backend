@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field, EmailStr
+from typing import Optional
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
+
 
 class AccountSchema(BaseModel):
     email: EmailStr
@@ -7,6 +9,7 @@ class AccountSchema(BaseModel):
     confirm_password: str
     first_name: str
     last_name: str
+
 
 class AccountResponse(BaseModel):
     id: str
@@ -17,4 +20,13 @@ class AccountResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    id: Optional[str] = None
