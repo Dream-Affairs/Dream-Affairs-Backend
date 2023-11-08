@@ -141,14 +141,14 @@ In your commit message, follow the format `category(scope): message`. Here's a b
 
 Here are some examples:
 
-- `feat(user-auth): Implement user authentication feature.`
-- `fix(bug-123): Resolve issue with data not saving properly.`
-- `refactor(api): Improve API response handling.`
-- `docs(readme): Update installation instructions.`
-- `build(deps): Add new library as a dependency.`
-- `test(unit): Add unit tests for the user service.`
-- `ci(github-actions): Configure automated testing workflows.`
-- `chore(clean-up): Remove unused code and files.`
+- `feat(user-auth): implement user authentication feature.`
+- `fix(bug-123): resolve issue with data not saving properly.`
+- `refactor(api): improve api response handling.`
+- `docs(readme): update installation instructions.`
+- `build(deps): add new library as a dependency.`
+- `test(unit): add unit tests for the user service.`
+- `ci(github-actions): configure automated testing workflows.`
+- `chore(clean-up): remove unused code and files.`
 
 ## License Information
 Any contributions you make will be under the MIT Software License. In short, when you submit code changes, your submissions are understood to be under the same [MIT License](LICENSE) that covers the project.
