@@ -1,4 +1,4 @@
-"""This module is used for configuration of the application."""
+"""This module is used for configuration of the application's settings."""
 from decouple import config
 
 
@@ -16,6 +16,8 @@ class Settings:
     DB_HOST = config("DB_HOST", default="localhost")
     DB_PORT = config("DB_PORT", default="5432")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
+    PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
+    DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 
 
 settings = Settings()
