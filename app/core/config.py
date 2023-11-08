@@ -16,6 +16,11 @@ class Settings:
     DB_HOST = config("DB_HOST", default="localhost")
     DB_PORT = config("DB_PORT", default="5432")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
+    AUTH_SECRET_KEY = config("AUTH_SECRET_KEY")
+    HASH_ALGORITHM = config("HASH_ALGORITHM")
+    ACCESS_TOKEN_EXPIRE_MINUTES = config(
+        "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
+    )
 
 
 settings = Settings()
