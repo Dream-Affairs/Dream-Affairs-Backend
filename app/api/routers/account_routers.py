@@ -78,13 +78,15 @@ def login(
     )
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials"
+        raise CustomException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            message="Invalid credentials",
         )
 
     if not verify_password(user_crdentials.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials"
+        raise CustomException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            message="Invalid credentials",
         )
 
     # create access token
