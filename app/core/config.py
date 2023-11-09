@@ -1,4 +1,4 @@
-"""This module is used for configuration of the application."""
+"""This module is used for configuration of the application's settings."""
 from decouple import config
 
 
@@ -21,6 +21,8 @@ class Settings:
     ACCESS_TOKEN_EXPIRE_MINUTES = config(
         "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
     )
+    PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
+    DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 
     EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
     EMAIL_PORT = config("EMAIL_PORT", default="587")

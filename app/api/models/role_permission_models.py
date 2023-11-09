@@ -104,8 +104,12 @@ class RolePermission(Base):  # type: ignore
 
     __tablename__ = "role_permission"
     id = Column(String, primary_key=True, default=uuid4().hex)
-    role_id = Column(String, ForeignKey("role.id"), nullable=False)
-    permission_id = Column(String, ForeignKey("permission.id"), nullable=False)
+    role_id = Column(
+        String, ForeignKey("role.id", ondelete="CASCADE"), nullable=False
+    )
+    permission_id = Column(
+        String, ForeignKey("permission.id", ondelete="CASCADE"), nullable=False
+    )
     is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)

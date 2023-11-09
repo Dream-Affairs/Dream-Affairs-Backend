@@ -43,7 +43,9 @@ class Account(Base):  # type: ignore
     __tablename__ = "account"
     id = Column(String, primary_key=True, default=uuid4().hex)
     first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
+    last_name = Column(
+        String,
+    )
     email = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     phone_number = Column(String(16))
@@ -53,7 +55,7 @@ class Account(Base):  # type: ignore
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
-    deleted_at = Column(DateTime, nullable=True)
+    deleted_at = Column(DateTime)
 
     auth = relationship("Auth", back_populates="account", lazy="joined")
 

@@ -58,7 +58,9 @@ class Organization(Base):  # type: ignore
     __tablename__ = "organization"
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
-    owner = Column(String, ForeignKey("account.id"), nullable=False)
+    owner = Column(
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
+    )
     org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
     is_deleted = Column(Boolean, default=False)
 
@@ -116,17 +118,15 @@ class OrganizationDetail(Base):  # type: ignore
     __tablename__ = "organization_detail"
     id = Column(Integer, primary_key=True, autoincrement=True)
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
     event_location = Column(
         String,
     )
-    website = Column(
-        String,
-    )
-    event_date = Column(
-        DateTime,
-    )
+    website = Column(String, nullable=False)
+    event_date = Column(DateTime, nullable=False)
     event_start_time = Column(
         DateTime,
     )
@@ -174,11 +174,17 @@ class OrganizationMember(Base):  # type: ignore
     __tablename__ = "organization_member"
     id = Column(Integer, primary_key=True, autoincrement=True)
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
-    account_id = Column(String, ForeignKey("account.id"), nullable=False)
+    account_id = Column(
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
+    )
     organization_role_id = Column(
-        String, ForeignKey("organization_role.id"), nullable=False
+        String,
+        ForeignKey("organization_role.id", ondelete="CASCADE"),
+        nullable=False,
     )
 
     is_suspended = Column(Boolean, default=False)
@@ -223,7 +229,9 @@ class OrganizationRole(Base):  # type: ignore
     __tablename__ = "organization_role"
     id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
     role_id = Column(String, ForeignKey("role.id"), nullable=False)
 
@@ -270,12 +278,18 @@ class OrganizationInvite(Base):  # type: ignore
 
     __tablename__ = "organization_invite"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    account_id = Column(String, ForeignKey("account.id"), nullable=False)
+    account_id = Column(
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
+    )
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
     organization_role_id = Column(
-        String, ForeignKey("organization_role.id"), nullable=False
+        String,
+        ForeignKey("organization_role.id", ondelete="CASCADE"),
+        nullable=False,
     )
     token = Column(String, nullable=False)
     time_sent = Column(DateTime, default=datetime.utcnow)
@@ -296,45 +310,4 @@ class OrganizationInvite(Base):  # type: ignore
     )
     role = relationship(
         "OrganizationRole", backref="organization_invite", lazy="joined"
-    )
-
-
-class OrganizationTag(Base):  # type: ignore
-    """
-    OrganizationTag:
-      This class is used to create the organization_tag table.
-
-    Args:
-      Base: This is the base class from which all the models inherit.
-
-    Attributes:
-      id: This is the primary key of the table.
-      organization_id: This is the foreign key of the \
-        organization table.
-      title: This is the title of the organization tag.
-      description: This is the description of the organization tag.
-      created_at: This is the date and time when the organization \
-        tag was created.
-      updated_at: This is the date and time when the organization \
-        tag was updated.
-
-    Relationships:
-      organization: This is the relationship between the organization \
-        and organization_tag table.
-
-    """
-
-    __tablename__ = "organization_tag"
-    id = Column(String, primary_key=True, default=uuid4().hex)
-    organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
-    )
-    tag = Column(String, nullable=False)
-    description = Column(String, nullable=False)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-    organization = relationship(
-        "Organization", backref="organization_tag", lazy="joined"
     )
