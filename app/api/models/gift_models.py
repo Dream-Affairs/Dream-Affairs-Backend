@@ -53,7 +53,9 @@ class Gift(Base):  # type: ignore
     __tablename__ = "gift"
     id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
     title = Column(String, nullable=False)
     description = Column(
@@ -81,6 +83,15 @@ class Gift(Base):  # type: ignore
         String,
     )
     payment_link = Column(
+        String,
+    )
+    bank_name = Column(
+        String,
+    )
+    bank_account_number = Column(
+        Integer,
+    )
+    bank_account_name = Column(
         String,
     )
     gift_type = Column(

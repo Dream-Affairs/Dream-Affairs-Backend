@@ -36,7 +36,9 @@ class Budget(Base):  # type: ignore
     __tablename__ = "budget"
     id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
-        String, ForeignKey("organization.id"), nullable=False
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
     )
     title = Column(String, nullable=False)
     currency = Column(String, nullable=False)

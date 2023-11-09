@@ -1,4 +1,4 @@
-"""This module is used for configuration of the application."""
+"""This module is used for configuration of the application's settings."""
 from decouple import config
 
 
@@ -16,6 +16,14 @@ class Settings:
     DB_HOST = config("DB_HOST", default="localhost")
     DB_PORT = config("DB_PORT", default="5432")
     ENVIRONMENT = config("ENVIRONMENT", default="development")
+    PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
+    DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
+
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+    EMAIL_PORT = config("EMAIL_PORT", default="587")
+    EMAIL_NAME = config("EMAIL_NAME", default="admin")
+    EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="password")
+    EMAIL_ADDRESS = config("EMAIL_ADDRESS", default="")
 
 
 settings = Settings()

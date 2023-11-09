@@ -1,20 +1,35 @@
 """Main module for the API."""
+# import sentry_sdk
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.responses.custom_responses import (
+    CustomException,
     CustomResponse,
     custom_http_exception_handler,
 )
 from app.api.routers import account_routers
-from app.core.config import settings
-from app.database.connection import create_database
+
+# from app.core.config import settings
+# from app.database.connection import create_database
 
 # ============ add imported routers here ============= #
 
 
 # ==================================================== #
+
+
+# ============ Sentry Initialization ============= #
+
+# if settings.ENVIRONMENT == "development":
+#     sentry_sdk.init(
+#         settings.PRD_SENTRY_DSN,
+#         traces_sample_rate=1.0,
+#         profiles_sample_rate=1.0,
+#     )
+
+# ================================================ #
 
 v1_router = APIRouter(prefix="/api/v1")
 
@@ -27,8 +42,6 @@ app = FastAPI(
 
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
-if settings.ENVIRONMENT == "development":
-    create_database()
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,7 +56,7 @@ app.add_middleware(
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
-    return CustomResponse(status_code=200, message="Healthy", data={})
+    raise CustomException(status_code=400, message="Healthy", data={})
 
 
 app.include_router(v1_router)
