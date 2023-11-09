@@ -4,8 +4,8 @@ operations."""
 from typing import Any
 from uuid import uuid4
 
-from fastapi import HTTPException
 from passlib.context import CryptContext
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.models.account_models import Account, Auth
@@ -38,6 +38,12 @@ def account_service(user: AccountSchema, db: Session) -> bool:
             successfully created, False otherwise.
     """
 
+    existing_user = (
+        db.query(Account).filter(Account.email == user.email).first()
+    )
+    if existing_user:
+        return False
+
     user_data = user.model_dump()
     user_data["password_hash"] = hash_password(user_data["password"])
     del user_data["password"]
@@ -50,8 +56,9 @@ def account_service(user: AccountSchema, db: Session) -> bool:
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-    except HTTPException as e:
+    except IntegrityError as e:
         print(e)
+        db.rollback()
         return False
 
     new_auth = Auth(
@@ -66,6 +73,7 @@ def account_service(user: AccountSchema, db: Session) -> bool:
         db.refresh(new_auth)
 
         return True
-    except HTTPException as e:
+    except IntegrityError as e:
         print(e)
+        db.rollback()
         return False
