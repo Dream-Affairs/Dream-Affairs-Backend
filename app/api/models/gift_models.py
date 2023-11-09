@@ -85,6 +85,15 @@ class Gift(Base):  # type: ignore
     payment_link = Column(
         String,
     )
+    bank_name = Column(
+        String,
+    )
+    bank_account_number = Column(
+        Integer,
+    )
+    bank_account_name = Column(
+        String,
+    )
     gift_type = Column(
         ENUM("physical", "cash", name="gift_type"), nullable=False
     )
