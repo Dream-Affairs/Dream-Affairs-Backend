@@ -6,7 +6,7 @@ from typing import Any, Dict
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy import Column
@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.models.account_models import Account, Auth
+from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import AccountSchema, TokenData
 from app.core.config import settings
 
@@ -106,6 +107,43 @@ def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+
+def login_service(
+    db: Session, user_credentials: OAuth2PasswordRequestForm = Depends()
+) -> CustomResponse:
+    """Authenticates a user and generates an access token.
+
+    Args:
+        db: The database session.
+        user_crdentials: The user credentials.
+
+    Returns:
+        CustomResponse: The response containing the access
+            token and token type.
+
+    Raises:
+        CustomException: If the user credentials are invalid.
+    """
+
+    user = (
+        db.query(Account)
+        .filter(Account.email == user_credentials.username)
+        .first()
+    )
+
+    if user and verify_password(user_credentials.password, user.password_hash):
+        access_token = create_access_token(data={"account_id": user.id})
+
+        return CustomResponse(
+            status_code=status.HTTP_200_OK,
+            data={"access_token": access_token, "token_type": "bearer"},
+        )
+
+    raise CustomException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        message="Invalid credentials",
+    )
 
 
 def create_access_token(data: Dict[str, Any]) -> Any:
