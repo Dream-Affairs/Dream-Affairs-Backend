@@ -1,5 +1,5 @@
 """Main module for the API."""
-# import sentry_sdk
+import sentry_sdk
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,28 +9,18 @@ from app.api.responses.custom_responses import (
     CustomResponse,
     custom_http_exception_handler,
 )
-# from app.api.routers import account_routers
-
-# from app.core.config import settings
-# from app.database.connection import create_database
 from app.api.routers import account_routers, meal_router
 from app.core.config import settings
-from app.database.connection import create_database
-
-# ============ add imported routers here ============= #
-
-
-# ==================================================== #
-
 
 # ============ Sentry Initialization ============= #
 
-# if settings.ENVIRONMENT == "development":
-#     sentry_sdk.init(
-#         settings.PRD_SENTRY_DSN,
-#         traces_sample_rate=1.0,
-#         profiles_sample_rate=1.0,
-#     )
+
+sentry_sdk.init(
+    settings.PRD_SENTRY_DSN,
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+    environment=settings.ENVIRONMENT,
+)
 
 # ================================================ #
 
