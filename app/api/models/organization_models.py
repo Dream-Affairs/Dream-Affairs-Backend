@@ -146,7 +146,7 @@ class OrganizationDetail(Base):  # type: ignore
         String,
     )
     website = Column(String, nullable=False)
-    event_date = Column(DateTime, nullable=False)
+    event_date = Column(DateTime)
     event_start_time = Column(
         DateTime,
     )
