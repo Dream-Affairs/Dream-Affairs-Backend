@@ -23,18 +23,6 @@ class AccountSchema(BaseModel):  # type: ignore
     last_name: str
 
 
-class Token(BaseModel):  # type: ignore
-    """Data model for an access token.
-
-    Attributes:
-        access_token (str): The access token string.
-        token_type (str): The type of the access token.
-    """
-
-    access_token: str
-    token_type: str
-
-
 class TokenData(BaseModel):  # type: ignore
     """Data model for an access token.
 
