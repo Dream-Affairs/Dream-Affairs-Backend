@@ -42,7 +42,7 @@ class MealCategory(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="associated_meal_category", lazy="joined"
+        "Organization", back_populates="meal_category", lazy="joined"
     )
 
 
@@ -138,7 +138,7 @@ class MealTag(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="associated_organization", lazy="joined"
+        "Organization", back_populates="organization_tag", lazy="joined"
     )
     meal = relationship("Meal", backref="associated_meal", lazy="joined")
     tags = relationship(

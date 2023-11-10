@@ -7,6 +7,9 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
+from app.api.models.gift_models import Gift
+from app.api.models.budget_expenditure_models import Budget
+from app.api.models.meal_models import Meal
 
 INVITE_STATUS = ENUM("pending", "accepted", "rejected", name="invite_status")
 
@@ -77,7 +80,7 @@ class Organization(Base):  # type: ignore
     organization_members = relationship(
         "OrganizationMember", back_populates="organization", lazy="joined"
     )
-    tag = relationship(
+    organization_tag = relationship(
         "OrganizationTag", back_populates="organization", lazy="joined"
     )
     gifts = relationship("Gift", back_populates="organization", lazy="joined")
@@ -186,7 +189,8 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
-
+    account_email = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -310,4 +314,47 @@ class OrganizationInvite(Base):  # type: ignore
     )
     role = relationship(
         "OrganizationRole", backref="organization_invite", lazy="joined"
+    )
+
+
+class OrganizationTag(Base):  # type: ignore
+    """
+    OrganizationTag:
+      This class is used to create the organization_tag table.
+
+    Args:
+      Base: This is the base class from which all the models inherit.
+
+    Attributes:
+      id: This is the primary key of the table.
+      organization_id: This is the foreign key of the \
+        organization table.
+      title: This is the title of the organization tag.
+      description: This is the description of the organization tag.
+      created_at: This is the date and time when the organization \
+        tag was created.
+      updated_at: This is the date and time when the organization \
+        tag was updated.
+
+    Relationships:
+      organization: This is the relationship between the organization \
+        and organization_tag table.
+
+    """
+
+    __tablename__ = "organization_tag"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    tag = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship(
+        "Organization", backref="organization_tag", lazy="joined"
     )
