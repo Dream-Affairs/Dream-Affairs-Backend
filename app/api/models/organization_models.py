@@ -82,9 +82,6 @@ class Organization(Base):  # type: ignore
     )
     gifts = relationship("Gift", back_populates="organization", lazy="joined")
     budget = relationship("Budget", backref="associated_budget", lazy="joined")
-    meal_category = relationship(
-        "MealCategory", back_populates="organization", lazy="joined"
-    )
 
 
 class OrganizationDetail(Base):  # type: ignore
