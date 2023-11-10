@@ -51,7 +51,7 @@ class Budget(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="associated_organization", lazy="joined"
+        "Organization", back_populates="budget", lazy="joined"
     )
     expenditures = relationship(
         "Expenditure", back_populates="budget", lazy="joined"
@@ -94,4 +94,6 @@ class Expenditure(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    budget = relationship("Budget", backref="expenditure", lazy="joined")
+    budget = relationship(
+        "Budget", back_populates="expenditures", lazy="joined"
+    )
