@@ -5,12 +5,18 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.responses.custom_responses import (
-    CustomException,
     CustomResponse,
     custom_http_exception_handler,
 )
-from app.api.routers import account_routers
+from app.api.routers.account_routers import router as account_routers
+from app.api.routers.email_router import email_router as email_routers
 from app.core.config import settings
+
+# ============ add imported routers here ============= #
+
+
+# ==================================================== #
+
 
 # ============ Sentry Initialization ============= #
 
@@ -49,11 +55,12 @@ app.add_middleware(
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
-    raise CustomException(status_code=400, message="Healthy", data={})
+    return CustomResponse(status_code=400, message="Healthy", data={})
 
 
 app.include_router(v1_router)
-app.include_router(account_routers.router)
+app.include_router(account_routers)
+app.include_router(email_routers)
 
 
 if __name__ == "__main__":
