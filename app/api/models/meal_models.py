@@ -41,8 +41,11 @@ class MealCategory(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
+    meals = relationship(
+        "Meal", back_populates="meal_categories", lazy="joined"
+    )
     organization = relationship(
-        "Organization", backref="associated_meal_category", lazy="joined"
+        "Organization", back_populates="meal_categories", lazy="joined"
     )
 
 
@@ -75,6 +78,7 @@ class Meal(Base):  # type: ignore
     __tablename__ = "meal"
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
+
     description = Column(
         String,
     )
@@ -84,14 +88,17 @@ class Meal(Base):  # type: ignore
     meal_category_id = Column(
         String, ForeignKey("meal_category.id"), nullable=False
     )
-
+    dietary_tag = Column(
+        String, ForeignKey("organization_tag.id"), nullable=False
+    )
     is_hidden = Column(Boolean, default=False)
     quantity = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     meal_categories = relationship(
-        "MealCategory", backref="associated_meal", lazy="joined"
+        "MealCategory", back_populates="meals", lazy="joined"
     )
+    meal_tags = relationship("MealTag", back_populates="meals", lazy="joined")
 
 
 class MealTag(Base):  # type: ignore
@@ -101,12 +108,11 @@ class MealTag(Base):  # type: ignore
 
     Attributes:
       id (str): This is the primary key of the table.
+      name (str): This is the name of the meal_tag.
       organization_id (str): This is the id of the organization \
         to which the meal_tag belongs.
-      meal_id (str): This is the id of the meal to which the \
-        meal_tag belongs.
-      organization_tag_id (str): This is the id of the \
-        organization_tag to which the meal_tag belongs.
+      is_hidden (bool): This is the boolean value which tells \
+        whether the meal_tag is hidden or not.
       created_at (datetime): This is the date and time when the \
         meal_tag was created.
       updated_at (datetime): This is the date and time when the \
@@ -114,33 +120,23 @@ class MealTag(Base):  # type: ignore
 
       organization (object): This is the organization to which the \
         meal_tag belongs.
-      meal (object): This is the meal to which the meal_tag belongs.
-      tags (list): This is the list of tags to which the meal_tag \
-        belongs.
-
     """
 
     __tablename__ = "meal_tag"
     id = Column(String, primary_key=True, default=uuid4().hex)
-    organization_id = Column(
-        String,
-        ForeignKey("organization.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    meal_id = Column(String, ForeignKey("meal.id"), nullable=False)
     organization_tag_id = Column(
         String,
         ForeignKey("organization_tag.id", ondelete="CASCADE"),
         nullable=False,
     )
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-    organization = relationship(
-        "Organization", backref="associated_organization", lazy="joined"
+    meal_id = Column(
+        String,
+        ForeignKey("meal.id", ondelete="CASCADE"),
+        nullable=False,
     )
-    meal = relationship("Meal", backref="associated_meal", lazy="joined")
-    tags = relationship(
-        "OrganizationTag", back_populates="meal_tag", lazy="joined"
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    meals = relationship("Meal", back_populates="meal_tags", lazy="joined")
+    organization_tag = relationship(
+        "OrganizationTag", back_populates="meal_tags", lazy="joined"
     )

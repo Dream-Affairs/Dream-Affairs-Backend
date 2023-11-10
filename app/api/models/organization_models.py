@@ -68,22 +68,42 @@ class Organization(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    account = relationship("Account", backref="organization", lazy="joined")
+    account = relationship(
+        "Account", back_populates="organizations", lazy="joined"
+    )
     detail = relationship(
-        "OrganizationDetail",
-        backref="Associated_organization_details",
-        lazy="joined",
+        "OrganizationDetail", back_populates="organization", lazy="joined"
     )
     organization_members = relationship(
-        "OrganizationMember", back_populates="organization", lazy="joined"
+        "OrganizationMember",
+        back_populates="organization",
     )
-    tag = relationship(
-        "OrganizationTag", back_populates="organization", lazy="joined"
+    organization_tag = relationship(
+        "OrganizationTag", back_populates="organization", lazy="dynamic"
     )
-    gifts = relationship("Gift", back_populates="organization", lazy="joined")
-    budget = relationship("Budget", backref="associated_budget", lazy="joined")
-    meal_category = relationship(
-        "MealCategory", back_populates="organization", lazy="joined"
+    gifts = relationship(
+        "Gift",
+        back_populates="organization",
+    )
+    budget = relationship(
+        "Budget",
+        back_populates="organization",
+    )
+    meal_categories = relationship(
+        "MealCategory",
+        back_populates="organization",
+    )
+    tags = relationship(
+        "OrganizationTag",
+        back_populates="organization",
+    )
+    organization_roles = relationship(
+        "OrganizationRole",
+        back_populates="organization",
+    )
+    organization_invite = relationship(
+        "OrganizationInvite",
+        back_populates="organization",
     )
 
 
@@ -138,7 +158,7 @@ class OrganizationDetail(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="associated_detail_organization", lazy="joined"
+        "Organization", back_populates="detail", lazy="joined"
     )
 
 
@@ -172,7 +192,7 @@ class OrganizationMember(Base):  # type: ignore
     """
 
     __tablename__ = "organization_member"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String, primary_key=True, default=uuid4().hex)
     organization_id = Column(
         String,
         ForeignKey("organization.id", ondelete="CASCADE"),
@@ -186,7 +206,6 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
-
     is_suspended = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -239,11 +258,13 @@ class OrganizationRole(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="organization_role", lazy="joined"
+        "Organization",
+        back_populates="organization_roles",
     )
     role = relationship("Role", backref="organization_role", lazy="joined")
     members = relationship(
-        "OrganizationMember", back_populates="member_role", lazy="joined"
+        "OrganizationMember",
+        back_populates="member_role",
     )
 
 
@@ -286,10 +307,8 @@ class OrganizationInvite(Base):  # type: ignore
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
-    organization_role_id = Column(
-        String,
-        ForeignKey("organization_role.id", ondelete="CASCADE"),
-        nullable=False,
+    organization_member_id = Column(
+        String, ForeignKey("organization_member.id"), nullable=True
     )
     token = Column(String, nullable=False)
     time_sent = Column(DateTime, default=datetime.utcnow)
@@ -303,11 +322,61 @@ class OrganizationInvite(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     account = relationship(
-        "Account", backref="organization_invite", lazy="joined"
+        "Account",
+        backref="organization_invite",
     )
     organization = relationship(
-        "Organization", backref="organization_invite", lazy="joined"
+        "Organization", back_populates="organization_invite", lazy="joined"
     )
-    role = relationship(
-        "OrganizationRole", backref="organization_invite", lazy="joined"
+
+
+class OrganizationTag(Base):  # type: ignore
+    """
+    OrganizationTag:
+      This class is used to create the organization_tag table.
+
+    Args:
+      Base: This is the base class from which all the models inherit.
+
+    Attributes:
+      id: This is the primary key of the table.
+      organization_id: This is the foreign key of the \
+        organization table.
+      title: This is the title of the organization tag.
+      description: This is the description of the organization tag.
+      created_at: This is the date and time when the organization \
+        tag was created.
+      updated_at: This is the date and time when the organization \
+        tag was updated.
+
+    Relationships:
+      organization: This is the relationship between the organization \
+        and organization_tag table.
+
+    """
+
+    __tablename__ = "organization_tag"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)
+    tag_type = Column(
+        ENUM("dietary", "guest", name="tag_type"), nullable=False
+    )
+    description = Column(
+        String,
+    )
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship(
+        "Organization", back_populates="organization_tag", lazy="joined"
+    )
+    meal_tags = relationship(
+        "MealTag",
+        back_populates="organization_tag",
     )
