@@ -157,7 +157,7 @@ def verify_access_token(
     return token_data
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     """Get the current user based on the provided access token.
 
     Args:
