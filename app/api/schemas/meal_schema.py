@@ -29,7 +29,7 @@ class ExistingMealCategory(CreateMealCategory):
         orm_mode:
             Converts sqlalchemy models to dictionarits for smooth passin"""
 
-        orm_mode = True
+        from_attributes = True
 
 
 class CreateMeal:

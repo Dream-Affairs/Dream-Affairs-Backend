@@ -27,6 +27,7 @@ v1_router = APIRouter(prefix="/api/v1")
 
 
 v1_router.include_router(account_routers.router, tags=["account"])
+v1_router.include_router(meal_router.router, tags=["meal management"])
 
 app = FastAPI(
     title="Dream Affairs API",
@@ -58,8 +59,6 @@ def health() -> CustomResponse:
 
 
 app.include_router(v1_router)
-app.include_router(account_routers.router)
-app.include_router(meal_router.app)
 
 
 if __name__ == "__main__":
