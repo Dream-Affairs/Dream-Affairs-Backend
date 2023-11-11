@@ -8,8 +8,15 @@ from app.api.responses.custom_responses import (
     CustomResponse,
     custom_http_exception_handler,
 )
-from app.api.routers import account_routers
+from app.api.routers.account_routers import router as account_routers
+from app.api.routers.email_router import email_router as email_routers
 from app.core.config import settings
+
+# ============ add imported routers here ============= #
+
+
+# ==================================================== #
+
 
 # ============ Sentry Initialization ============= #
 
@@ -26,7 +33,8 @@ sentry_sdk.init(
 v1_router = APIRouter(prefix="/api/v1")
 
 
-v1_router.include_router(account_routers.router, tags=["account"])
+v1_router.include_router(account_routers, tags=["account"])
+v1_router.include_router(email_routers, tags=["email"])
 
 app = FastAPI(
     title="Dream Affairs API",
