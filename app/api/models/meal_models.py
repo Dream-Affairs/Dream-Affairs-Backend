@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-import sqlalchemy.orm as orm
 
 from app.database.connection import Base
 
@@ -37,22 +36,20 @@ class MealCategory(Base):  # type: ignore
     __tablename__ = "meal_category"
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
-    # organization_id = Column(
-    #     String,
-    #     ForeignKey("organization.id", ondelete="CASCADE"),
-    #     nullable=False,
-    # )
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     # creator_id = Column(String, ForeignKey("account.id"), nullable=False)
     is_hidden = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    # organization = relationship(
-    #     "Organization", backref="associated_meal_category", lazy="joined"
-    # )
-    # account = relationship(
-    #     "Account", backref="associated_meal_category", lazy="joined"
-    # )
+    organization = relationship(
+        "Organization", back_populates="meal_category", lazy="joined"
+    )
+
 
 class Meal(Base):  # type: ignore
     """
@@ -104,6 +101,7 @@ class Meal(Base):  # type: ignore
         "Account", backref="associated_meal_category", lazy="joined"
     )
 
+
 class MealTag(Base):  # type: ignore
     """
     MealTag:
@@ -142,10 +140,10 @@ class MealTag(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
+    organization = relationship(
+        "Organization", back_populates="organization_tag", lazy="joined"
+    )
     meal = relationship("Meal", backref="associated_meal", lazy="joined")
     # tags = relationship(
     #     "OrganizationTag", back_populates="meal_tag", lazy="joined"
     # )
-
-def get_mealCategory_by_name(name: str, db: orm.Session):
-    return db.query(MealCategory).filter(MealCategory.name == name).first()

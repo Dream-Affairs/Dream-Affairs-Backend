@@ -3,8 +3,8 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Column, DateTime, ForeignKey, String
-from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
 
@@ -41,9 +41,7 @@ class OrganizationTag(Base):  # type: ignore
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
-    tag_category = Column(
-        ENUM("Meal", "Gift", name="tag-category"), nullable=False
-    )
+    tag_type = Column(ENUM("Meal", "Gift", name="tag-type"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(String)
 

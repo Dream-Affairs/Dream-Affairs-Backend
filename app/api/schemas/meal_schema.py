@@ -1,27 +1,43 @@
-from typing import Optional
-from uuid import uuid4
-from unittest.mock import Base
-from pydantic import BaseModel, EmailStr
-from datetime import datetime, date
+"""This module defines Pydantic schemas for meal management."""
 
-class CreateMealCategory(BaseModel):
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
+
+
+class CreateMealCategory(BaseModel):  # type: ignore
+    """Represents the base schema for a male category."""
+
     name: str
-    is_hidden: bool = False
+
 
 class ExistingMealCategory(CreateMealCategory):
-    id: uuid4
+    """Represents the schema for a created Meal Category."""
+
+    id: str
+    is_hidden: bool = False
     creator_id: str
     organization_id: str
     created_at: datetime
     updated_at: datetime
 
     class Config:
-        from_attributes: True
+        """Repersents the config model for this Schema
+        Aim:
+            Specify how I want my schema to react with the data I pass
+        orm_mode:
+            Converts sqlalchemy models to dictionarits for smooth passin"""
 
-class CreateMeal():
+        orm_mode = True
+
+
+class CreateMeal:
+    """Represents the base schema for a meal."""
+
     name: str
     description: Optional[str] = ""
-    image_url: str 
-    meal_category_id: str 
+    image_url: str
+    meal_category_id: str
     is_hidden: Optional[bool] = False
     quantity: int
