@@ -108,5 +108,5 @@ class Gift(Base):  # type: ignore
     deleted_at = Column(DateTime, nullable=True)
 
     organization = relationship(
-        "Organization", backref="associated_Organization", lazy="joined"
+        "Organization", back_populates="gifts", lazy="joined"
     )

@@ -5,7 +5,6 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.responses.custom_responses import (
-    CustomException,
     CustomResponse,
     custom_http_exception_handler,
 )
@@ -25,6 +24,9 @@ sentry_sdk.init(
 # ================================================ #
 
 v1_router = APIRouter(prefix="/api/v1")
+
+
+v1_router.include_router(account_routers.router, tags=["account"])
 
 app = FastAPI(
     title="Dream Affairs API",
@@ -49,7 +51,10 @@ app.add_middleware(
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
-    raise CustomException(status_code=400, message="Healthy", data={})
+    raise CustomResponse(
+        status_code=200,
+        detail="Healthy",
+    )
 
 
 app.include_router(v1_router)

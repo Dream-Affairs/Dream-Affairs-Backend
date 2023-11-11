@@ -16,6 +16,11 @@ class Settings:
     DB_HOST = config("DB_HOST", default="localhost")
     DB_PORT = config("DB_PORT", default="5432")
     ENVIRONMENT = config("ENVIRONMENT", default="")
+    AUTH_SECRET_KEY = config("AUTH_SECRET_KEY")
+    HASH_ALGORITHM = config("HASH_ALGORITHM")
+    ACCESS_TOKEN_EXPIRE_MINUTES = config(
+        "ACCESS_TOKEN_EXPIRE_MINUTES", default=30
+    )
     PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
     DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 

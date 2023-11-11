@@ -2,12 +2,13 @@
 
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import AccountSchema
 from app.database.connection import get_db
-from app.services.account_services import account_service
+from app.services.account_services import account_service, login_service
 
 BASE_URL = "/auth"
 
@@ -45,3 +46,23 @@ def signup(
             data="",
         )
     raise CustomException(status_code=500, message="Failed to create account")
+
+
+@router.post("/login")
+def login(
+    user_credentials: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Log in a user and generate an access token.
+
+    Args:
+        user_credentials: The user's login credentials.
+        db (Session): The database session.
+
+    Returns:
+        dict: A dictionary containing the access token and token type.
+
+    Raises:
+        HTTPException: If the provided credentials are invalid.
+    """
+    return login_service(db, user_credentials)

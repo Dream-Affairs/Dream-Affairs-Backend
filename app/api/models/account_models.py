@@ -42,7 +42,9 @@ class Account(Base):  # type: ignore
 
     __tablename__ = "account"
     id = Column(String, primary_key=True, default=uuid4().hex)
-    first_name = Column(String, nullable=False)
+    first_name = Column(
+        String,
+    )
     last_name = Column(
         String,
     )
@@ -58,6 +60,9 @@ class Account(Base):  # type: ignore
     deleted_at = Column(DateTime)
 
     auth = relationship("Auth", back_populates="account", lazy="joined")
+    # organizations = relationship(
+    #     "Organization", back_populates="account", lazy="joined"
+    # )
 
 
 class Auth(Base):  # type: ignore
