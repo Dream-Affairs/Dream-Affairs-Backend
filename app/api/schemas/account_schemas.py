@@ -1,5 +1,6 @@
 """This module defines Pydantic schemas for user accounts."""
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
@@ -20,7 +21,9 @@ class AccountSchema(BaseModel):  # type: ignore
     password: str
     confirm_password: str
     first_name: str
-    last_name: str
+    event_date: Optional[datetime]
+    location: str
+    partner_name: str
 
 
 class TokenData(BaseModel):  # type: ignore
