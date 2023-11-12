@@ -60,9 +60,9 @@ class Account(Base):  # type: ignore
     deleted_at = Column(DateTime)
 
     auth = relationship("Auth", back_populates="account", lazy="joined")
-    # organizations = relationship(
-    #     "Organization", back_populates="account", lazy="joined"
-    # )
+    organizations = relationship(
+        "Organization", back_populates="account", lazy="joined"
+    )
 
 
 class Auth(Base):  # type: ignore
