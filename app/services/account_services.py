@@ -2,7 +2,7 @@
 operations."""
 
 from datetime import datetime, timedelta
-from typing import Any, Dict
+from typing import Any, Dict, Union
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, status
@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.models.account_models import Account, Auth
+from app.api.models.organization_models import Organization, OrganizationDetail
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import AccountSchema, TokenData
 from app.core.config import settings
@@ -51,39 +52,58 @@ def account_service(user: AccountSchema, db: Session) -> bool:
     if existing_user:
         return False
 
-    user_data = user.model_dump()
-    user_data["password_hash"] = hash_password(user_data["password"])
-    del user_data["password"]
-    del user_data["confirm_password"]
-    user_data["id"] = uuid4().hex
+    new_user = Account(
+        id=uuid4().hex,
+        email=user.email,
+        first_name=user.first_name,
+        password_hash=hash_password(user.password),
+    )
 
-    new_user = Account(**user_data)
-
-    try:
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-    except IntegrityError as e:
-        print(e)
-        db.rollback()
-        return False
-
-    new_auth = Auth(
+    auth = Auth(
         id=uuid4().hex,
         account_id=new_user.id,
         provider="local",
         setup_date=new_user.created_at,
     )
-    try:
-        db.add(new_auth)
-        db.commit()
-        db.refresh(new_auth)
 
-        return True
-    except IntegrityError as e:
-        print(e)
-        db.rollback()
-        return False
+    org = Organization(
+        id=uuid4().hex,
+        name=f"{new_user.first_name} & {user.partner_name}".title(),
+        owner=new_user.id,
+        org_type="Wedding",
+    )
+
+    org_detail = OrganizationDetail(
+        organization_id=org.id,
+        event_location=user.location,
+        website=f"/{user.first_name}-{user.partner_name}".lower(),
+        event_date=user.event_date,
+    )
+
+    return add_to_db(db, new_user, auth, org, org_detail)
+
+
+def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
+    """Adds the given objects to the database.
+
+    Args:
+        db: The database session.
+        *args: The objects to be added to the database.
+
+    Returns:
+        bool: True if all objects were successfully added, False otherwise.
+    """
+
+    for arg in args:
+        try:
+            db.add(arg)
+            db.commit()
+            db.refresh(arg)
+        except IntegrityError as e:
+            print(e)
+            db.rollback()
+            return False
+    return True
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
