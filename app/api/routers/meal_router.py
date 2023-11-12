@@ -20,7 +20,7 @@ router = APIRouter(prefix=BASE_URL)
 
 @router.post("/create-meal-category", response_model=ExistingMealCategory)
 def create_meal_category(
-    org_id: str,
+    # org_id: str,
     meal_category: CreateMealCategory,
     db: orm.Session = fastapi.Depends(get_db),
 ) -> CustomResponse:
@@ -44,7 +44,8 @@ def create_meal_category(
             status_code=400, detail="Category name already exists"
         )
 
-    category = model(organization_id=org_id, **meal_category.model_dump())
+    # category = model(organization_id=org_id, **meal_category.model_dump())
+    category = model(**meal_category.model_dump())
     db.add(category)
     db.commit()
     db.refresh(category)

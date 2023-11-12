@@ -36,11 +36,11 @@ class MealCategory(Base):  # type: ignore
     __tablename__ = "meal_category"
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
-    organization_id = Column(
-        String,
-        ForeignKey("organization.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    # organization_id = Column(
+    #     String,
+    #     ForeignKey("organization.id", ondelete="CASCADE"),
+    #     nullable=False,
+    # )
     is_hidden = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -48,9 +48,9 @@ class MealCategory(Base):  # type: ignore
     meals = relationship(
         "Meal", back_populates="meal_categories", lazy="joined"
     )
-    organization = relationship(
-        "Organization", back_populates="meal_categories", lazy="joined"
-    )
+    # organization = relationship(
+    #     "Organization", back_populates="meal_categories", lazy="dynamic"
+    # )
 
 
 class Meal(Base):  # type: ignore
@@ -141,6 +141,6 @@ class MealTag(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
 
     meals = relationship("Meal", back_populates="meal_tags", lazy="joined")
-    organization_tag = relationship(
-        "OrganizationTag", back_populates="meal_tags", lazy="joined"
-    )
+    # organization_tag = relationship(
+    #     "OrganizationTag", back_populates="meal_tags", lazy="joined"
+    # )

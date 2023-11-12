@@ -89,10 +89,10 @@ class Organization(Base):  # type: ignore
         "Budget",
         back_populates="organization",
     )
-    meal_categories = relationship(
-        "MealCategory",
-        back_populates="organization",
-    )
+    # meal_categories = relationship(
+    #     "MealCategory",
+    #     back_populates="organization",
+    # )
     tags = relationship(
         "OrganizationTag",
         back_populates="organization",
