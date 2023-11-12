@@ -14,7 +14,7 @@ from app.api import models as model_init
 from app.api.models.account_models import Account, Auth
 from app.api.models.budget_expenditure_models import Budget, Expenditure
 from app.api.models.gift_models import Gift
-from app.api.models.meal_models import Meal, MealCategory
+from app.api.models.meal_models import Meal, MealCategory, MealTag
 from app.api.models.organization_models import (
     Organization,
     OrganizationDetail,
@@ -119,6 +119,7 @@ organization_invite = OrganizationInvite(
     id=ORGANIZATION_INVITE_ID,
     organization_id=ORGANIZATION_ID,
     account_id=ACCOUNT_ID,
+    organization_member_id=ORGANIZATION_MEMBER_ID,
     token="test_token",
     status="pending",
 )
@@ -129,6 +130,7 @@ organization_tag = OrganizationTag(
     organization_id=ORGANIZATION_ID,
     name="Test Tag",
     description="Test Description",
+    tag_type="guest",
 )
 
 MEAL_CATEGORY_ID = "3kjbk34jh34k5j345k3jg53k5jh3g5k34j5hg3k543j45gk35"
@@ -148,7 +150,13 @@ meal = Meal(
     meal_category_id=MEAL_CATEGORY_ID,
     is_hidden=False,
     quantity=1,
-    # dieatary_preference=["vegan", "vegetarian"]
+)
+
+MEAL_TAGS_ID = "3kjbk34jh34k5j345k3jg53k5jh3g5k34j5hg3k543j45gk35d"
+meal_tags = MealTag(
+    id=MEAL_TAGS_ID,
+    organization_tag_id=ORGANIZATION_TAG_ID,
+    meal_id=MEAL_ID,
 )
 
 BUDGET_ID = "3kjbk34jh34k5j345k3jg53k5jh3g5k34j5hg3k543j45gk35f"
@@ -474,10 +482,6 @@ def test_organization_invite_realtionship(
     assert (
         organization_invite_instance.account.first_name == account.first_name
     )
-    assert (
-        organization_invite_instance.organization_role_id
-        == organization_role.id
-    )
 
 
 def test_organization_tag_model(
@@ -490,7 +494,7 @@ def test_organization_tag_model(
     db.refresh(organization_tag)
 
     assert organization_tag.organization_id == organization.id
-    assert organization_tag.tag == "Test Tag"
+    assert organization_tag.name == "Test Tag"
     assert organization_tag.description == "Test Description"
 
 
@@ -553,7 +557,19 @@ def test_meal_model(
     assert meal.meal_category_id == meal_category.id
     assert meal.is_hidden is False
     assert meal.quantity == 1
-    # assert meal.dieatary_preference == ["vegan", "vegetarian"]
+
+
+def test_meal_tag_model(
+    setup_module_fixture: Any,
+) -> None:
+    """Test the meal_tag model."""
+    db = setup_module_fixture
+    db.add(meal_tags)
+    db.commit()
+    db.refresh(meal_tags)
+
+    assert meal_tags.meal_id == meal.id
+    assert meal_tags.organization_tag_id == organization_tag.id
 
 
 def test_meal_realtionship(
@@ -643,13 +659,13 @@ def test_organization_realtionship(
 
     assert organization_instance.account.id == account.id
     assert organization_instance.detail[0].id == organization_detail.id
-    assert organization_instance.tag[0].id == organization_tag.id
+    assert organization_instance.tags[0].id == organization_tag.id
     assert (
         organization_instance.organization_members[0].id
         == organization_member.id
     )
     assert organization_instance.gifts[0].id == gift.id
-    assert organization_instance.meal_category[0].id == meal_category.id
+    assert organization_instance.meal_categories[0].id == meal_category.id
     assert organization_instance.budget[0].id == budget.id
 
 
@@ -681,6 +697,19 @@ def test_expenditure_realtionship(
 
     assert expenditure_instance.budget_id == budget.id
     assert expenditure_instance.budget.title == budget.title
+
+
+def test_gift_realtionship(
+    setup_module_fixture: Any,
+) -> None:
+    """Test the gift relationship."""
+    db = setup_module_fixture
+    gift_instance = (
+        db.query(Gift).filter(Gift.organization_id == organization.id).first()
+    )
+
+    assert gift_instance.organization_id == organization.id
+    assert gift_instance.organization.name == organization.name
 
 
 def test_teradown_module() -> None:

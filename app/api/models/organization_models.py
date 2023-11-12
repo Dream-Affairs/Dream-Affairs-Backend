@@ -78,9 +78,6 @@ class Organization(Base):  # type: ignore
         "OrganizationMember",
         back_populates="organization",
     )
-    organization_tag = relationship(
-        "OrganizationTag", back_populates="organization", lazy="dynamic"
-    )
     gifts = relationship(
         "Gift",
         back_populates="organization",
@@ -212,7 +209,7 @@ class OrganizationMember(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", backref="organization_member", lazy="joined"
+        "Organization", back_populates="organization_members", lazy="joined"
     )
     account = relationship("Account", backref="member_account", lazy="joined")
     member_role = relationship(
@@ -374,7 +371,7 @@ class OrganizationTag(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", back_populates="organization_tag", lazy="joined"
+        "Organization", back_populates="tags", lazy="joined"
     )
     meal_tags = relationship(
         "MealTag",

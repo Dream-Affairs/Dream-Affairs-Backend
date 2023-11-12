@@ -15,10 +15,10 @@ from app.services.meal_services import get_meal_category_by_name as unique_name
 
 BASE_URL = "/{org_id}/meal-management"
 
-router = APIRouter(prefix=BASE_URL)
+meal_router = APIRouter(prefix=BASE_URL)
 
 
-@router.post("/create-meal-category", response_model=ExistingMealCategory)
+@meal_router.post("/create-meal-category", response_model=ExistingMealCategory)
 def create_meal_category(
     # org_id: str,
     meal_category: CreateMealCategory,
