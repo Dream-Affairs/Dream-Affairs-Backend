@@ -37,13 +37,6 @@ class Role(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    permissions = relationship(
-        "Permission",
-        secondary="role_permission",
-        lazy="subquery",
-        backref="role",
-    )
-
 
 class Permission(Base):  # type: ignore
     """
