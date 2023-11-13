@@ -2,6 +2,7 @@ alembic==1.12.1
 annotated-types==0.6.0
 anyio==3.7.1
 attrs==23.1.0
+bcrypt==4.0.1
 beautifulsoup4==4.12.2
 black==23.10.1
 certifi==2023.7.22
