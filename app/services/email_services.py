@@ -1,11 +1,11 @@
 """This module is used to send an email to the recipient."""
+import os
 import smtplib
 import ssl
 from email.message import EmailMessage
 from typing import Any, Dict, Tuple
 
-import pystache
-from mjml import mjml_to_html
+from jinja2 import Environment, FileSystemLoader
 
 from app.core.config import settings
 
@@ -14,6 +14,8 @@ EMAIL_ADDRESS: str = settings.EMAIL_ADDRESS
 EMAIL_PASSWORD: str = settings.EMAIL_PASSWORD
 EMAIL_HOST: str = settings.EMAIL_HOST
 EMAIL_PORT: int = settings.EMAIL_PORT
+
+TEMP_FOLDER = os.path.join(os.path.abspath(settings.TEMPLATE_DIR))
 
 
 def send_email(
@@ -30,6 +32,23 @@ def send_email(
         smtp.send_message(msg)
         # close connection
         smtp.quit()
+
+
+def generate_html(
+    template: Any,
+    **kwargs: Dict[str, Any],
+) -> Any:
+    """This function is used to generate html from the template.
+
+    Args:
+        template: This is the template of the email.
+        **kwargs: This is the dictionary of the arguments.
+    """
+    templates = Environment(
+        loader=FileSystemLoader(TEMP_FOLDER), autoescape=True
+    )
+    template = templates.get_template(template)
+    return template.render(**kwargs)
 
 
 def send_email_api(
@@ -52,7 +71,7 @@ def send_email_api(
     msg = EmailMessage()
 
     print(kwargs)
-    body = mjml_to_html(pystache.render(template, kwargs.get("kwargs"))).html
+    body = generate_html(template, **kwargs)
 
     msg["Subject"] = subject
     msg["From"] = formataddr((sender_name, sender))
@@ -86,7 +105,7 @@ def send_company_email_api(
 
     msg["To"] = kwargs.get("recipient_email")
 
-    body = mjml_to_html(pystache.render(template, kwargs)).html
+    body = generate_html(template, **kwargs)
 
     msg.set_content(body, subtype="html")
 

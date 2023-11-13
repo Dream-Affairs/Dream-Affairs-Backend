@@ -33,8 +33,12 @@ sentry_sdk.init(
 v1_router = APIRouter(prefix="/api/v1")
 
 
-v1_router.include_router(account_routers, tags=["account"])
-v1_router.include_router(email_routers, tags=["email"])
+v1_router.include_router(
+    account_routers,
+)
+v1_router.include_router(
+    email_routers,
+)
 
 app = FastAPI(
     title="Dream Affairs API",
