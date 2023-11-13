@@ -32,7 +32,6 @@ def get_db_engine() -> Engine:
             f"postgresql://{db_user}:{db_password}"
             f"@{db_host}:{db_port}/{db_name}"
         )
-        print(database_url)
         return create_engine(database_url)
 
     if db_type == "sqlite":

@@ -11,6 +11,7 @@ from app.api.schemas.meal_schema import (
     ExistingMealCategory,
 )
 from app.database.connection import get_db
+from app.services.meal_services import get_meal_categories as get_all
 from app.services.meal_services import get_meal_category_by_name as unique_name
 
 BASE_URL = "/{org_id}/meal-management"
@@ -55,3 +56,23 @@ def create_meal_category(
         message="Meal Category Successfully Created",
         data=ExistingMealCategory(**category),
     )
+
+
+@meal_router.get("/get-all-meal-category")
+def get_all_meal_category(
+    org_id: str, db: orm.Session = fastapi.Depends(get_db)
+) -> CustomResponse:
+    """Intro--> This endpoint allows you to get all Meal Category in the
+    database. To get all Meal Categories, you need to make a get request to the
+    /meal-management/get_all endpoint.
+
+    paramDesc-->org_id: Organization ID of the organization logged into.
+                CreateMealCategory: Schema for incoming Data
+                db: Database Session
+
+    returnDesc-->On sucessful request, it returns list of all categories
+
+    returnBody--> the meal category object with details specified below.
+    """
+
+    return get_all(org_id, db)
