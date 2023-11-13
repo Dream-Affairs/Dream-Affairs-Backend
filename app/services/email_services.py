@@ -83,6 +83,7 @@ def send_email_api(
 def send_company_email_api(
     subject: str,
     template: str,
+    recipient_email: str,
     **kwargs: Dict[str, Any],
 ) -> None:
     """This function is used to send company specific emails to the recipient
@@ -95,15 +96,10 @@ def send_company_email_api(
     """
     msg = EmailMessage()
 
-    # check if reciepient email is provided in the kwargs
-    if not kwargs.get("recipient_email"):
-        print("recipient_email is required in the kwargs!")
-        return
-
     msg["Subject"] = subject
     msg["From"] = formataddr((EMAIL_NAME, EMAIL_ADDRESS))
 
-    msg["To"] = kwargs.get("recipient_email")
+    msg["To"] = recipient_email
 
     body = generate_html(template, **kwargs)
 
