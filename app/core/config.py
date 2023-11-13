@@ -1,4 +1,5 @@
 """This module is used for configuration of the application's settings."""
+
 from decouple import config
 
 
@@ -9,6 +10,7 @@ class Settings:
         from the .env file.
     """
 
+    TEMPLATE_DIR = config("TEMPLATE_DIR", default="app/templates")
     DB_TYPE = config("DB_TYPE", default="sqlite")
     DB_NAME = config("DB_NAME", default="database")
     DB_USER = config("DB_USER", default="root")
