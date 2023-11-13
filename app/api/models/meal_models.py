@@ -49,7 +49,7 @@ class MealCategory(Base):  # type: ignore
         "Meal", back_populates="meal_categories", lazy="joined"
     )
     organization = relationship(
-        "Organization", back_populates="meal_categories", lazy="dynamic"
+        "Organization", back_populates="meal_categories", lazy="joined"
     )
 
 
