@@ -73,4 +73,3 @@ jobs:
       - name: Type checking with mypy
         run: |
           mypy $(find . -type f -name "*.py") --strict --ignore-missing-imports --allow-untyped-decorators
-          
