@@ -157,7 +157,10 @@ def login_service(
     )
 
     if user and verify_password(user_credentials.password, user.password_hash):
-        access_token = create_access_token(data={"account_id": user.id})
+        access_token = create_access_token(
+            data={"account_id": user.id},
+            expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
 
         return CustomResponse(
             status_code=status.HTTP_200_OK,
@@ -170,7 +173,7 @@ def login_service(
     )
 
 
-def create_access_token(data: Dict[str, Any]) -> Any:
+def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
     """Create an access token.
 
     Args:
@@ -182,9 +185,7 @@ def create_access_token(data: Dict[str, Any]) -> Any:
 
     to_encode = data.copy()
 
-    expire = datetime.utcnow() + timedelta(
-        minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
+    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
     to_encode["exp"] = expire
 
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -263,7 +264,9 @@ def forgot_password_service(
         db.query(Account).filter(Account.email == user_data.email).first()
     )
     if account:
-        access_token = create_access_token(data={"account_id": account.id})
+        access_token = create_access_token(
+            data={"account_id": account.id}, expire_mins=10
+        )
         url = f"/api/v1/auth/reset-password?token={access_token}"
         print(url)  # temporary
 
