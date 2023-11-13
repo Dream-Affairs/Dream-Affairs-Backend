@@ -57,6 +57,7 @@ repos:
         -   --disable=import-error
         -   --disable=too-few-public-methods,R0801
         -   --disable=too-many-arguments
+        -   --disable=unused-import
 
 
 -   repo: https://github.com/pre-commit/mirrors-mypy
