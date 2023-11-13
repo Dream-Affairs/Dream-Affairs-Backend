@@ -6,9 +6,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.account_schemas import AccountSchema
+from app.api.schemas.account_schemas import AccountSchema, ForgotPasswordData
 from app.database.connection import get_db
-from app.services.account_services import account_service, login_service
+from app.services.account_services import (
+    account_service,
+    forgot_password_service,
+    login_service,
+)
 from app.services.email_services import send_company_email_api
 
 BASE_URL = "/auth"
@@ -76,3 +80,22 @@ def login(
         HTTPException: If the provided credentials are invalid.
     """
     return login_service(db, user_credentials)
+
+
+@router.post("/forgot-password")
+def user_forgot_password(
+    user_data: ForgotPasswordData,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Handles the request to initiate the password reset process for a user.
+
+    Args:
+        request: The incoming request object.
+        user_email: The email address of the user.
+        db: The database session.
+
+    Returns:
+        The result of the forgot password service.
+    """
+
+    return forgot_password_service(user_data, db)
