@@ -345,9 +345,6 @@ class OrganizationInvite(Base):  # type: ignore
     organization = relationship(
         "Organization", back_populates="organization_invite", lazy="joined"
     )
-    organization_member = relationship(
-        "OrganizationMember", backref="organization_invite"
-    )
 
 
 class OrganizationTag(Base):  # type: ignore

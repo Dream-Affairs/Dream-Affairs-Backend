@@ -6,13 +6,13 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class CreateMealCategory(BaseModel):  # type: ignore
+class MealCategorySchema(BaseModel):  # type: ignore
     """Represents the base schema for a male category."""
 
     name: str
 
 
-class ExistingMealCategory(CreateMealCategory):
+class MealCategoryResponse(MealCategorySchema):
     """Represents the schema for a created Meal Category."""
 
     id: str
@@ -32,7 +32,7 @@ class ExistingMealCategory(CreateMealCategory):
         from_attributes = True
 
 
-class CreateMeal:
+class MealSchema:
     """Represents the base schema for a meal."""
 
     name: str
