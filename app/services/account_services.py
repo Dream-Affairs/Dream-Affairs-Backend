@@ -2,7 +2,7 @@
 operations."""
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, status
@@ -19,6 +19,7 @@ from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
     ForgotPasswordData,
+    ResetPasswordData,
     TokenData,
 )
 from app.core.config import settings
@@ -75,6 +76,33 @@ def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def decode_jwt_token(token: str, credentials_exception: HTTPException) -> str:
+    """Decode a JWT token and retrieve the account ID.
+
+    Args:
+        token: The JWT token to decode.
+        credentials_exception: The exception to raise if the account
+            ID is not found.
+
+    Returns:
+        str: The decoded account ID.
+
+    Raises:
+        credentials_exception: If the account ID is not found in the decoded
+            token.
+        JWTError: If an error occurs during JWT decoding.
+    """
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        account_id: Optional[str] = payload.get("account_id")
+        if account_id is None:
+            raise credentials_exception
+        return account_id
+    except JWTError as exc:
+        raise credentials_exception from exc
+
+
 def verify_access_token(
     token: str, credentials_exception: HTTPException
 ) -> TokenData:
@@ -90,18 +118,8 @@ def verify_access_token(
     Raises:
         credentials_exception: If the access token is invalid.
     """
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        account_id: str = payload.get("account_id")
-
-        if account_id is None:
-            raise credentials_exception
-        token_data = TokenData(id=account_id)
-    except JWTError as exc:
-        raise credentials_exception from exc
-
-    return token_data
+    account_id = decode_jwt_token(token, credentials_exception)
+    return TokenData(id=account_id)
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
@@ -283,4 +301,53 @@ def forgot_password_service(
 
     raise CustomException(
         status_code=500, detail="An unexpected error occurred"
+    )
+
+
+def reset_password_service(
+    token_data: ResetPasswordData, db: Session
+) -> CustomResponse:
+    """Reset the password for an account using a reset password token.
+
+    Args:
+        token_data (ResetPasswordData): The data associated with
+            the reset password token.
+        db (Session): The database session.
+
+    Returns:
+        dict: A dictionary with a "message" key indicating the
+            success of the password reset.
+
+    Raises:
+        CustomException: If the passwords do not match, the token is invalid
+        or expired, or the account is not found.
+    """
+    if token_data.password != token_data.confirm_password:
+        raise CustomException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match",
+        )
+
+    # Validate the token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired link",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    account_id = decode_jwt_token(token_data.token, credentials_exception)
+
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
+        )
+
+    # Set the new password
+    hashed_password = hash_password(token_data.password)
+    account.password_hash = hashed_password
+
+    add_to_db(db, account)
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK, message="Password reset successful"
     )

@@ -449,5 +449,5 @@ class Checklist(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     organization = relationship(
-        "Organization", back_populates="checklist", lazy="dynamic"
+        "Organization", back_populates="checklist", lazy="joined"
     )
