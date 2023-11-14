@@ -6,12 +6,17 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.account_schemas import AccountSchema, ForgotPasswordData
+from app.api.schemas.account_schemas import (
+    AccountSchema,
+    ForgotPasswordData,
+    ResetPasswordData,
+)
 from app.database.connection import get_db
 from app.services.account_services import (
     account_service,
     forgot_password_service,
     login_service,
+    reset_password_service,
 )
 from app.services.email_services import send_company_email_api
 
@@ -99,3 +104,20 @@ def user_forgot_password(
     """
 
     return forgot_password_service(user_data, db)
+
+
+@router.post("/reset-password")
+def reset_password(
+    token_data: ResetPasswordData, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """Reset the password for an account.
+
+    Args:
+        token_data: The data associated with the reset password token.
+        db: The database session.
+
+    Returns:
+        The result of the `reset_password_service` function.
+    """
+
+    return reset_password_service(token_data, db)
