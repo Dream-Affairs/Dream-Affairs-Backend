@@ -1,5 +1,6 @@
 """This module defines the FastAPI API endpoints for meal management."""
 
+
 import fastapi
 from fastapi import APIRouter
 from sqlalchemy import orm
@@ -25,7 +26,9 @@ def create_meal_category(
     meal_category: CreateMealCategory,
     db: orm.Session = fastapi.Depends(get_db),
 ) -> CustomResponse:
-    """Intro--> This endpoint allows you to create a create  a new Meal
+    """Creates a new meal category.
+
+    Intro--> This endpoint allows you to create a create  a new Meal
     Category on the fly and takes in about two  paramenters. To create a Meal
     Category, you need to make  a post request to the /meal-management/create-
     meal- category endpoint.
@@ -40,13 +43,14 @@ def create_meal_category(
 
     returnBody--> the blog object with details specified below.
     """
+
     if unique_name(name=meal_category.name, db=db):
         raise CustomException(
             status_code=400, detail="Category name already exists"
         )
 
     category = model(organization_id=org_id, **meal_category.model_dump())
-    # category = model(**meal_category.model_dump())
+
     db.add(category)
     db.commit()
     db.refresh(category)
@@ -54,7 +58,16 @@ def create_meal_category(
     return CustomResponse(
         status_code=201,
         message="Meal Category Successfully Created",
-        data=ExistingMealCategory(**category),
+        data={
+            "id": category.id,
+            "name": category.name,
+            "organization_id": category.organization_id,
+            "organization": {
+                "name": category.organization.name,
+                "id": category.organization.id,
+            },
+            "meals": category.meals,
+        },
     )
 
 
@@ -62,7 +75,9 @@ def create_meal_category(
 def get_all_meal_category(
     org_id: str, db: orm.Session = fastapi.Depends(get_db)
 ) -> CustomResponse:
-    """Intro--> This endpoint allows you to get all Meal Category in the
+    """Gets all existing Meal Category.
+
+    Intro--> This endpoint allows you to get all Meal Category in the
     database. To get all Meal Categories, you need to make a get request to the
     /meal-management/get_all endpoint.
 
@@ -75,4 +90,10 @@ def get_all_meal_category(
     returnBody--> the meal category object with details specified below.
     """
 
-    return get_all(org_id, db)
+    category_list = get_all(org_id, db)
+
+    return CustomResponse(
+        status_code=201,
+        message="All Meal Category Successfully fetched",
+        data=category_list,
+    )

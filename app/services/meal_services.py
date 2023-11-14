@@ -1,9 +1,10 @@
 """This module contains function that ensure a Meal is created properly."""
 
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from app.api.models.meal_models import MealCategory
-from app.api.responses.custom_responses import CustomResponse
 
 
 def get_meal_category_by_name(name: str, db: Session) -> bool:
@@ -22,7 +23,7 @@ def get_meal_category_by_name(name: str, db: Session) -> bool:
     return bool(value)
 
 
-def get_meal_categories(org_id: str, db: Session) -> CustomResponse:
+def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
     """Gets all meal categories that exist for a specific organization.
 
     Args:
@@ -30,7 +31,8 @@ def get_meal_categories(org_id: str, db: Session) -> CustomResponse:
         db (Session): The database session.
 
     Returns:
-        list: List of dictionaries representing meal categories.
+        List[Dict[str, Any]]: List of dictionaries representing
+        meal categories.
     """
 
     # Retrieve all records from the MealCategory table
@@ -40,13 +42,19 @@ def get_meal_categories(org_id: str, db: Session) -> CustomResponse:
         .all()
     )
 
-    # # Convert the result to a list of dictionaries
-    meal_category_list = [
-        meal_category.__dict__ for meal_category in meal_categories
-    ]
+    # Convert the SQLAlchemy objects into dictionaries
+    meal_category_list = []
+    for meal_category in meal_categories:
+        meal_category_dict = {
+            "id": meal_category.id,
+            "name": meal_category.name,
+            "organization_id": meal_category.organization_id,
+            "organization": {
+                "name": meal_category.organization.name,
+                "id": meal_category.organization.id,
+            },
+            "meals": meal_category.meals,
+        }
+        meal_category_list.append(meal_category_dict)
 
-    return CustomResponse(
-        status_code=201,
-        essage="Fetch all meal category",
-        data=meal_category_list,
-    )
+    return meal_category_list
