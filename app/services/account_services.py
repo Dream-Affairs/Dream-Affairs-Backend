@@ -23,6 +23,11 @@ from app.api.schemas.account_schemas import (
 )
 from app.core.config import settings
 
+SECRET_KEY = settings.AUTH_SECRET_KEY
+ALGORITHM = settings.HASH_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -38,82 +43,6 @@ def hash_password(password: str) -> Any:
     return pwd_context.hash(password)
 
 
-def account_service(user: AccountSchema, db: Session) -> bool:
-    """Create a new user account and associated authentication record.
-
-    Args:
-        user (AccountSchema): The user account data.
-        db (Session): The database session.
-
-    Returns:
-        bool: True if the user account and authentication record were
-            successfully created, False otherwise.
-    """
-
-    existing_user = (
-        db.query(Account).filter(Account.email == user.email).first()
-    )
-    if existing_user:
-        return False
-
-    new_user = Account(
-        id=uuid4().hex,
-        email=user.email,
-        first_name=user.first_name,
-        password_hash=hash_password(user.password),
-    )
-
-    auth = Auth(
-        id=uuid4().hex,
-        account_id=new_user.id,
-        provider="local",
-        setup_date=new_user.created_at,
-    )
-
-    org = Organization(
-        id=uuid4().hex,
-        name=f"{new_user.first_name} & {user.partner_name}".title(),
-        owner=new_user.id,
-        org_type="Wedding",
-    )
-
-    org_detail = OrganizationDetail(
-        organization_id=org.id,
-        event_location=user.location,
-        website=f"/{user.first_name}-{user.partner_name}".lower(),
-        event_date=user.event_date,
-    )
-
-    return add_to_db(db, new_user, auth, org, org_detail)
-
-
-def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
-    """Adds the given objects to the database.
-
-    Args:
-        db: The database session.
-        *args: The objects to be added to the database.
-
-    Returns:
-        bool: True if all objects were successfully added, False otherwise.
-    """
-
-    for arg in args:
-        try:
-            db.add(arg)
-            db.commit()
-            db.refresh(arg)
-        except IntegrityError as e:
-            print(e)
-            db.rollback()
-            return False
-    return True
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
     """Verify a plain password against a hashed password.
 
@@ -126,51 +55,6 @@ def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
     """
 
     return pwd_context.verify(plain_password, hashed_password)
-
-
-SECRET_KEY = settings.AUTH_SECRET_KEY
-ALGORITHM = settings.HASH_ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-
-
-def login_service(
-    db: Session, user_credentials: OAuth2PasswordRequestForm = Depends()
-) -> CustomResponse:
-    """Authenticates a user and generates an access token.
-
-    Args:
-        db: The database session.
-        user_crdentials: The user credentials.
-
-    Returns:
-        CustomResponse: The response containing the access
-            token and token type.
-
-    Raises:
-        CustomException: If the user credentials are invalid.
-    """
-
-    user = (
-        db.query(Account)
-        .filter(Account.email == user_credentials.username)
-        .first()
-    )
-
-    if user and verify_password(user_credentials.password, user.password_hash):
-        access_token = create_access_token(
-            data={"account_id": user.id},
-            expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        )
-
-        return CustomResponse(
-            status_code=status.HTTP_200_OK,
-            data={"access_token": access_token, "token_type": "bearer"},
-        )
-
-    raise CustomException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        message="Invalid credentials",
-    )
 
 
 def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
@@ -240,6 +124,118 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     )
 
     return verify_access_token(token, credentials_exception)
+
+
+def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
+    """Adds the given objects to the database.
+
+    Args:
+        db: The database session.
+        *args: The objects to be added to the database.
+
+    Returns:
+        bool: True if all objects were successfully added, False otherwise.
+    """
+
+    for arg in args:
+        try:
+            db.add(arg)
+            db.commit()
+            db.refresh(arg)
+        except IntegrityError as e:
+            print(e)
+            db.rollback()
+            return False
+    return True
+
+
+def account_service(user: AccountSchema, db: Session) -> bool:
+    """Create a new user account and associated authentication record.
+
+    Args:
+        user (AccountSchema): The user account data.
+        db (Session): The database session.
+
+    Returns:
+        bool: True if the user account and authentication record were
+            successfully created, False otherwise.
+    """
+
+    existing_user = (
+        db.query(Account).filter(Account.email == user.email).first()
+    )
+    if existing_user:
+        return False
+
+    new_user = Account(
+        id=uuid4().hex,
+        email=user.email,
+        first_name=user.first_name,
+        password_hash=hash_password(user.password),
+    )
+
+    auth = Auth(
+        id=uuid4().hex,
+        account_id=new_user.id,
+        provider="local",
+        setup_date=new_user.created_at,
+    )
+
+    org = Organization(
+        id=uuid4().hex,
+        name=f"{new_user.first_name} & {user.partner_name}".title(),
+        owner=new_user.id,
+        org_type="Wedding",
+    )
+
+    org_detail = OrganizationDetail(
+        organization_id=org.id,
+        event_location=user.location,
+        website=f"/{user.first_name}-{user.partner_name}".lower(),
+        event_date=user.event_date,
+    )
+
+    return add_to_db(db, new_user, auth, org, org_detail)
+
+
+def login_service(
+    db: Session, user_credentials: OAuth2PasswordRequestForm = Depends()
+) -> CustomResponse:
+    """Authenticates a user and generates an access token.
+
+    Args:
+        db: The database session.
+        user_crdentials: The user credentials.
+
+    Returns:
+        CustomResponse: The response containing the access
+            token and token type.
+
+    Raises:
+        CustomException: If the user credentials are invalid.
+    """
+
+    user = (
+        db.query(Account)
+        .filter(Account.email == user_credentials.username)
+        .first()
+    )
+
+    if user and verify_password(user_credentials.password, user.password_hash):
+        access_token = create_access_token(
+            data={"account_id": user.id},
+            expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        )
+
+        return CustomResponse(
+            status_code=status.HTTP_200_OK,
+            data={"access_token": access_token, "token_type": "bearer"},
+        )
+
+    raise CustomException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        message="Invalid credentials",
+    )
 
 
 def forgot_password_service(
