@@ -2,7 +2,7 @@
 operations."""
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, status
@@ -19,10 +19,16 @@ from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
     ForgotPasswordData,
+    ResetPasswordData,
     TokenData,
 )
 from app.core.config import settings
 
+SECRET_KEY = settings.AUTH_SECRET_KEY
+ALGORITHM = settings.HASH_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -36,6 +42,129 @@ def hash_password(password: str) -> Any:
         str: The hashed password.
     """
     return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
+    """Verify a plain password against a hashed password.
+
+    Args:
+        plain_password (str): The plain password to verify.
+        hashed_password (str): The hashed password to compare against.
+
+    Returns:
+        str: The result of the password verification.
+    """
+
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
+    """Create an access token.
+
+    Args:
+        data (dict): The data to encode into the access token.
+
+    Returns:
+        str: The generated access token.
+    """
+
+    to_encode = data.copy()
+
+    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
+    to_encode["exp"] = expire
+
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_jwt_token(token: str, credentials_exception: HTTPException) -> str:
+    """Decode a JWT token and retrieve the account ID.
+
+    Args:
+        token: The JWT token to decode.
+        credentials_exception: The exception to raise if the account
+            ID is not found.
+
+    Returns:
+        str: The decoded account ID.
+
+    Raises:
+        credentials_exception: If the account ID is not found in the decoded
+            token.
+        JWTError: If an error occurs during JWT decoding.
+    """
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        account_id: Optional[str] = payload.get("account_id")
+        if account_id is None:
+            raise credentials_exception
+        return account_id
+    except JWTError as exc:
+        raise credentials_exception from exc
+
+
+def verify_access_token(
+    token: str, credentials_exception: HTTPException
+) -> TokenData:
+    """Verify an access token.
+
+    Args:
+        token (str): The access token to verify.
+        credentials_exception: The exception to raise if the token is invalid.
+
+    Returns:
+        TokenData: The token data extracted from the access token.
+
+    Raises:
+        credentials_exception: If the access token is invalid.
+    """
+    account_id = decode_jwt_token(token, credentials_exception)
+    return TokenData(id=account_id)
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
+    """Get the current user based on the provided access token.
+
+    Args:
+        token (str, optional): The access token.
+
+    Returns:
+        TokenData: The token data representing the current user.
+
+    Raises:
+        HTTPException: If the credentials cannot be validated.
+    """
+
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    return verify_access_token(token, credentials_exception)
+
+
+def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
+    """Adds the given objects to the database.
+
+    Args:
+        db: The database session.
+        *args: The objects to be added to the database.
+
+    Returns:
+        bool: True if all objects were successfully added, False otherwise.
+    """
+
+    for arg in args:
+        try:
+            db.add(arg)
+            db.commit()
+            db.refresh(arg)
+        except IntegrityError as e:
+            print(e)
+            db.rollback()
+            return False
+    return True
 
 
 def account_service(user: AccountSchema, db: Session) -> bool:
@@ -87,52 +216,6 @@ def account_service(user: AccountSchema, db: Session) -> bool:
     return add_to_db(db, new_user, auth, org, org_detail)
 
 
-def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
-    """Adds the given objects to the database.
-
-    Args:
-        db: The database session.
-        *args: The objects to be added to the database.
-
-    Returns:
-        bool: True if all objects were successfully added, False otherwise.
-    """
-
-    for arg in args:
-        try:
-            db.add(arg)
-            db.commit()
-            db.refresh(arg)
-        except IntegrityError as e:
-            print(e)
-            db.rollback()
-            return False
-    return True
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
-    """Verify a plain password against a hashed password.
-
-    Args:
-        plain_password (str): The plain password to verify.
-        hashed_password (str): The hashed password to compare against.
-
-    Returns:
-        str: The result of the password verification.
-    """
-
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-SECRET_KEY = settings.AUTH_SECRET_KEY
-ALGORITHM = settings.HASH_ALGORITHM
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-
-
 def login_service(
     db: Session, user_credentials: OAuth2PasswordRequestForm = Depends()
 ) -> CustomResponse:
@@ -171,75 +254,6 @@ def login_service(
         status_code=status.HTTP_403_FORBIDDEN,
         message="Invalid credentials",
     )
-
-
-def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
-    """Create an access token.
-
-    Args:
-        data (dict): The data to encode into the access token.
-
-    Returns:
-        str: The generated access token.
-    """
-
-    to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
-    to_encode["exp"] = expire
-
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def verify_access_token(
-    token: str, credentials_exception: HTTPException
-) -> TokenData:
-    """Verify an access token.
-
-    Args:
-        token (str): The access token to verify.
-        credentials_exception: The exception to raise if the token is invalid.
-
-    Returns:
-        TokenData: The token data extracted from the access token.
-
-    Raises:
-        credentials_exception: If the access token is invalid.
-    """
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        account_id: str = payload.get("account_id")
-
-        if account_id is None:
-            raise credentials_exception
-        token_data = TokenData(id=account_id)
-    except JWTError as exc:
-        raise credentials_exception from exc
-
-    return token_data
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
-    """Get the current user based on the provided access token.
-
-    Args:
-        token (str, optional): The access token.
-
-    Returns:
-        TokenData: The token data representing the current user.
-
-    Raises:
-        HTTPException: If the credentials cannot be validated.
-    """
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    return verify_access_token(token, credentials_exception)
 
 
 def forgot_password_service(
@@ -287,4 +301,53 @@ def forgot_password_service(
 
     raise CustomException(
         status_code=500, detail="An unexpected error occurred"
+    )
+
+
+def reset_password_service(
+    token_data: ResetPasswordData, db: Session
+) -> CustomResponse:
+    """Reset the password for an account using a reset password token.
+
+    Args:
+        token_data (ResetPasswordData): The data associated with
+            the reset password token.
+        db (Session): The database session.
+
+    Returns:
+        dict: A dictionary with a "message" key indicating the
+            success of the password reset.
+
+    Raises:
+        CustomException: If the passwords do not match, the token is invalid
+        or expired, or the account is not found.
+    """
+    if token_data.password != token_data.confirm_password:
+        raise CustomException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Passwords do not match",
+        )
+
+    # Validate the token
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired link",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    account_id = decode_jwt_token(token_data.token, credentials_exception)
+
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
+        )
+
+    # Set the new password
+    hashed_password = hash_password(token_data.password)
+    account.password_hash = hashed_password
+
+    add_to_db(db, account)
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK, message="Password reset successful"
     )
