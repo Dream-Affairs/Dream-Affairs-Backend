@@ -325,7 +325,7 @@ def reset_password_service(
     if token_data.password != token_data.confirm_password:
         raise CustomException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Passwords do not match",
+            message="Passwords do not match",
         )
 
     # Validate the token
