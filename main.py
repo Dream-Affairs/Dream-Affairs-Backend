@@ -41,7 +41,7 @@ v1_router.include_router(
     email_routers,
 )
 
-v1_router.include_router(meal_routers, tags=["meal management"])
+v1_router.include_router(meal_routers)
 
 app = FastAPI(
     title="Dream Affairs API",

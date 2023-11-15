@@ -13,7 +13,7 @@ from app.services.meal_services import get_meal_category_by_name as unique_name
 
 BASE_URL = "/{org_id}/meal-management"
 
-meal_router = APIRouter(prefix=BASE_URL)
+meal_router = APIRouter(prefix=BASE_URL, tags=["Meal Management"])
 
 
 @meal_router.post("/create-meal-category")
