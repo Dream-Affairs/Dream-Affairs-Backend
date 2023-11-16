@@ -57,8 +57,9 @@ def signup(
     background_tasks.add_task(
         send_company_email_api,
         subject="Welcome to Dream Affairs",
-        recipient=user.email,
-        kwargs={...},
+        recipient_email=user.email,
+        template="_email_verification.html",
+        kwargs={"name": user.first_name, "verification_link": ...},
     )
     return CustomResponse(
         status_code=status.HTTP_201_CREATED,
