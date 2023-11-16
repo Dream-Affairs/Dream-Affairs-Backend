@@ -6,6 +6,22 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
+from app.api.models.account_models import Account, Auth  # noqa: F401
+from app.api.models.budget_expenditure_models import (  # noqa: F401
+    Budget,
+    Expenditure,
+)
+from app.api.models.gift_models import Gift  # noqa: F401
+from app.api.models.meal_models import (  # noqa: F401
+    Meal,
+    MealCategory,
+    MealTag,
+)
+from app.api.models.role_permission_models import (  # noqa: F401
+    Permission,
+    Role,
+    RolePermission,
+)
 from app.database.connection import Base
 
 INVITE_STATUS = ENUM("pending", "accepted", "rejected", name="invite_status")
@@ -71,15 +87,15 @@ class Organization(Base):  # type: ignore
     account = relationship(
         "Account", back_populates="organizations", lazy="joined"
     )
+    gifts = relationship(
+        "Gift",
+        back_populates="organization",
+    )
     detail = relationship(
         "OrganizationDetail", back_populates="organization", lazy="joined"
     )
     organization_members = relationship(
         "OrganizationMember",
-        back_populates="organization",
-    )
-    gifts = relationship(
-        "Gift",
         back_populates="organization",
     )
     budget = relationship(
@@ -100,6 +116,10 @@ class Organization(Base):  # type: ignore
     )
     organization_invite = relationship(
         "OrganizationInvite",
+        back_populates="organization",
+    )
+    checklist = relationship(
+        "Checklist",
         back_populates="organization",
     )
 
@@ -376,4 +396,58 @@ class OrganizationTag(Base):  # type: ignore
     meal_tags = relationship(
         "MealTag",
         back_populates="organization_tag",
+    )
+
+
+class Checklist(Base):  # type: ignore
+    """
+    Checklist model:
+      This table contains the checklist for the organization.
+
+    Attributes:
+      id (str): The id of the checklist.
+      organization_id (str): The id of the organization to which \
+        the checklist belongs.
+      title (str): The title of the checklist.
+      description (str): The description of the checklist.
+      status (str): The status of the checklist.
+      is_completed (bool): The flag to indicate if the checklist is \
+        completed.
+      is_hidden (bool): The flag to indicate if the checklist is hidden.
+      completed_at (datetime): The date and time when the checklist was \
+        completed.
+      created_at (datetime): The date and time when the checklist was \
+        created.
+      updated_at (datetime): The date and time when the checklist was \
+        last updated.
+
+      organization (object): The organization to which the checklist \
+        belongs.
+
+    """
+
+    __tablename__ = "checklist"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    title = Column(String, nullable=False)
+    description = Column(
+        String,
+    )
+    status = Column(
+        ENUM("completed", "pending", "Overdue", name="checklist_status"),
+        nullable=False,
+    )
+    is_completed = Column(Boolean, default=False)
+    is_hidden = Column(Boolean, default=False)
+
+    completed_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship(
+        "Organization", back_populates="checklist", lazy="joined"
     )

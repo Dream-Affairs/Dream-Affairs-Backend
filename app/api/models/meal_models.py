@@ -18,6 +18,8 @@ class MealCategory(Base):  # type: ignore
       name (str): This is the name of the meal_category.
       organization_id (str): This is the id of the organization \
         to which the meal_category belongs.
+      creator_id (str): This is the id of the creator account \
+        to which the meal_category belongs.
       is_hidden (bool): This is the boolean value which \
         tells whether the meal_category is hidden or not.
       created_at (datetime): This is the date and time when the \
@@ -26,6 +28,8 @@ class MealCategory(Base):  # type: ignore
         meal_category was updated.
 
       organization (object): This is the organization to which the \
+        meal_category belongs.
+      account (object): This is the account owner to which the \
         meal_category belongs.
     """
 

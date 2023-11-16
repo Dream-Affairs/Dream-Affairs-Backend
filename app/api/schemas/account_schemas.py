@@ -34,3 +34,27 @@ class TokenData(BaseModel):  # type: ignore
     """
 
     id: Optional[str] = None
+
+
+class ForgotPasswordData(BaseModel):  # type: ignore
+    """Represents the data required for the forgot password functionality.
+
+    Attributes:
+        email (EmailStr): The email address of the user.
+    """
+
+    email: EmailStr
+
+
+class ResetPasswordData(BaseModel):  # type: ignore
+    """Data model for resetting a password.
+
+    Attributes:
+        token (str): The reset password token.
+        password (str): The new password.
+        confirm_password (str): Confirmation of the new password.
+    """
+
+    token: str
+    password: str
+    confirm_password: str

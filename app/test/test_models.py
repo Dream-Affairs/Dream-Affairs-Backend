@@ -715,4 +715,4 @@ def test_gift_realtionship(
 def test_teradown_module() -> None:
     """Tear down the database."""
     print("Tearing down")
-    os.remove("test.db")
+    os.remove("\test.db")
