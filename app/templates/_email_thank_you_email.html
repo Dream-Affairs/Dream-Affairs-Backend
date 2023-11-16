@@ -1,4 +1,5 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %}
+{% block content %}
 <table style="width: 100%">
   <tr>
     <td>
@@ -42,7 +43,7 @@
                 color: #48195a;
               "
             >
-              CHINONYE & JOHN
+              {{kwargs.organization_name}}
             </p>
 
             <div style="margin-top: 49px">
@@ -56,7 +57,7 @@
                   line-height: 19.6px;
                 "
               >
-                Hello {{First Name}},<br /><br />
+                Hello {{kwargs.first_name}},<br /><br />
                 We hope this message finds you well. We wanted to take a moment
                 to express our deepest gratitude for being a part of our wedding
                 day. Your presence and warm wishes made the celebration even
@@ -70,7 +71,7 @@
                 Thank you once again for sharing in our joy and making our day
                 unforgettable<br /><br />
                 Warmest regards,<br />
-                Chinonye & John
+                {{kwargs.organization_name}}
               </p>
 
               <a
@@ -187,8 +188,8 @@
                   "
                 >
                   This message was sent from dreamaffairs.com on behalf of
-                  Chinonye and John. <br />Send replies to
-                  chinonyeumeh.14@gmail.com.<br />
+                  {{kwargs.organization_name}}. <br />Send replies to
+                  {{kwargs.organization_email}}.<br />
                   <a
                     href="#"
                     style="font: inherit; text-decoration: none; color: inherit"

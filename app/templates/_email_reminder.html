@@ -41,7 +41,7 @@
                 text-align: center;
               "
             >
-              CHINONYE & JOHN
+              {{kwargs.organization_name}}
             </p>
 
             <div style="margin-top: 49px">
@@ -54,30 +54,30 @@
                   line-height: 19.6px;
                 "
               >
-                Hello {{First Name}},<br /><br />
+                Hello {{kwargs.name}},<br /><br />
                 We hope this message finds you well. We are thrilled to remind
                 you that the big day is just around the corner, and we can't
                 wait to celebrate with all of you! <br />As we prepare for our
                 special day, we wanted to provide you with a few essential
                 details to ensure everything goes smoothly.<br /><br />
-                <b>Wedding Date:</b> 30th October, 2024 <br /><br /><b
+                <b>Wedding Date:</b> {{kwargs.event_date}} <br /><br /><b
                   >Location:</b
                 >
-                Eko Hotel, Lekki Phase 1, Lagos Nigeria Church
-                <br /><br /><b>Wedding Time:</b> 9:00am <br /><br /><b
+                {{kwargs.event_location}}
+                <br /><br /><b>Wedding Time:</b> {{kwargs.wedding_time}} <br /><br /><b
                   >Reception Time:</b
                 >
-                11:00am <br /><br />If you have any questions or need further
+                {{kwargs.reception_time}} <br /><br />If you have any questions or need further
                 information, please don't hesitate to reach out to us. You can
-                contact us at [080675222356].<br /><br />
+                contact us at {{kwargs.phone_number}}.<br /><br />
                 Thank you for being a part of our journey. We look forward to
                 celebrating with you on our special day!<br /><br />
                 Warmest regards,<br />
-                Chinonye & John
+                {{kwargs.organization_name}}
               </p>
 
               <a
-                href="#"
+                href={{kwargs.organization_website}}}
                 style="
                   display: block;
                   text-align: center;
@@ -193,8 +193,8 @@
                   "
                 >
                   This message was sent from dreamaffairs.com on behalf of
-                  Chinonye and John. <br />Send replies to
-                  chinonyeumeh.14@gmail.com.<br />
+                  {{organization_name}}. <br />Send replies to
+                  {{kwargs.organization_email}}.<br />
                   <a
                     href="#"
                     style="font: inherit; text-decoration: none; color: inherit"

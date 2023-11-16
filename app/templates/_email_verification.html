@@ -66,12 +66,12 @@
                   line-height: 19.6px;
                 "
               >
-                Hello [User's Name],<br /><br />
+                Hello {{kwargs.name}},<br /><br />
                 Welcome to Dream Affairs<br /><br />
                 To get started, we need to verify your email address. Please
                 click the link below.<br /><br />
-                <a href="#" style="text-decoration: none; color: #4b97ed"
-                  >[Verification Link]</a
+                <a href={{kwargs.verification_link}} style="text-decoration: none; color: #4b97ed"
+                  >Verification Link</a
                 >
                 <br /><br />
                 <br /><br />Thank you for choosing DreamAffairs We're honored to
