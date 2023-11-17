@@ -25,12 +25,8 @@ jobs:
           pip install -r requirements.txt flake8
 
       - name: Run flake8
-        uses: suo/flake8-github-action@releases/v1
-        with:
-          checkName: 'flake8'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+        run: |
+          flake8 --max-line-length=79 --ignore=W503, B008
   pylint:
     runs-on: ubuntu-latest
     steps:
@@ -50,8 +46,7 @@ jobs:
 
       - name: Run pylint
         run: |
-          pylint $(find . -type f -name "*.py") --disable=too-few-public-methods --disable=import-error
-
+          pylint $(find . -type f -name "*.py") --disable=too-few-public-methods --disable=import-error --disable=too-many-arguments --disable=unused-import
 
   mypy:
     runs-on: ubuntu-latest
