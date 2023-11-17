@@ -52,31 +52,36 @@ def create_new_role(db: Session, role: dict):
         )
 
     # Create new role
-    new_role = OrganizationRole(
-        name=role.name,
-        description=role.description,
-        organization_id=role.organization_id,
-    )
-    db.add(new_role)
-    db.commit()
-    db.refresh(new_role)
+    try:
+        new_role = OrganizationRole(
+            name=role.name,
+            description=role.description,
+            organization_id=role.organization_id,
+        )
+        db.add(new_role)
+        db.commit()
+        db.refresh(new_role)
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to create new role",
+            data={"role_id": role.id},
+        ) from exc
 
     permissions = []
 
-    try:
-        for permission_id in role.permissions:
-            # Check if permission exists
-            permission = (
-                db.query(Permission)
-                .filter(Permission.id == permission_id)
-                .first()
+    for permission_id in role.permissions:
+        # Check if permission exists
+        permission = (
+            db.query(Permission).filter(Permission.id == permission_id).first()
+        )
+        if not permission:
+            raise CustomException(
+                status_code=400,
+                message="Permission does not exist",
+                data={"permission_id": permission_id},
             )
-            if not permission:
-                raise CustomException(
-                    status_code=400,
-                    message="Permission does not exist",
-                    data={"permission_id": permission_id},
-                )
+        try:
             # Create new role permission
             new_permission = RolePermission(
                 id=uuid4().hex,
@@ -86,16 +91,20 @@ def create_new_role(db: Session, role: dict):
             db.add(new_permission)
             db.commit()
             db.refresh(new_permission)
+        except Exception as exc:
+            raise CustomException(
+                status_code=500,
+                message="Failed to create new role permission",
+                data={"role_id": new_role.id},
+            ) from exc
 
-            permissions.append(
-                {
-                    "id": permission_id,
-                    "name": permission.name,
-                    "description": permission.description,
-                }
-            )
-    except Exception as e:
-        raise e
+        permissions.append(
+            {
+                "id": permission_id,
+                "name": permission.name,
+                "description": permission.description,
+            }
+        )
 
     return {
         "id": new_role.id,

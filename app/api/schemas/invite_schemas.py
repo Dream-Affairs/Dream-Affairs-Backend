@@ -1,4 +1,6 @@
 """Schemas for invite endpoints."""
+from typing import List
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -9,13 +11,13 @@ class RoleCreate(BaseModel):
         name (str): Name of the role
         description (str): Description of the role
         organization_id (str): Organization ID
-        permissions (list[str]): List of permissions
+        permissions (List[str]): List of permissions
     """
 
     name: str
     description: str
     organization_id: str
-    permissions: list[str]
+    permissions: List[str]
 
 
 class InviteOrgMember(BaseModel):
