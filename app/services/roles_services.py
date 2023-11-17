@@ -48,6 +48,19 @@ def create_new_role(db: Session, role: dict):
 
     try:
         for permission_id in role.permissions:
+            permission = (
+                db.query(Permission)
+                .filter(Permission.id == permission_id)
+                .first()
+            )
+            if not permission:
+                raise CustomException(
+                    status_code=400,
+                    message="Permission does not exist",
+                    data={
+                        "permission_id": permission_id
+                    }
+                )
             new_permission = RolePermission(
                 id=uuid4().hex,
                 organization_role_id=new_role.id,
@@ -58,9 +71,9 @@ def create_new_role(db: Session, role: dict):
             db.refresh(new_permission)
 
             permissions.append({
-                "id": new_permission.id,
-                "organization_role_id": new_permission.organization_role_id,
-                "permission_id": new_permission.permission_id,
+                "id": permission_id,
+                "name": permission.name,
+                "description": permission.description,
             })
     except Exception:
         raise CustomException(
