@@ -12,7 +12,7 @@ router = APIRouter(tags=["Invites"])
 
 @router.post("/invites")
 async def invite_member(
-    role: InviteMember, db: Session = Depends(get_db)
+    invite: InviteMember, db: Session = Depends(get_db)
 ) -> CustomResponse:
     """Create a new role.
 
@@ -27,7 +27,7 @@ async def invite_member(
         CustomResponse: Role details
     """
     try:
-        member_details = invite_new_member(db, role)
+        member_details = invite_new_member(db, invite)
     except Exception as e:
         raise e
     return CustomResponse(
