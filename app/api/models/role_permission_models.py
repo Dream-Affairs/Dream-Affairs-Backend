@@ -61,7 +61,7 @@ class RolePermission(Base):  # type: ignore
     """
 
     __tablename__ = "role_permission"
-    id = Column(String, primary_key=True, default=uuid4().hex)
+    id = Column(String, primary_key=True)
     organization_role_id = Column(
         String,
         ForeignKey("organization_role.id", ondelete="CASCADE"),
@@ -76,9 +76,6 @@ class RolePermission(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
-    role = relationship(
-        "OrganizationRole", backref="organization_role", lazy=True
-    )
     permission = relationship(
         "Permission", backref="role_permission", lazy=True
     )

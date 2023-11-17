@@ -317,8 +317,7 @@ class OrganizationTag(Base):  # type: ignore
     )
     name = Column(String, nullable=False)
     tag_type = Column(
-      ENUM("dietary", "guest", name="tag_type"),
-      nullable=False
+        ENUM("dietary", "guest", name="tag_type"), nullable=False
     )
     description = Column(
         String,
