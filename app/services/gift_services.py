@@ -68,16 +68,16 @@ def create_blob(container_name: str, raw_file: UploadFile) -> str:
     return blob_url
 
 
-def add_product_gift(
-    product_data: dict[str, Any],
+def add_cash_gift(
+    payment_data: dict[str, Any],
     gift_image: UploadFile,
     member_id: str,
     db: Session,
 ) -> tuple[Any, Any]:
-    """Add product gift to the associated authenticated user/organization.
+    """Add Cash funds gift to the associated authenticated user/organization.
 
     Args:
-        product_data (Dict): The gift data to be added.
+        payment_data (Dict): The gift data to be added.
         gift_image:
         db (Session): The database session.
 
@@ -91,7 +91,7 @@ def add_product_gift(
 
     if not authenticate_member:
         exception = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Invalid Owner"
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid Member ID"
         )
         return None, exception
 
@@ -100,11 +100,11 @@ def add_product_gift(
     # upload a blob and retrieve the url
     image_file_path = create_blob(org_id, gift_image)
 
-    # product_data = gift.model_dump()
-    product_data["organization_id"] = org_id
-    product_data["product_image_url"] = image_file_path
+    # payment_data = gift.model_dump()
+    payment_data["organization_id"] = org_id
+    payment_data["product_image_url"] = image_file_path
 
-    new_gift = Gift(**product_data)
+    new_gift = Gift(**payment_data)
 
     try:
         db.add(new_gift)
@@ -113,7 +113,7 @@ def add_product_gift(
 
         response = CustomResponse(
             status_code=status.HTTP_201_CREATED,
-            message="Gift successfully added",
+            message="Cash funds gift successfully added",
             data=jsonable_encoder(new_gift),
         )
         return response, None
