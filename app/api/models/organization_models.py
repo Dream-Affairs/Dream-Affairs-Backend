@@ -213,6 +213,7 @@ class OrganizationMember(Base):  # type: ignore
     account_id = Column(
         String, ForeignKey("account.id", ondelete="CASCADE"), nullable=True
     )
+    name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     organization_role_id = Column(
         String,
@@ -220,6 +221,7 @@ class OrganizationMember(Base):  # type: ignore
         nullable=False,
     )
     invite_token = Column(String, nullable=False)
+    is_default = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 

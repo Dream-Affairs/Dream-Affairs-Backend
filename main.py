@@ -10,6 +10,7 @@ from app.api.responses.custom_responses import (
 )
 from app.api.routers.account_routers import router as account_routers
 from app.api.routers.email_router import email_router as email_routers
+from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
 from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
@@ -43,6 +44,9 @@ v1_router.include_router(
 )
 v1_router.include_router(
     role_routers,
+)
+v1_router.include_router(
+    invite_routers,
 )
 
 v1_router.include_router(meal_routers)
