@@ -167,7 +167,7 @@ def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
     return True
 
 
-def account_service(user: AccountSchema, db: Session) -> bool:
+def account_service(user: AccountSchema, db: Session) -> Any:
     """Create a new user account and associated authentication record.
 
     Args:
@@ -183,7 +183,10 @@ def account_service(user: AccountSchema, db: Session) -> bool:
         db.query(Account).filter(Account.email == user.email).first()
     )
     if existing_user:
-        return False
+        return None, CustomException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="User already exists",
+        )
 
     new_user = Account(
         id=uuid4().hex,
@@ -213,7 +216,12 @@ def account_service(user: AccountSchema, db: Session) -> bool:
         event_date=user.event_date,
     )
 
-    return add_to_db(db, new_user, auth, org, org_detail)
+    if not add_to_db(db, new_user, auth, org, org_detail):
+        return None, CustomException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="failed to create account",
+        )
+    return True, None
 
 
 def login_service(
