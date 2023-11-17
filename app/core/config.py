@@ -32,5 +32,9 @@ class Settings:
     EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="password")
     EMAIL_ADDRESS = config("EMAIL_ADDRESS", default="")
 
+    ACCOUNT_NAME = config("ACCOUNT_NAME", default="")
+    KEY = config("KEY", default="")
+    CONNECTION_STRING = config("CONNECTION_STRING", default="")
+
 
 settings = Settings()
