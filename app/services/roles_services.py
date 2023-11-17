@@ -118,7 +118,7 @@ def get_all_roles(db: Session, organization_id: str):
     Returns:
         list: List of roles
     """
-    # Check if organization exists
+    # Check if organization ab746d6exists
     organization = (
         db.query(Organization)
         .filter(Organization.id == organization_id)
@@ -139,8 +139,6 @@ def get_all_roles(db: Session, organization_id: str):
     roles_dict = model_to_dict(roles)
 
     return roles_dict
-
-    return roles
 
 
 def get_role_details(db: Session, organization_id: str, role_id: str):

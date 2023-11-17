@@ -70,7 +70,7 @@ app.add_middleware(
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
-    raise CustomResponse(
+    return CustomResponse(
         status_code=200,
         detail="Healthy",
     )
