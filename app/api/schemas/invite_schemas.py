@@ -20,15 +20,17 @@ class RoleCreate(BaseModel):  # type: ignore
     permissions: List[str]
 
 
-class InviteOrgMember(BaseModel):  # type: ignore
+class InviteMember(BaseModel):  # type: ignore
     """Schema for inviting a new organization member.
 
     Attributes:
+        name (str): Name of the user
         email (EmailStr): Email of the user
         organization_id (str): Organization ID
-        role (str): Role of the user
+        role_id (str): Role of the user
     """
 
+    name: str
     email: EmailStr
     organization_id: str
-    role: str
+    role_id: str
