@@ -1,6 +1,6 @@
 from sqlalchemy.orm.session import Session
 
-from app.api.models.organization_models import OrganizationRole
+from app.api.models.organization_models import Organization, OrganizationRole
 from app.api.models.role_permission_models import Permission, RolePermission
 from app.services.custom_services import model_to_dict
 from app.api.responses.custom_responses import CustomException
@@ -10,8 +10,8 @@ from uuid import uuid4
 def create_new_role(db: Session, role: dict):
     # Check if organization exists
     organization = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == role.organization_id)
+        db.query(Organization)
+        .filter(Organization.id == role.organization_id)
         .first()
     )
     if not organization:
@@ -79,8 +79,8 @@ def create_new_role(db: Session, role: dict):
 
 def get_all_roles(db: Session, organization_id: str):
     organization = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
         .first()
     )
     if not organization:
@@ -105,8 +105,8 @@ def get_all_roles(db: Session, organization_id: str):
 def get_role_details(db: Session, organization_id: str, role_id: str):
     # Check if organization exists
     organization = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
         .first()
     )
     if not organization:
