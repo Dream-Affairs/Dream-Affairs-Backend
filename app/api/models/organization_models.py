@@ -211,7 +211,7 @@ class OrganizationMember(Base):  # type: ignore
         nullable=False,
     )
     account_id = Column(
-        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=True
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
     )
     organization_role_id = Column(
         String,
