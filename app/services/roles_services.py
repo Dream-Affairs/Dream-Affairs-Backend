@@ -1,4 +1,5 @@
 """Role services."""
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from sqlalchemy.orm.session import Session
@@ -6,10 +7,11 @@ from sqlalchemy.orm.session import Session
 from app.api.models.organization_models import Organization, OrganizationRole
 from app.api.models.role_permission_models import Permission, RolePermission
 from app.api.responses.custom_responses import CustomException
+from app.api.schemas.invite_schemas import RoleCreate
 from app.services.custom_services import model_to_dict
 
 
-def create_new_role(db: Session, role: dict):
+def create_new_role(db: Session, role: RoleCreate) -> Dict[str, Any]:
     """Create new role.
 
     Args:
@@ -114,7 +116,7 @@ def create_new_role(db: Session, role: dict):
     }
 
 
-def get_all_roles(db: Session, organization_id: str):
+def get_all_roles(db: Session, organization_id: str) -> List[Dict[str, Any]]:
     """Get all roles.
 
     Args:
@@ -150,7 +152,9 @@ def get_all_roles(db: Session, organization_id: str):
     return roles_dict
 
 
-def get_role_details(db: Session, organization_id: str, role_id: str):
+def get_role_details(
+    db: Session, organization_id: str, role_id: str
+) -> Dict[str, Any]:
     """Get role details.
 
     Args:

@@ -4,7 +4,7 @@ from typing import List
 from pydantic import BaseModel, EmailStr
 
 
-class RoleCreate(BaseModel):
+class RoleCreate(BaseModel):  # type: ignore
     """Schema for creating a new role.
 
     Attributes:
@@ -20,7 +20,7 @@ class RoleCreate(BaseModel):
     permissions: List[str]
 
 
-class InviteOrgMember(BaseModel):
+class InviteOrgMember(BaseModel):  # type: ignore
     """Schema for inviting a new organization member.
 
     Attributes:

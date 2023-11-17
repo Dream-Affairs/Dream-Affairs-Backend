@@ -1,5 +1,6 @@
 """This module defines the router for the role endpoints."""
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm.session import Session
 
 from app.api.models.role_permission_models import Permission
 from app.api.responses.custom_responses import CustomResponse
@@ -16,7 +17,7 @@ router = APIRouter(tags=["Roles & Permissions"])
 
 
 @router.get("/permissions")
-async def get_permissions(db=Depends(get_db)):
+async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
     """Get all permissions.
 
     Args:
@@ -34,7 +35,9 @@ async def get_permissions(db=Depends(get_db)):
 
 
 @router.get("/roles/{organization_id}")
-async def get_roles(organization_id: str, db=Depends(get_db)):
+async def get_roles(
+    organization_id: str, db: Session = Depends(get_db)
+) -> CustomResponse:
     """Get all roles.
 
     Args:
@@ -60,8 +63,8 @@ async def get_roles(organization_id: str, db=Depends(get_db)):
 
 @router.get("/roles/{organization_id}/{role_id}")
 async def get_role_by_id(
-    organization_id: str, role_id: str, db=Depends(get_db)
-):
+    organization_id: str, role_id: str, db: Session = Depends(get_db)
+) -> CustomResponse:
     """Get role by ID.
 
     Args:
@@ -87,7 +90,9 @@ async def get_role_by_id(
 
 
 @router.post("/roles")
-async def create_role(role: RoleCreate, db=Depends(get_db)):
+async def create_role(
+    role: RoleCreate, db: Session = Depends(get_db)
+) -> CustomResponse:
     """Create a new role.
 
     Args:
