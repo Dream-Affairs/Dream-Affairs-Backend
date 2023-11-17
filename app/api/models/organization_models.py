@@ -211,9 +211,8 @@ class OrganizationMember(Base):  # type: ignore
         nullable=False,
     )
     account_id = Column(
-        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=True
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
     )
-    email = Column(String, nullable=False)
     organization_role_id = Column(
         String,
         ForeignKey("organization_role.id", ondelete="CASCADE"),
@@ -269,6 +268,7 @@ class OrganizationRole(Base):  # type: ignore
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
+    is_default = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
