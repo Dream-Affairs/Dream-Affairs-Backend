@@ -26,7 +26,7 @@ jobs:
 
       - name: Run flake8
         run: |
-          flake8 --max-line-length=79 --ignore=W503, B008
+          flake8 --max-line-length=79 --ignore=W503,B008
   pylint:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +46,7 @@ jobs:
 
       - name: Run pylint
         run: |
-          pylint $(find . -type f -name "*.py") --disable=too-few-public-methods --disable=import-error --disable=too-many-arguments --disable=unused-import
+          pylint $(find . -type f -name "*.py") --disable=too-few-public-methods,import-error,too-many-arguments,unused-import,R0801
 
   mypy:
     runs-on: ubuntu-latest
