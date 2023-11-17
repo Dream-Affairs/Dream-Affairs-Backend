@@ -8,88 +8,42 @@ from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.invite_schemas import RoleCreate
 from app.database.connection import get_db
 from app.services.custom_services import model_to_dict
+from app.services.roles_services import get_role_details, get_all_roles
 
 router = APIRouter(tags=["Roles & Permissions"])
 
 
 @router.get("/permissions")
 async def get_permissions(db=Depends(get_db)):
-    """Get all permissions.
-
-    Returns:
-        list: A list of permissions
-    """
-    permissions = db.query(Permission).all()
-    permissions_dict = model_to_dict(permissions)
+    permissions = model_to_dict(db.query(Permission).all())
     return CustomResponse(
         status_code=200,
         message="Permissions retrieved successfully",
-        data=permissions_dict,
+        data=permissions,
     )
 
 
 @router.get("/roles/{organization_id}")
-async def get_role(organization_id: str, db=Depends(get_db)):
-    """Get all role for an organization.
-
-    Args:
-        organization_id (int): The organization id
-
-    Returns:
-        Role: The role
-    """
-    role = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
-        .all()
+async def get_roles(organization_id: str, db=Depends(get_db)):
+    roles = get_all_roles(db, organization_id)
+    return CustomResponse(
+        status_code=200,
+        message="Roles retrieved successfully",
+        data=roles,
     )
-    return role
 
 
 @router.get("/roles/{organization_id}/{role_id}")
-async def get_role(organization_id: str, role_id: str, db=Depends(get_db)):
-    """Get a role for an organization.
-
-    Args:
-        organization_id (int): The organization id
-        role_id (int): The role id
-
-    Returns:
-        Role: The role
-    """
-    role = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
-        .filter(OrganizationRole.id == role_id)
-        .first()
+async def get_role_by_id(organization_id: str, role_id: str, db=Depends(get_db)):
+    role_details = get_role_details(db, organization_id, role_id)
+    return CustomResponse(
+        status_code=200,
+        message="Role retrieved successfully",
+        data=role_details,
     )
-
-    if not role:
-        return {"error": "Role not found"}
-
-    print(role.id)
-    role_permissions = (
-        db.query(RolePermission)
-        .filter(RolePermission.organization_role_id == role.id)
-        .all()
-    )
-
-    return role_permissions
-
-
-from uuid import uuid4
-
 
 @router.post("/roles")
 async def create_role(role: RoleCreate, db=Depends(get_db)):
-    """Create a new role.
-
-    Args:
-        role (RoleCreate): The role to be created
-
-    Returns:
-        Role: The created role
-    """
     new_role = OrganizationRole(
         name=role.name,
         description=role.description,

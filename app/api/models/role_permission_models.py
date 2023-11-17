@@ -45,15 +45,11 @@ class RolePermission(Base):  # type: ignore
       id (str): The id of the role permission.
       role_id (str): The id of the role.
       permission_id (str): The id of the permission.
-      is_deleted (bool): The flag to indicate if the role permission \
-        has been deleted.
 
       created_at (datetime): The date and time when the role permission \
         was created.
       updated_at (datetime): The date and time when the role permission \
         was last updated.
-      deleted_at (datetime): The date and time when the role permission \
-        was deleted.
 
       role (Role): The role associated with the role permission.
       permission (Permission): The permission associated with the \
@@ -70,11 +66,9 @@ class RolePermission(Base):  # type: ignore
     permission_id = Column(
         String, ForeignKey("permission.id", ondelete="CASCADE"), nullable=False
     )
-    is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
-    deleted_at = Column(DateTime, nullable=True)
 
     permission = relationship(
         "Permission", backref="role_permission", lazy=True
