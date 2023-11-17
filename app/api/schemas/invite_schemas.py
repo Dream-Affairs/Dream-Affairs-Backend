@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr
 class RoleCreate(BaseModel):
     name: str
     description: str
+    organization_id: str
     permissions: list[str]
 
 

@@ -272,7 +272,6 @@ class OrganizationRole(Base):  # type: ignore
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
-    deleted_at = Column(DateTime, nullable=True)
 
     organization = relationship(
         "Organization",

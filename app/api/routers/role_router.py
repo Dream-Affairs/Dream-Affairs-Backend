@@ -19,16 +19,23 @@ async def get_permissions(db=Depends(get_db)):
     return permissions
 
 
-@router.get("/roles")
-async def get_roles(db=Depends(get_db)):
+@router.get("/roles/{organization_id}")
+async def get_role(organization_id: str, db=Depends(get_db)):
     """
-    Get all roles
+    Get all role for an organization
+
+    Args:
+        organization_id (int): The organization id
 
     Returns:
-        list: A list of roles
+        Role: The role
     """
-    roles = db.query(OrganizationRole).all()
-    return roles
+    role = (
+        db.query(OrganizationRole)
+        .filter(OrganizationRole.organization_id == organization_id)
+        .all()
+    )
+    return role
 
 
 @router.post("/roles")
@@ -38,7 +45,7 @@ async def create_role(role: RoleCreate, db=Depends(get_db)):
 
     Args:
         role (RoleCreate): The role to be created
-    
+
     Returns:
         Role: The created role
     """
@@ -53,8 +60,10 @@ async def create_role(role: RoleCreate, db=Depends(get_db)):
 
     for permission in role.permissions:
         new_permission = RolePermission(
-            role_id=new_role.id, permission_id=permission
+            organization_role_id=new_role.id, permission_id=permission
         )
         db.add(new_permission)
         db.commit()
         db.refresh(new_permission)
+
+    return new_role
