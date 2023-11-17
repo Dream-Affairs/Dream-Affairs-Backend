@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.api.responses.custom_responses import CustomException, CustomResponse
+from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
     ForgotPasswordData,
@@ -50,10 +50,11 @@ def signup(
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
-    if not account_service(user, db):
-        raise CustomException(
-            status_code=500, message="Failed to create account"
-        )
+    _, err = account_service(user, db)
+
+    if err:
+        raise err
+
     background_tasks.add_task(
         send_company_email_api,
         subject="Welcome to Dream Affairs",
@@ -61,6 +62,7 @@ def signup(
         template="_email_verification.html",
         kwargs={"name": user.first_name, "verification_link": ...},
     )
+
     return CustomResponse(
         status_code=status.HTTP_201_CREATED,
         message="Account created successfully",
