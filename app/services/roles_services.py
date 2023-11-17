@@ -1,13 +1,29 @@
+"""Role services."""
+from uuid import uuid4
+
 from sqlalchemy.orm.session import Session
 
 from app.api.models.organization_models import Organization, OrganizationRole
 from app.api.models.role_permission_models import Permission, RolePermission
-from app.services.custom_services import model_to_dict
 from app.api.responses.custom_responses import CustomException
-from uuid import uuid4
+from app.services.custom_services import model_to_dict
 
 
 def create_new_role(db: Session, role: dict):
+    """Create new role.
+
+    Args:
+        db (Session): Database session
+        role (dict): Role details
+
+    Raises:
+        CustomException: If organization does not exist
+        CustomException: If role with same name already exists
+        CustomException: If permission does not exist
+
+    Returns:
+        dict: Role details
+    """
     # Check if organization exists
     organization = (
         db.query(Organization)
@@ -35,6 +51,7 @@ def create_new_role(db: Session, role: dict):
             data={"role_name": role.name},
         )
 
+    # Create new role
     new_role = OrganizationRole(
         name=role.name,
         description=role.description,
@@ -48,6 +65,7 @@ def create_new_role(db: Session, role: dict):
 
     try:
         for permission_id in role.permissions:
+            # Check if permission exists
             permission = (
                 db.query(Permission)
                 .filter(Permission.id == permission_id)
@@ -57,10 +75,9 @@ def create_new_role(db: Session, role: dict):
                 raise CustomException(
                     status_code=400,
                     message="Permission does not exist",
-                    data={
-                        "permission_id": permission_id
-                    }
+                    data={"permission_id": permission_id},
                 )
+            # Create new role permission
             new_permission = RolePermission(
                 id=uuid4().hex,
                 organization_role_id=new_role.id,
@@ -70,17 +87,15 @@ def create_new_role(db: Session, role: dict):
             db.commit()
             db.refresh(new_permission)
 
-            permissions.append({
-                "id": permission_id,
-                "name": permission.name,
-                "description": permission.description,
-            })
-    except Exception:
-        raise CustomException(
-            status_code=400,
-            message="Failed to create role",
-            data={"permission_id": permission_id},
-        )
+            permissions.append(
+                {
+                    "id": permission_id,
+                    "name": permission.name,
+                    "description": permission.description,
+                }
+            )
+    except Exception as e:
+        raise e
 
     return {
         "id": new_role.id,
@@ -91,6 +106,19 @@ def create_new_role(db: Session, role: dict):
 
 
 def get_all_roles(db: Session, organization_id: str):
+    """Get all roles.
+
+    Args:
+        db (Session): Database session
+        organization_id (str): Organization ID
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        list: List of roles
+    """
+    # Check if organization exists
     organization = (
         db.query(Organization)
         .filter(Organization.id == organization_id)
@@ -116,6 +144,20 @@ def get_all_roles(db: Session, organization_id: str):
 
 
 def get_role_details(db: Session, organization_id: str, role_id: str):
+    """Get role details.
+
+    Args:
+        db (Session): Database session
+        organization_id (str): Organization ID
+        role_id (str): Role ID
+
+    Raises:
+        CustomException: If organization does not exist
+        CustomException: If role does not exist
+
+    Returns:
+        dict: Role details
+    """
     # Check if organization exists
     organization = (
         db.query(Organization)
