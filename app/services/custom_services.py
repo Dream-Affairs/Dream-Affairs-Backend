@@ -1,8 +1,9 @@
-""" This module contains the custom services for the application. """
+"""This module contains the custom services for the application."""
 from datetime import datetime
 
+
 def model_to_dict(models):
-    """Converts a list of SQLAlchemy models to a list of dictionaries
+    """Converts a list of SQLAlchemy models to a list of dictionaries.
 
     Args:
         models (list): List of SQLAlchemy models
@@ -10,8 +11,9 @@ def model_to_dict(models):
     Returns:
         list: A list of dictionary representations of the models
     """
+
     def convert_datetime(value):
-        """Converts datetime objects to ISO format"""
+        """Converts datetime objects to ISO format."""
         if isinstance(value, datetime):
             return value.isoformat()
         return value

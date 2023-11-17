@@ -1,7 +1,5 @@
 from pydantic import BaseModel, EmailStr
 
-""" Request Models """
-
 
 class RoleCreate(BaseModel):
     name: str
