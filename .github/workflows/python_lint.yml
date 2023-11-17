@@ -26,7 +26,7 @@ jobs:
 
       - name: Run flake8
         run: |
-          flake8 --max-line-length=79 --ignore=W503, B008
+          flake8 --max-line-length=79 --ignore=W503,B008
   pylint:
     runs-on: ubuntu-latest
     steps:
