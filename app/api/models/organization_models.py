@@ -219,7 +219,6 @@ class OrganizationMember(Base):  # type: ignore
         nullable=False,
     )
     invite_token = Column(String, nullable=False)
-    is_default = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
@@ -269,6 +268,7 @@ class OrganizationRole(Base):  # type: ignore
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
+    is_default = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
