@@ -19,7 +19,6 @@ from app.api.models.meal_models import (  # noqa: F401
 )
 from app.api.models.role_permission_models import (  # noqa: F401
     Permission,
-    Role,
     RolePermission,
 )
 from app.database.connection import Base
@@ -112,10 +111,6 @@ class Organization(Base):  # type: ignore
     )
     organization_roles = relationship(
         "OrganizationRole",
-        back_populates="organization",
-    )
-    organization_invite = relationship(
-        "OrganizationInvite",
         back_populates="organization",
     )
     checklist = relationship(
@@ -223,6 +218,8 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
+    invite_token = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -264,12 +261,14 @@ class OrganizationRole(Base):  # type: ignore
 
     __tablename__ = "organization_role"
     id = Column(String, primary_key=True, default=uuid4().hex)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
     organization_id = Column(
         String,
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
-    role_id = Column(String, ForeignKey("role.id"), nullable=False)
+    is_default = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -278,72 +277,9 @@ class OrganizationRole(Base):  # type: ignore
         "Organization",
         back_populates="organization_roles",
     )
-    role = relationship("Role", backref="organization_role", lazy="joined")
     members = relationship(
         "OrganizationMember",
         back_populates="member_role",
-    )
-
-
-class OrganizationInvite(Base):  # type: ignore
-    """
-    OrganizationInvite:
-      This class is used to create the organization_invite table.
-
-    Args:
-      Base: This is the base class from which all the models inherit.
-
-    Attributes:
-      id: This is the primary key of the table.
-      account_id: This is the foreign key of the account table.
-      organization_id: This is the foreign key of the organization table.
-      role_id: This is the foreign key of the role table.
-      token: This is the token of the organization invite.
-      time_sent: This is the date and time when the organization invite \
-        was sent.
-      time_accepted_or_rejected: This is the date and time when the \
-        organization invite was accepted or rejected.
-      status: This is the status of the organization invite.
-
-    Relationships:
-      account: This is the relationship between the account and \
-        organization_invite table.
-      organization: This is the relationship between the organization \
-        and organization_invite table.
-      role: This is the relationship between the role and \
-        organization_invite table.
-    """
-
-    __tablename__ = "organization_invite"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    account_id = Column(
-        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
-    )
-    organization_id = Column(
-        String,
-        ForeignKey("organization.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    organization_member_id = Column(
-        String, ForeignKey("organization_member.id"), nullable=True
-    )
-    token = Column(String, nullable=False)
-    time_sent = Column(DateTime, default=datetime.utcnow)
-    time_accepted_or_rejected = Column(DateTime, nullable=True)
-    status = Column(
-        ENUM("pending", "accepted", "rejected", name="invitation_status"),
-        nullable=False,
-    )
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-    account = relationship(
-        "Account",
-        backref="organization_invite",
-    )
-    organization = relationship(
-        "Organization", back_populates="organization_invite", lazy="joined"
     )
 
 
