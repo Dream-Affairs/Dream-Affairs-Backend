@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from sqlalchemy.orm.session import Session
 
+from app.api.models.account_models import Account
 from app.api.models.organization_models import (
     Organization,
     OrganizationMember,
@@ -68,6 +69,36 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
             data={"email": member.email},
         )
 
+    # Check if member has an account
+    member_account = (
+        db.query(Account).filter(Account.email == member.email).first()
+    )
+    if not member_account:
+        # Create account
+        try:
+            # split name to get first and last name
+            name = member.name.split(" ")
+            first_name = name[0]
+            last_name = name[1] if len(name) > 1 else None
+
+            member_account = Account(
+                id=uuid4().hex,
+                first_name=first_name,
+                last_name=last_name,
+                email=member.email,
+                password_hash=" ",  # nosec
+            )
+            db.add(member_account)
+            db.commit()
+            db.refresh(member_account)
+        except Exception as exc:
+            print(exc)
+            raise CustomException(
+                status_code=500,
+                message="Failed to create account",
+                data={"email": member.email},
+            ) from exc
+
     # Generate invite token
     invite_token = uuid4().hex
 
@@ -75,8 +106,7 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
     try:
         new_member = OrganizationMember(
             id=uuid4().hex,
-            name=member.name,
-            email=member.email,
+            account_id=member_account.id,
             organization_id=member.organization_id,
             organization_role_id=member.role_id,
             invite_token=invite_token,
@@ -90,8 +120,8 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
 
     return {
         "id": new_member.id,
-        "name": new_member.name,
-        "email": new_member.email,
+        "name": member.name,
+        "email": member.email,
         "role": role.name,
         "organization": organization.name,
         "invite_token": new_member.invite_token,

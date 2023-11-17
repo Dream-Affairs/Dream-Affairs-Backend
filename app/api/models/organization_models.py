@@ -213,8 +213,6 @@ class OrganizationMember(Base):  # type: ignore
     account_id = Column(
         String, ForeignKey("account.id", ondelete="CASCADE"), nullable=True
     )
-    name = Column(String, nullable=False)
-    email = Column(String, nullable=False)
     organization_role_id = Column(
         String,
         ForeignKey("organization_role.id", ondelete="CASCADE"),
