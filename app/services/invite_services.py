@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from sqlalchemy.orm.session import Session
+from sqlalchemy.sql.expression import not_
 
 from app.api.models.account_models import Account
 from app.api.models.organization_models import (
@@ -222,10 +223,11 @@ def accepted_invites(
         member = (
             db.query(OrganizationMember)
             .filter(OrganizationMember.organization_id == organization_id)
-            .filter(OrganizationMember.is_accepted is True)
-            .filter(OrganizationMember.is_suspended is False)
+            .filter(OrganizationMember.is_accepted)
+            .filter(not_(OrganizationMember.is_suspended))
             .all()
         )
+        print(member)
     except Exception as exc:
         raise CustomException(
             status_code=500,
@@ -283,7 +285,7 @@ def suspended_invites(
         member = (
             db.query(OrganizationMember)
             .filter(OrganizationMember.organization_id == organization_id)
-            .filter(OrganizationMember.is_suspended is True)
+            .filter(OrganizationMember.is_suspended)
             .all()
         )
     except Exception as exc:
