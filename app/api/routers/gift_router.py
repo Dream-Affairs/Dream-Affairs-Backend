@@ -29,7 +29,7 @@ async def upload_gift_image(
     Args:
         member_id: the id to authenticate the user\
         (9174b84cf01f49a4ab26a79e736fbdff).
-        gift_image: the file for to use as gift image
+        gift_image: the file to use as gift image
         db: database session.
 
     Return: returns CustomResponse containing the product_image_url
