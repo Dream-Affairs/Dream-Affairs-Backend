@@ -11,7 +11,13 @@ from app.api.models.budget_expenditure_models import (  # noqa: F401
     Budget,
     Expenditure,
 )
-from app.api.models.gift_models import Gift  # noqa: F401
+from app.api.models.gift_models import (  # noqa: F401
+    BankDetail,
+    Gift,
+    LinkDetail,
+    PaymentOption,
+    WalletDetail,
+)
 from app.api.models.meal_models import (  # noqa: F401
     Meal,
     MealCategory,
@@ -116,6 +122,16 @@ class Organization(Base):  # type: ignore
     checklist = relationship(
         "Checklist",
         back_populates="organization",
+    )
+
+    bank_details = relationship(
+        "BankDetail", back_populates="organization", lazy="joined"
+    )
+    link_details = relationship(
+        "LinkDetail", back_populates="organization", lazy="joined"
+    )
+    wallet_details = relationship(
+        "WalletDetail", back_populates="organization", lazy="joined"
     )
 
 
