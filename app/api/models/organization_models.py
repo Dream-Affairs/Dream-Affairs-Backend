@@ -19,7 +19,6 @@ from app.api.models.meal_models import (  # noqa: F401
 )
 from app.api.models.role_permission_models import (  # noqa: F401
     Permission,
-    Role,
     RolePermission,
 )
 from app.database.connection import Base
@@ -114,10 +113,6 @@ class Organization(Base):  # type: ignore
         "OrganizationRole",
         back_populates="organization",
     )
-    organization_invite = relationship(
-        "OrganizationInvite",
-        back_populates="organization",
-    )
     checklist = relationship(
         "Checklist",
         back_populates="organization",
@@ -191,7 +186,12 @@ class OrganizationMember(Base):  # type: ignore
       id: This is the primary key of the table.
       organization_id: This is the foreign key of the organization table.
       account_id: This is the foreign key of the account table.
-      role_id: This is the foreign key of the role table.
+      organization_role_id: This is the foreign key of the \
+        organization_role table.
+      invite_token: This is the token which is used to invite the \
+        organization member.
+      is_accepted: This is the boolean value which tells whether the \
+        member is accepted or not.
       is_suspended: This is the boolean value which tells whether the \
         member is suspended or not.
       created_at: This is the date and time when the organization \
@@ -204,8 +204,8 @@ class OrganizationMember(Base):  # type: ignore
         organization_member table.
       account: This is the relationship between the account and \
         organization_member table.
-      role: This is the relationship between the role and \
-        organization_member table.
+      member_role: This is the relationship between the organization_role \
+        and organization_member table.
     """
 
     __tablename__ = "organization_member"
@@ -223,6 +223,8 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
+    invite_token = Column(String, nullable=False)
+    is_accepted = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -247,9 +249,11 @@ class OrganizationRole(Base):  # type: ignore
 
     Attributes:
       id: This is the primary key of the table.
-      organization_id: This is the foreign key of the organization \
-        table.
-      role_id: This is the foreign key of the role table.
+      name: This is the name of the organization role.
+      description: This is the description of the organization role.
+      organization_id: This is the foreign key of the organization tsble.
+      is_default: This is the boolean value which tells whether the \
+        organization role is default or not.
       created_at: This is the date and time when the organization\
          role was created.
       updated_at: This is the date and time when the organization\
@@ -258,18 +262,20 @@ class OrganizationRole(Base):  # type: ignore
     Relationships:
       organization: This is the relationship between the organization \
         and organization_role table.
-      role: This is the relationship between the role and \
-        organization_role table.
+      members: This is the relationship between the organization_role \
+        and organization_member table.
     """
 
     __tablename__ = "organization_role"
     id = Column(String, primary_key=True, default=uuid4().hex)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
     organization_id = Column(
         String,
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
-    role_id = Column(String, ForeignKey("role.id"), nullable=False)
+    is_default = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -278,72 +284,9 @@ class OrganizationRole(Base):  # type: ignore
         "Organization",
         back_populates="organization_roles",
     )
-    role = relationship("Role", backref="organization_role", lazy="joined")
     members = relationship(
         "OrganizationMember",
         back_populates="member_role",
-    )
-
-
-class OrganizationInvite(Base):  # type: ignore
-    """
-    OrganizationInvite:
-      This class is used to create the organization_invite table.
-
-    Args:
-      Base: This is the base class from which all the models inherit.
-
-    Attributes:
-      id: This is the primary key of the table.
-      account_id: This is the foreign key of the account table.
-      organization_id: This is the foreign key of the organization table.
-      role_id: This is the foreign key of the role table.
-      token: This is the token of the organization invite.
-      time_sent: This is the date and time when the organization invite \
-        was sent.
-      time_accepted_or_rejected: This is the date and time when the \
-        organization invite was accepted or rejected.
-      status: This is the status of the organization invite.
-
-    Relationships:
-      account: This is the relationship between the account and \
-        organization_invite table.
-      organization: This is the relationship between the organization \
-        and organization_invite table.
-      role: This is the relationship between the role and \
-        organization_invite table.
-    """
-
-    __tablename__ = "organization_invite"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    account_id = Column(
-        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
-    )
-    organization_id = Column(
-        String,
-        ForeignKey("organization.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    organization_member_id = Column(
-        String, ForeignKey("organization_member.id"), nullable=True
-    )
-    token = Column(String, nullable=False)
-    time_sent = Column(DateTime, default=datetime.utcnow)
-    time_accepted_or_rejected = Column(DateTime, nullable=True)
-    status = Column(
-        ENUM("pending", "accepted", "rejected", name="invitation_status"),
-        nullable=False,
-    )
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow)
-
-    account = relationship(
-        "Account",
-        backref="organization_invite",
-    )
-    organization = relationship(
-        "Organization", back_populates="organization_invite", lazy="joined"
     )
 
 

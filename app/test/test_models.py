@@ -18,16 +18,11 @@ from app.api.models.meal_models import Meal, MealCategory, MealTag
 from app.api.models.organization_models import (
     Organization,
     OrganizationDetail,
-    OrganizationInvite,
     OrganizationMember,
     OrganizationRole,
     OrganizationTag,
 )
-from app.api.models.role_permission_models import (
-    Permission,
-    Role,
-    RolePermission,
-)
+from app.api.models.role_permission_models import Permission, RolePermission
 from app.database.connection import Base
 
 DATABASE_URL = config("DATABASE_URL", default="sqlite:///test.db")
@@ -51,25 +46,12 @@ auth = Auth(
     id=AUTH_ID, account_id=ACCOUNT_ID, provider="google", account=account
 )
 
-ROLE_ID = "3kjbk34jh34k5j345k3jg53k5jh3g5k3t4j5hg3k543j45gk35"
-role = Role(
-    id=ROLE_ID,
-    name="Test Role",
-    description="Test Description",
-    is_deleted=False,
-)
-
 PERMISSION_ID = "3kjbk34jh34k5j345k3jg53k5jh3g5k34j5hge3k543j45gk35"
 permission = Permission(
     id=PERMISSION_ID,
     name="Test Permission",
     description="Test Description",
     is_deleted=False,
-)
-
-ROLE_PERMISSION_ID = "3kjbk34jh34k5j345k3jg53k5jwh3g5k34j5hg3k543j45gk35"
-role_permission = RolePermission(
-    id=ROLE_PERMISSION_ID, role_id=ROLE_ID, permission_id=PERMISSION_ID
 )
 
 ORGANIZATION_ID = "23nbm4h5m45345345jgm34535gk34j5g3k4j5g34"
@@ -100,7 +82,13 @@ ORGANIZATION_ROLE_ID = "34bv45b6v6mmv3h456456bv54mn6b6v645v"
 organization_role = OrganizationRole(
     id=ORGANIZATION_ROLE_ID,
     organization_id=ORGANIZATION_ID,
-    role_id=ROLE_ID,
+)
+
+ROLE_PERMISSION_ID = "3kjbk34jh34k5j345k3jg53k5jwh3g5k34j5hg3k543j45gk35"
+role_permission = RolePermission(
+    id=ROLE_PERMISSION_ID,
+    role_id=ORGANIZATION_ROLE_ID,
+    permission_id=PERMISSION_ID,
 )
 
 ORGANIZATION_MEMBER_ID = 1
@@ -108,20 +96,10 @@ organization_member = OrganizationMember(
     id=ORGANIZATION_MEMBER_ID,
     organization_id=ORGANIZATION_ID,
     account_id=ACCOUNT_ID,
-    organization_role_id=ROLE_ID,
+    organization_role_id=ORGANIZATION_ROLE_ID,
     organization=organization,
     account=account,
     member_role=organization_role,
-)
-
-ORGANIZATION_INVITE_ID = 1
-organization_invite = OrganizationInvite(
-    id=ORGANIZATION_INVITE_ID,
-    organization_id=ORGANIZATION_ID,
-    account_id=ACCOUNT_ID,
-    organization_member_id=ORGANIZATION_MEMBER_ID,
-    token="test_token",
-    status="pending",
 )
 
 ORGANIZATION_TAG_ID = "vm64n5v36jh5v63jh6mn3456vmn3vmn5b63m45nv"
@@ -275,20 +253,6 @@ def test_account_auth_realtionship(
     assert auth_instance.account.first_name == account.first_name
 
 
-def test_role_model(
-    setup_module_fixture: Any,
-) -> None:
-    """Test the role model."""
-    db = setup_module_fixture
-    db.add(role)
-    db.commit()
-    db.refresh(role)
-
-    assert role.name == "Test Role"
-    assert role.description == "Test Description"
-    assert role.is_deleted is False
-
-
 def test_permission_model(
     setup_module_fixture: Any,
 ) -> None:
@@ -312,7 +276,7 @@ def test_role_permission_model(
     db.commit()
     db.refresh(role_permission)
 
-    assert role_permission.role_id == role.id
+    assert role_permission.role_id == organization_role.id
     assert role_permission.permission_id == permission.id
 
 
@@ -323,12 +287,12 @@ def test_role_permission_realtionship(
     db = setup_module_fixture
     role_permission_instance = (
         db.query(RolePermission)
-        .filter(RolePermission.role_id == role.id)
+        .filter(RolePermission.role_id == organization_role.id)
         .first()
     )
 
-    assert role_permission_instance.role_id == role.id
-    assert role_permission_instance.role.name == role.name
+    assert role_permission_instance.role_id == organization_role.id
+    assert role_permission_instance.role.name == organization_role.name
     assert role_permission_instance.permission_id == permission.id
     assert role_permission_instance.permission.name == permission.name
 
@@ -409,7 +373,6 @@ def test_organization_role_model(
     db.refresh(organization_role)
 
     assert organization_role.organization_id == organization.id
-    assert organization_role.role_id == role.id
 
 
 def test_organization_role_realtionship(
@@ -425,8 +388,8 @@ def test_organization_role_realtionship(
 
     assert organization_role_instance.organization_id == organization.id
     assert organization_role_instance.organization.name == organization.name
-    assert organization_role_instance.role_id == role.id
-    assert organization_role_instance.role.name == role.name
+    assert organization_role_instance.role_id == organization_role.id
+    assert organization_role_instance.role.name == organization_role.name
     assert organization_role_instance.members[0].account_id == account.id
 
 
@@ -448,40 +411,6 @@ def test_organization_member_realtionship(
         organization_member_instance.account.first_name == account.first_name
     )
     assert organization_member_instance.member_role.id == organization_role.id
-
-
-def test_organization_invite_model(
-    setup_module_fixture: Any,
-) -> None:
-    """Test the organization_invite model."""
-    db = setup_module_fixture
-    db.add(organization_invite)
-    db.commit()
-    db.refresh(organization_invite)
-
-    assert organization_invite.organization_id == organization.id
-    assert organization_invite.account_id == account.id
-    assert organization_invite.token == "test_token"
-    assert organization_invite.status == "pending"
-
-
-def test_organization_invite_realtionship(
-    setup_module_fixture: Any,
-) -> None:
-    """Test the organization organization_invite relationship."""
-    db = setup_module_fixture
-    organization_invite_instance = (
-        db.query(OrganizationInvite)
-        .filter(OrganizationInvite.organization_id == organization.id)
-        .first()
-    )
-
-    assert organization_invite_instance.organization_id == organization.id
-    assert organization_invite_instance.organization.name == organization.name
-    assert organization_invite_instance.account_id == account.id
-    assert (
-        organization_invite_instance.account.first_name == account.first_name
-    )
 
 
 def test_organization_tag_model(

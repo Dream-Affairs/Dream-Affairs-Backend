@@ -79,12 +79,6 @@ class Gift(Base):  # type: ignore
     currency = Column(
         String,
     )
-    payment_provider = Column(
-        String,
-    )
-    payment_link = Column(
-        String,
-    )
     gift_type = Column(
         ENUM("physical", "cash", name="gift_type"), nullable=False
     )
@@ -109,4 +103,141 @@ class Gift(Base):  # type: ignore
 
     organization = relationship(
         "Organization", back_populates="gifts", lazy="joined"
+    )
+    payment_options = relationship(
+        "PaymentOption", back_populates="gift", lazy="joined"
+    )
+
+
+class PaymentOption(Base):  # type: ignore
+    """
+    Payment option model:
+
+    Attributes:
+        id (str): The id of the payment option.
+        payment_type (str): The type of the payment option.
+        gift_id (str): The id of the gift to which the payment option belongs.
+        payment_option_id (str): The id of the payment option.
+        bank (object): The bank details of the payment option.
+        wallet (object): The wallet details of the payment option.
+        payment_link (object): The payment link details of the payment option.
+        gift (object): The gift to which the payment option belongs.
+
+    relationship:
+        bank (object): The bank details of the payment option.
+        wallet (object): The wallet details of the payment option.
+        payment_link (object): The payment link details of the payment option.
+        gift (object): The gift to which the payment option belongs.
+    """
+
+    __tablename__ = "payment_option"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    payment_type = Column(
+        ENUM("bank", "wallet", "link", name="payment_type"),
+        nullable=False,
+    )
+    gift_id = Column(
+        String,
+        ForeignKey("gift.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    payment_option_id = Column(String, nullable=False)
+
+    gift = relationship(
+        "Gift", back_populates="payment_options", lazy="joined"
+    )
+
+
+class BankDetail(Base):  # type: ignore
+    """
+    Bank detail model:
+
+    Attributes:
+        id (str): The id of the bank detail.
+        organization_id (str): The id of the organization to which the bank \
+            detail belongs.
+        name (str): The name of the bank.
+        account_name (str): The name of the account.
+        account_number (str): The account number.
+
+    relationship:
+        payment_options (object): The payment options to which the bank \
+            detail belongs.
+    """
+
+    __tablename__ = "bank_detail"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)  # bank name
+    account_name = Column(String, nullable=False)
+    account_number = Column(String, nullable=False)
+
+    payment_options = relationship(
+        "PaymentOption", back_populates="bank", lazy="joined"
+    )
+
+
+class WalletDetail(Base):  # type: ignore
+    """
+    Wallet detail model:
+
+    Attributes:
+        id (str): The id of the wallet detail.
+        organization_id (str): The id of the organization to which the \
+            wallet detail belongs.
+        name (str): The name of the wallet.
+        wallet_tag (str): The tag of the wallet.
+
+    relationship:
+        payment_options (object): The payment options to which the wallet \
+            detail belongs.
+    """
+
+    __tablename__ = "wallet_detail"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)  # wallet name
+    wallet_tag = Column(String, nullable=False)
+
+    payment_options = relationship(
+        "PaymentOption", back_populates="wallet", lazy="joined"
+    )
+
+
+class LinkDetail(Base):  # type: ignore
+    """
+    Link detail model:
+
+    Attributes:
+        id (str): The id of the link detail.
+        organization_id (str): The id of the organization to which the \
+            link detail belongs.
+        name (str): The name of the payment link.
+        payment_link (str): The payment link.
+
+    relationship:
+        payment_options (object): The payment options to which the link \
+            detail belongs.
+    """
+
+    __tablename__ = "link_detail"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name = Column(String, nullable=False)  # payment link name
+    payment_link = Column(String, nullable=False)
+
+    payment_options = relationship(
+        "PaymentOption", back_populates="payment_link", lazy="joined"
     )
