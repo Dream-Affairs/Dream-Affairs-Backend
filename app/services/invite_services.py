@@ -1,5 +1,5 @@
 """Invite services."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from sqlalchemy.orm.session import Session
@@ -186,4 +186,215 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
         "organization": member.organization.name,
         "invite_token": member.invite_token,
         "is_accepted": member.is_accepted,
+        "is_suspended": member.is_suspended,
+    }
+
+
+def accepted_invites(
+    db: Session, organization_id: str
+) -> List[Dict[str, Any]]:
+    """Accept an invite.
+
+    Args:
+        db (Session): Database session
+        orgqnization_id (str): Invite token
+
+    Raises:
+        CustomException: If token is invalid
+
+    Returns:
+        dict: Member details
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    try:
+        member = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.organization_id == organization_id)
+            .filter(OrganizationMember.is_accepted is True)
+            .filter(OrganizationMember.is_suspended is False)
+            .all()
+        )
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to fetch accepted invites",
+            data={"organization_id": organization_id},
+        ) from exc
+
+    member_list = []
+    for i in member:
+        member_list.append(
+            {
+                "id": i.id,
+                "name": f"{i.account.first_name} {i.account.last_name}",
+                "email": i.account.email,
+                "role": i.member_role.name,
+                "organization": i.organization.name,
+                "invite_token": i.invite_token,
+                "is_accepted": i.is_accepted,
+                "is_suspended": i.is_suspended,
+            }
+        )
+
+    return member_list
+
+
+def suspended_invites(
+    db: Session, organization_id: str
+) -> List[Dict[str, Any]]:
+    """Accept an invite.
+
+    Args:
+        db (Session): Database session
+        orgqnization_id (str): Invite token
+
+    Raises:
+        CustomException: If token is invalid
+
+    Returns:
+        dict: Member details
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    try:
+        member = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.organization_id == organization_id)
+            .filter(OrganizationMember.is_suspended is True)
+            .all()
+        )
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to fetch suspended invites",
+            data={"organization_id": organization_id},
+        ) from exc
+
+    member_list = []
+    for i in member:
+        member_list.append(
+            {
+                "id": i.id,
+                "name": f"{i.account.first_name} {i.account.last_name}",
+                "email": i.account.email,
+                "role": i.member_role.name,
+                "organization": i.organization.name,
+                "invite_token": i.invite_token,
+                "is_accepted": i.is_accepted,
+                "is_suspended": i.is_suspended,
+            }
+        )
+
+    return member_list
+
+
+def suspend_member(
+    db: Session,
+    organization_id: str,
+    member_id: str,
+) -> Dict[str, Any]:
+    """Suspend a member.
+
+    Args:
+        db (Session): Database session
+        organization_id (str): Organization ID
+        member_id (str): Member ID
+
+    Raises:
+        CustomException: If organization does not exist
+        CustomException: If member does not exist
+        CustomException: If member is already suspended
+        CustomException: If member is not accepted
+        CustomException: If failed to suspend member
+
+    Returns:
+        dict: Member details
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    # Check if member exists
+    member = (
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.organization_id == organization_id)
+        .filter(OrganizationMember.id == member_id)
+        .first()
+    )
+    if not member:
+        raise CustomException(
+            status_code=404,
+            message="Member not found",
+            data={"member_id": member_id},
+        )
+
+    # Check if member is already suspended
+    if member.is_suspended:
+        raise CustomException(
+            status_code=400,
+            message="Member is already suspended",
+            data={"member_id": member_id},
+        )
+
+    # Check if member is accepted
+    if not member.is_accepted:
+        raise CustomException(
+            status_code=400,
+            message="Member has not accepted invite",
+            data={"member_id": member_id},
+        )
+
+    # Suspend member
+    try:
+        member.is_suspended = True
+        db.commit()
+        db.refresh(member)
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to suspend member",
+            data={"member_id": member_id},
+        ) from exc
+
+    return {
+        "id": member.id,
+        "name": f"{member.account.first_name} {member.account.last_name}",
+        "email": member.account.email,
+        "role": member.member_role.name,
+        "organization": member.organization.name,
+        "invite_token": member.invite_token,
+        "is_accepted": member.is_accepted,
+        "is_suspended": member.is_suspended,
     }
