@@ -1,5 +1,5 @@
 """Invite services."""
-from typing import Any, Dict
+from typing import Any, Dict, List
 from uuid import uuid4
 
 from sqlalchemy.orm.session import Session
@@ -187,3 +187,62 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
         "invite_token": member.invite_token,
         "is_accepted": member.is_accepted,
     }
+
+
+def accepted_invites(
+    db: Session, organization_id: str
+) -> List[Dict[str, Any]]:
+    """Accept an invite.
+
+    Args:
+        db (Session): Database session
+        orgqnization_id (str): Invite token
+
+    Raises:
+        CustomException: If token is invalid
+
+    Returns:
+        dict: Member details
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    try:
+        member = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.organization_id == organization_id)
+            .filter(OrganizationMember.is_accepted is True)
+            .all()
+        )
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to fetch accepted invites",
+            data={"organization_id": organization_id},
+        ) from exc
+
+    member_list = []
+    for i in member:
+        member_list.append(
+            {
+                "id": i.id,
+                "name": f"{i.account.first_name} {i.account.last_name}",
+                "email": i.account.email,
+                "role": i.member_role.name,
+                "organization": i.organization.name,
+                "invite_token": i.invite_token,
+                "is_accepted": i.is_accepted,
+            }
+        )
+
+    return member_list
