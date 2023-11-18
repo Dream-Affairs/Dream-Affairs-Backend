@@ -23,7 +23,7 @@ connection_string = settings.CONNECTION_STRING
 def check_for_container(container_name: str) -> None:
     """Check if azure container exist
     Args:
-        container_name: used for naming container\
+        container_name: used for naming container
         checks if container exists.
     Return: True or False
     """
@@ -37,7 +37,7 @@ def check_for_container(container_name: str) -> None:
 def create_blob(container_name: str, raw_file: UploadFile) -> str:
     """Create a Blob on azure
     Args:
-        container_name: used to create a container if\
+        container_name: used to create a container if
             it doesn't exists
         raw_file: the file to save as blob
     Return:
@@ -100,7 +100,7 @@ def add_cash_gift(
     # upload a blob and retrieve the url
     image_file_path = create_blob(org_id, gift_image)
 
-    # payment_data = gift.model_dump()
+    # payment_data = gift.model_dump(), used for schema dump.
     payment_data["organization_id"] = org_id
     payment_data["product_image_url"] = image_file_path
 
@@ -118,8 +118,7 @@ def add_cash_gift(
         )
         return response, None
 
-    except InternalError as e:
-        print(e)
+    except InternalError:
         db.rollback()
         exception = CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
