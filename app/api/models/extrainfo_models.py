@@ -1,8 +1,8 @@
 """This file contains the models for the Extrainfo table."""
+from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, DateTime, String
-from sqlalchemy.sql import func
 
 from app.database.connection import Base
 
@@ -40,7 +40,7 @@ class Extrainfo(Base):  # type: ignore
     description = Column(String(255), default="")
     is_primary = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
-    date_created = Column(DateTime, server_default=func.now())
+    date_created = Column(DateTime, default=datetime.utcnow())
     last_updated = Column(
-        DateTime, server_default=func.now(), onupdate=func.now()
+        DateTime, default=datetime.utcnow(), onupdate=datetime.utcnow()
     )
