@@ -176,8 +176,8 @@ class BankDetail(Base):  # type: ignore
     account_name = Column(String, nullable=False)
     account_number = Column(String, nullable=False)
 
-    payment_options = relationship(
-        "PaymentOption", back_populates="bank", lazy="joined"
+    organization = relationship(
+        "Organization", back_populates="bank_details", lazy="joined"
     )
 
 
@@ -207,8 +207,8 @@ class WalletDetail(Base):  # type: ignore
     name = Column(String, nullable=False)  # wallet name
     wallet_tag = Column(String, nullable=False)
 
-    payment_options = relationship(
-        "PaymentOption", back_populates="wallet", lazy="joined"
+    organization = relationship(
+        "Organization", back_populates="wallet_details", lazy="joined"
     )
 
 
@@ -238,6 +238,6 @@ class LinkDetail(Base):  # type: ignore
     name = Column(String, nullable=False)  # payment link name
     payment_link = Column(String, nullable=False)
 
-    payment_options = relationship(
-        "PaymentOption", back_populates="payment_link", lazy="joined"
+    organization = relationship(
+        "Organization", back_populates="link_details", lazy="joined"
     )
