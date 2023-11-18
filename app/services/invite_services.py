@@ -59,7 +59,7 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
     member_exists = (
         db.query(OrganizationMember)
         .filter(OrganizationMember.organization_id == member.organization_id)
-        .filter(OrganizationMember.email == member.email)
+        .filter(OrganizationMember.account.has(email=member.email))
         .first()
     )
     if member_exists:
@@ -111,6 +111,9 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
             organization_role_id=member.role_id,
             invite_token=invite_token,
         )
+        db.add(new_member)
+        db.commit()
+        db.refresh(new_member)
     except Exception as exc:
         raise CustomException(
             status_code=500,
@@ -125,4 +128,62 @@ def invite_new_member(db: Session, member: InviteMember) -> Dict[str, Any]:
         "role": role.name,
         "organization": organization.name,
         "invite_token": new_member.invite_token,
+        "is_accepted": new_member.is_accepted,
+    }
+
+
+def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
+    """Accept an invite.
+
+    Args:
+        db (Session): Database session
+        invite_token (str): Invite token
+
+    Raises:
+        CustomException: If token is invalid
+
+    Returns:
+        dict: Member details
+    """
+    # Check if invite token is valid
+    member = (
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.invite_token == invite_token)
+        .first()
+    )
+    if not member:
+        raise CustomException(
+            status_code=400,
+            message="Invalid invite token",
+            data={"invite_token": invite_token},
+        )
+
+    # Check if member has already accepted invite
+    if member.is_accepted:
+        raise CustomException(
+            status_code=400,
+            message="Invite has already been accepted",
+            data={"invite_token": invite_token},
+        )
+
+    # Accept invite
+    try:
+        member.is_accepted = True
+        db.commit()
+        db.refresh(member)
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to accept invite",
+            data={"invite_token": invite_token},
+        ) from exc
+
+    return {
+        "id": member.id,
+        "name": f"{member.account.first_name} {member.account.last_name}",
+        "email": member.account.email,
+        "role": member.member_role.name,
+        "organization": member.organization.name,
+        "invite_token": member.invite_token,
+        "is_accepted": member.is_accepted,
     }
