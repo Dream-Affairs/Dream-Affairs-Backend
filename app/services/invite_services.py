@@ -227,7 +227,6 @@ def accepted_invites(
             .filter(not_(OrganizationMember.is_suspended))
             .all()
         )
-        print(member)
     except Exception as exc:
         raise CustomException(
             status_code=500,
