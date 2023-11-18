@@ -13,11 +13,30 @@ from sqlalchemy.orm import Session
 from app.api.models.gift_models import Gift
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
+from app.api.schemas.gift_schemas import AddProductGift
 from app.core.config import settings
 
 account_name = settings.ACCOUNT_NAME
 account_key = settings.KEY
 connection_string = settings.CONNECTION_STRING
+
+
+def fake_authenticate(member_id: str, db: Session) -> Any:
+    """This functions tries to mimic auth for a user
+    Arg:
+    member_id: the ID to validate and authenticate
+    db: the database session.
+    Return: if Authenticated return the org_id which the user belong to,
+        if fails, return False.
+    """
+    authenticate_member = (
+        db.query(Organization).filter(Organization.owner == member_id).first()
+    )
+    if not authenticate_member:
+        return False
+
+    org_id = authenticate_member.id
+    return org_id
 
 
 def check_for_container(container_name: str) -> None:
@@ -34,14 +53,14 @@ def check_for_container(container_name: str) -> None:
         container.create_container()
 
 
-def create_blob(container_name: str, raw_file: UploadFile) -> str:
+def create_blob(container_name: str, raw_file: UploadFile) -> tuple[Any, Any]:
     """Create a Blob on azure
     Args:
-        container_name: used to create a container if\
+        container_name: used to create a container if
             it doesn't exists
         raw_file: the file to save as blob
     Return:
-        Return the url to the blob on azure
+        Return a turple [None,Response] or [Response,None]
     """
     # check and create a container if not exist
     check_for_container(container_name)
@@ -55,22 +74,27 @@ def create_blob(container_name: str, raw_file: UploadFile) -> str:
     blob_client = blob_service_client.get_blob_client(
         container=container_name, blob=blob_name
     )
+
     if not blob_client.exists():
         blob_client.upload_blob(blob_data)
 
-    # the lines below is to meet up with max line length
+        # the lines below is to meet up with max line length
     acct = account_name
     cont = container_name
 
     # general format for azure blob url
     blob_url = f"https://{acct}.blob.core.windows.net/{cont}/{blob_name}"
 
-    return blob_url
+    response = CustomResponse(
+        status_code=status.HTTP_201_CREATED,
+        message="image uploaded successfully",
+        data={"product_image_url": blob_url},
+    )
+    return response
 
 
 def add_product_gift(
-    product_data: dict[str, Any],
-    gift_image: UploadFile,
+    gift: AddProductGift,
     member_id: str,
     db: Session,
 ) -> tuple[Any, Any]:
@@ -85,24 +109,18 @@ def add_product_gift(
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse
     """
-    authenticate_member = (
-        db.query(Organization).filter(Organization.owner == member_id).first()
-    )
+    member_org_id = fake_authenticate(member_id, db)
 
-    if not authenticate_member:
+    if not member_org_id:
         exception = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Invalid Owner"
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid member_id"
         )
         return None, exception
 
-    org_id = authenticate_member.id
+    org_id = member_org_id
 
-    # upload a blob and retrieve the url
-    image_file_path = create_blob(org_id, gift_image)
-
-    # product_data = gift.model_dump()
+    product_data = gift.model_dump()
     product_data["organization_id"] = org_id
-    product_data["product_image_url"] = image_file_path
 
     new_gift = Gift(**product_data)
 
@@ -118,8 +136,7 @@ def add_product_gift(
         )
         return response, None
 
-    except InternalError as e:
-        print(e)
+    except InternalError:
         db.rollback()
         exception = CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
