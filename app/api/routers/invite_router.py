@@ -8,6 +8,7 @@ from app.database.connection import get_db
 from app.services.invite_services import (
     accept_invite,
     accepted_invites,
+    suspended_invites,
     invite_new_member,
 )
 
