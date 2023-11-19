@@ -359,3 +359,22 @@ def reset_password_service(
     return CustomResponse(
         status_code=status.HTTP_200_OK, message="Password reset successful"
     )
+
+
+# remove this function when auth is implemented
+def fake_authenticate(member_id: str, db: Session) -> Any:
+    """This functions tries to mimic auth for a user
+    Arg:
+    member_id: the ID to validate and authenticate
+    db: the database session.
+    Return: if Authenticated return the org_id which the user belong to,
+        if fails, return False.
+    """
+    authenticate_member = (
+        db.query(Organization).filter(Organization.owner == member_id).first()
+    )
+    if not authenticate_member:
+        return False
+
+    org_id = authenticate_member.id
+    return org_id

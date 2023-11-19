@@ -1,58 +1,16 @@
 """This module defines the FastAPI API endpoints for registry/gift."""
 
 
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.responses.custom_responses import CustomException
 from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
 from app.database.connection import get_db
-from app.services.gift_services import (
-    add_product_gift,
-    create_blob,
-    edit_product_gift,
-    fake_authenticate,
-)
+from app.services.gift_services import add_product_gift, edit_product_gift
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
-
-
-@gift_router.post("/upload-gift-image")
-async def upload_gift_image(
-    member_id: str,
-    gift_image: Annotated[UploadFile, File()],
-    db: Session = Depends(get_db),
-) -> Any:
-    """Upload a gift image to cloud.
-
-    Args:
-
-        member_id: the id to authenticate the user
-
-        gift_image: the file to use as gift image
-
-        db: database session.
-
-    Return: returns CustomResponse containing the product_image_url
-
-    Exception:
-
-        raises a CustomException if failed to create blob
-    """
-    # fake authenticate the user
-    member_org_id = fake_authenticate(member_id, db)
-
-    if not member_org_id:
-        err = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Invalid member_id"
-        )
-        raise err
-
-    response = create_blob(member_org_id, gift_image)
-
-    return response
 
 
 @gift_router.post("/add-product-gift")
@@ -83,11 +41,7 @@ async def add_product(
             a field is missing or internal server error.
     """
 
-    response, exception = add_product_gift(
-        gift=gift_item,
-        member_id=member_id,
-        db=db,
-    )
+    response, exception = add_product_gift(gift_item, member_id, db)
     if exception:
         raise exception
 
@@ -120,11 +74,7 @@ async def edit_product(
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
-    response, exception = edit_product_gift(
-        gift_data=gift_item,
-        gift_id=gift_id,
-        db=db,
-    )
+    response, exception = edit_product_gift(gift_item, gift_id, db)
     if exception:
         raise exception
 
