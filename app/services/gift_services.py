@@ -137,6 +137,6 @@ def fetch_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     response = CustomResponse(
         status_code=status.HTTP_200_OK,
         message="success",
-        data=jsonable_encoder(gift_instance, exclude="organization"),
+        data=jsonable_encoder(gift_instance, exclude=["organization"]),
     )
     return response, None

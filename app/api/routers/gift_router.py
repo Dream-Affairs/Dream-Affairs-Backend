@@ -37,7 +37,7 @@ async def add_product(
         db(Session): the database session
 
     Response: Returns CustomResponse with 201 status code and
-        data.
+        `data` which is a dictionary containing gift details.
 
     Exception:
 
@@ -72,7 +72,7 @@ async def edit_product(
         db(Session): the database session
 
     Response: Returns CustomResponse with 201 status code and
-        data.
+        `data` which is a dictionary containing gift details.
 
     Exception:
 
@@ -99,7 +99,7 @@ async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
         db(Session): the database session
 
     Response: Returns CustomResponse with 200 status code and
-        gift data.
+        gift `data` which is a dictionary containing gift details.
 
     Exception:
 
