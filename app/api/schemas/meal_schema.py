@@ -32,12 +32,10 @@ class MealCategoryResponse(MealCategorySchema):
         from_attributes = True
 
 
-class MealSchema:
+class MealSchema(BaseModel):  # type: ignore
     """Represents the base schema for a meal."""
 
     name: str
     description: Optional[str] = ""
-    image_url: str
-    meal_category_id: str
     is_hidden: Optional[bool] = False
-    quantity: int
+    quantity: int = 0
