@@ -1,6 +1,7 @@
 """This module provides functions for handling registry/gift related
 operations."""
 
+from datetime import datetime
 from typing import Any
 
 from fastapi import status
@@ -53,7 +54,7 @@ def add_product_gift(
         response = CustomResponse(
             status_code=status.HTTP_201_CREATED,
             message="Gift successfully added",
-            data=jsonable_encoder(new_gift),
+            data=jsonable_encoder(new_gift, exclude=["organization"]),
         )
         return response, None
 
@@ -101,7 +102,7 @@ def edit_product_gift(
         response = CustomResponse(
             status_code=status.HTTP_201_CREATED,
             message="Gift successfully updated",
-            data=jsonable_encoder(gift_instance),
+            data=jsonable_encoder(gift_instance, exclude=["organization"]),
         )
         return response, None
 
@@ -133,6 +134,12 @@ def fetch_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
             status_code=status.HTTP_404_NOT_FOUND, message="Invalid gift_id"
         )
         return None, exception
+    if gift_instance.is_deleted:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The gift doesn't exist, It must have been deleted",
+        )
+        return None, exception
 
     response = CustomResponse(
         status_code=status.HTTP_200_OK,
@@ -142,7 +149,7 @@ def fetch_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def delet_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
+def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     """Delete a gift associated with the gift_id.
 
     Args:
@@ -153,20 +160,24 @@ def delet_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse containing gift data.
     """
-    gift_instance = (
-        db.query(Gift)
-        .filter(Gift.id == gift_id, Gift.is_deleted == "false")
-        .first()
-    )
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
 
     if not gift_instance:
         exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="Invalid gift_id or the gift doesn't exist",
+            message="Invalid gift_id",
         )
         return None, exception
 
-    gift_instance.is_deleted = "false"
+    if gift_instance.is_deleted:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The gift doesn't exist, It must have been deleted",
+        )
+        return None, exception
+
+    gift_instance.is_deleted = True
+    gift_instance.deleted_at = datetime.utcnow()
     db.commit()
     db.refresh(gift_instance)
 
