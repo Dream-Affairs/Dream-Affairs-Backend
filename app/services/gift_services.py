@@ -102,7 +102,7 @@ def add_product_gift(
 
     Args:
         product_data (Dict): The gift data to be added.
-        gift_image:
+
         db (Session): The database session.
 
     Returns:
@@ -141,6 +141,54 @@ def add_product_gift(
         exception = CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="Failed to add gift",
+        )
+
+        return None, exception
+
+
+def edit_product_gift(
+    gift_data: AddProductGift,
+    gift_id: str,
+    db: Session,
+) -> tuple[Any, Any]:
+    """Edit product gift  associated with user/organization.
+
+    Args:
+        gift_data (Dict): The gift data to be updated.
+        db (Session): The database session.
+
+    Returns:
+        List: [None,Exception] or [Respoonse,None]. return an exception
+        or a CustomResponse
+    """
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+
+    if not gift_instance:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid gift_id"
+        )
+        return None, exception
+
+    product_data = gift_data.model_dump(exclude_unset=True)
+
+    try:
+        for key, value in product_data.items():
+            setattr(gift_instance, key, value)
+        db.commit()
+        db.refresh(gift_instance)
+
+        response = CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Gift successfully updated",
+            data=jsonable_encoder(gift_instance),
+        )
+        return response, None
+
+    except InternalError:
+        db.rollback()
+        exception = CustomException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to update gift",
         )
 
         return None, exception

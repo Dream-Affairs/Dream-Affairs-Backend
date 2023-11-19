@@ -45,3 +45,14 @@ class AddProductGift(GiftSchema):
             Converts sqlalchemy models to dictionarits for smooth parsing"""
 
         from_attributes = True
+
+
+class EditProductGift(AddProductGift):
+    """Represents the schema for adding product gift."""
+
+    is_gift_hidden: bool
+
+    class Config:
+        """Repersents the config model for this Schema."""
+
+        from_attributes = True
