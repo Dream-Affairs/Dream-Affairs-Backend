@@ -39,9 +39,18 @@ class AddProductGift(GiftSchema):
 
     class Config:
         """Repersents the config model for this Schema
-        Aim:
-            Specify how I want my schema to react with the data I pass
-        orm_mode:
+        form_attributes:
             Converts sqlalchemy models to dictionarits for smooth parsing"""
+
+        from_attributes = True
+
+
+class EditProductGift(AddProductGift):
+    """Represents the schema for adding product gift."""
+
+    is_gift_hidden: bool
+
+    class Config:
+        """Repersents the config model for this Schema."""
 
         from_attributes = True
