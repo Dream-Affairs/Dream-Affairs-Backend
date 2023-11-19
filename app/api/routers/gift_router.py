@@ -8,7 +8,11 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
 from app.database.connection import get_db
-from app.services.gift_services import add_product_gift, edit_product_gift
+from app.services.gift_services import (
+    add_product_gift,
+    edit_product_gift,
+    fetch_gift,
+)
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
 
@@ -71,10 +75,39 @@ async def edit_product(
         data.
 
     Exception:
+
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
     response, exception = edit_product_gift(gift_item, gift_id, db)
+    if exception:
+        raise exception
+
+    return response
+
+
+@gift_router.get("/get-gift")
+async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
+    """Geta gift from the Registry.
+
+    Request:
+
+        Method: GET
+
+        gift_id: the ID of the gift to get
+
+        db(Session): the database session
+
+    Response: Returns CustomResponse with 200 status code and
+        gift data.
+
+    Exception:
+
+        CustomException: If the user is not authenticated or
+            a field is missing or internal server error.
+    """
+
+    response, exception = fetch_gift(gift_id, db)
     if exception:
         raise exception
 
