@@ -62,8 +62,3 @@ def upload_image_to_azure_blob(
         print(f"Resource not found: {not_found_err}")
         # Handle the resource not found error
         return None
-
-    # except Exception as e:
-    #     print(f"An unexpected error occurred: {e}")
-    #     # Handle other unexpected exceptions
-    #     return None
