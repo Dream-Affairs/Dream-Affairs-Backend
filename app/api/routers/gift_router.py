@@ -6,9 +6,9 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.schemas.gift_schemas import AddProductGift
+from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
 from app.database.connection import get_db
-from app.services.gift_services import add_product_gift
+from app.services.gift_services import add_product_gift, edit_product_gift
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
 
@@ -22,11 +22,49 @@ async def add_product(
     """Add a New product gift to Registry.
 
     Request:
+
         Method: POST
+
         member_id: account_id for authentication
-            "9174b84cf01f49a4ab26a79e736fbdff"
+
         gift_item(AddProductGift): Request Body containing the details of the
             product gift to be added.
+
+        db(Session): the database session
+
+    Response: Returns CustomResponse with 201 status code and
+        data.
+
+    Exception:
+
+        CustomException: If the user is not authenticated or
+            a field is missing or internal server error.
+    """
+
+    response, exception = add_product_gift(gift_item, member_id, db)
+    if exception:
+        raise exception
+
+    return response
+
+
+@gift_router.patch("/edit-product-gift")
+async def edit_product(
+    gift_id: str,
+    gift_item: EditProductGift,
+    db: Session = Depends(get_db),
+) -> Any:
+    """Edit a product gift in Registry.
+
+    Request:
+
+        Method: PATCH
+
+        gift_id: the ID of the gift to be edited
+
+        gift_item(EditProductGift): Request Body containing the details of the
+            product gift to be edited.
+
         db(Session): the database session
 
     Response: Returns CustomResponse with 201 status code and
@@ -36,12 +74,7 @@ async def add_product(
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
-
-    response, exception = add_product_gift(
-        gift=gift_item,
-        member_id=member_id,
-        db=db,
-    )
+    response, exception = edit_product_gift(gift_item, gift_id, db)
     if exception:
         raise exception
 
