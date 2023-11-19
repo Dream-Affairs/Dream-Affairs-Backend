@@ -4,7 +4,11 @@ operations."""
 
 from typing import Any
 
-from azure.storage.blob import BlobServiceClient, ContainerClient
+from azure.storage.blob import (
+    BlobServiceClient,
+    ContainerClient,
+    ContentSettings,
+)
 from fastapi import UploadFile, status
 from fastapi.responses import Response
 
@@ -54,7 +58,8 @@ def create_blob(container_name: str, raw_file: UploadFile) -> tuple[Any, Any]:
     )
 
     if not blob_client.exists():
-        blob_client.upload_blob(blob_data)
+        content_settings = ContentSettings(content_type=raw_file.content_type)
+        blob_client.upload_blob(blob_data, content_settings=content_settings)
 
     # general format for azure blob url
     blob_url = f"https://{settings.ACCOUNT_NAME}.blob.core.windows.net"
@@ -90,7 +95,8 @@ def fetch_blob(url: str) -> Response:
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND, message="Blob not found"
         )
-
+    file = blob_client.download_blob()
     return Response(
-        content=blob_client.download_blob().readall(), media_type="image/png"
+        content=file.readall(),
+        media_type=file.properties.content_settings.content_type,
     )

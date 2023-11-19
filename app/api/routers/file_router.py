@@ -44,7 +44,7 @@ async def upload_file(
     return response
 
 
-@router.get("/get-image/{url}")
+@router.get("/get-image")
 async def get_file(url: str) -> Any:
     """
     Fetch a blob from azure
