@@ -2,10 +2,10 @@
 operations."""
 
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Union
 from uuid import uuid4
 
-from fastapi import Depends, HTTPException, status
+from fastapi import BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -21,8 +21,10 @@ from app.api.schemas.account_schemas import (
     ForgotPasswordData,
     ResetPasswordData,
     TokenData,
+    VerifyAccountTokenData,
 )
 from app.core.config import settings
+from app.services.email_services import send_company_email_api
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -76,7 +78,9 @@ def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_jwt_token(token: str, credentials_exception: HTTPException) -> str:
+def decode_jwt_token(
+    token: str, credentials_exception: HTTPException
+) -> tuple[str, str]:
     """Decode a JWT token and retrieve the account ID.
 
     Args:
@@ -95,10 +99,12 @@ def decode_jwt_token(token: str, credentials_exception: HTTPException) -> str:
 
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        account_id: Optional[str] = payload.get("account_id")
+        account_id = payload.get("account_id")
+        context = payload.get("context")
+
         if account_id is None:
             raise credentials_exception
-        return account_id
+        return (account_id, context)
     except JWTError as exc:
         raise credentials_exception from exc
 
@@ -118,7 +124,7 @@ def verify_access_token(
     Raises:
         credentials_exception: If the access token is invalid.
     """
-    account_id = decode_jwt_token(token, credentials_exception)
+    account_id, _ = decode_jwt_token(token, credentials_exception)
     return TokenData(id=account_id)
 
 
@@ -167,7 +173,9 @@ def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
     return True
 
 
-def account_service(user: AccountSchema, db: Session) -> Any:
+def account_service(
+    user: AccountSchema, background_tasks: BackgroundTasks, db: Session
+) -> Any:
     """Create a new user account and associated authentication record.
 
     Args:
@@ -221,7 +229,71 @@ def account_service(user: AccountSchema, db: Session) -> Any:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
+
+    access_token = create_access_token(
+        data={"account_id": new_user.id, "context": "verify-account"},
+        expire_mins=10,
+    )
+    url = f"/api/v1/auth/verify-account?token={access_token}"
+    print("verify accout url: ", url)
+
+    background_tasks.add_task(
+        send_company_email_api,
+        subject="Welcome to Dream Affairs",
+        recipient_email=user.email,
+        template="_email_verification.html",
+        kwargs={"name": user.first_name, "verification_link": url},
+    )
+
     return True, None
+
+
+def verify_account_service(
+    token_data: VerifyAccountTokenData, db: Session
+) -> CustomResponse:
+    """Verify an account using a verify account token.
+
+    Args:
+        token_data (VerifyAccountTokenData): The data associated with
+            the verify account token.
+        db (Session): The database session.
+
+    Returns:
+        CustomResponse: The response containing a "message" key indicating the
+            success of the verified account.
+
+    Raises:
+        CustomException: If wrong token context, the token is invalid
+        or expired, or the account is not found.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired link",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    account_id, context = decode_jwt_token(
+        token_data.token, credentials_exception
+    )
+
+    if context != "verify-account":
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Invalid or expired link",
+        )
+
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
+        )
+
+    account.is_verified = True
+    add_to_db(db, account)
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK, message="Verification successful"
+    )
 
 
 def login_service(
@@ -287,7 +359,8 @@ def forgot_password_service(
     )
     if account:
         access_token = create_access_token(
-            data={"account_id": account.id}, expire_mins=10
+            data={"account_id": account.id, "context": "reset-password"},
+            expire_mins=10,
         )
         url = f"/api/v1/auth/reset-password?token={access_token}"
         print(url)  # temporary
@@ -336,13 +409,21 @@ def reset_password_service(
             message="Passwords do not match",
         )
 
-    # Validate the token
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid or expired link",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    account_id = decode_jwt_token(token_data.token, credentials_exception)
+
+    account_id, context = decode_jwt_token(
+        token_data.token, credentials_exception
+    )
+
+    if context != "reset-password":
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Invalid or expired link",
+        )
 
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
@@ -353,7 +434,6 @@ def reset_password_service(
     # Set the new password
     hashed_password = hash_password(token_data.password)
     account.password_hash = hashed_password
-
     add_to_db(db, account)
 
     return CustomResponse(
