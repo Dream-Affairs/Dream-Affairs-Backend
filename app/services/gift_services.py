@@ -2,7 +2,7 @@
 operations."""
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List
 
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -186,3 +186,32 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
         message="Gift deleted successfully",
     )
     return response, None
+
+
+def filter_all_gifts(db: Session) -> List[Dict[str, Any]]:
+    """Fetch all gifts that are not deleted.
+
+    Args:
+        db (Session): The database session.
+
+    Returns:
+        List: [Dict[str,Any]], a list of dictionaries containing
+        gift details.
+    """
+    gift_instance = db.query(Gift).all()
+
+    if not gift_instance:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="No gifts found",
+        )
+    # an empty list to append gifts that are not deleted
+    gifts = []
+    for gift in gift_instance:
+        # check if not deleted or hidden
+        if not gift.is_deleted and not gift.is_gift_hidden:
+            # append the gift details to gifts excluding
+            # organization details.
+            gifts.append(jsonable_encoder(gift, exclude=["organization"]))
+
+    return gifts
