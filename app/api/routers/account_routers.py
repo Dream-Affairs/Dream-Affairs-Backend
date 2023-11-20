@@ -10,6 +10,7 @@ from app.api.schemas.account_schemas import (
     AccountSchema,
     ForgotPasswordData,
     ResetPasswordData,
+    VerifyAccountTokenData,
 )
 from app.database.connection import get_db
 from app.services.account_services import (
@@ -17,6 +18,7 @@ from app.services.account_services import (
     forgot_password_service,
     login_service,
     reset_password_service,
+    verify_account_service,
 )
 
 BASE_URL = "/auth"
@@ -79,6 +81,23 @@ def login(
         HTTPException: If the provided credentials are invalid.
     """
     return login_service(db, user_credentials)
+
+
+@router.post("/verify-account")
+def verify_account(
+    token_data: VerifyAccountTokenData, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """Reset the password for an account.
+
+    Args:
+        token_data: The data associated with the reset password token.
+        db: The database session.
+
+    Returns:
+        The result of the `reset_password_service` function.
+    """
+
+    return verify_account_service(token_data, db)
 
 
 @router.post("/forgot-password")
