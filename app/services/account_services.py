@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional, Union
 from uuid import uuid4
 
 from fastapi import Depends, HTTPException, status
+from fastapi.background import BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -23,6 +24,7 @@ from app.api.schemas.account_schemas import (
     TokenData,
 )
 from app.core.config import settings
+from app.services.email_services import send_company_email_api
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -167,7 +169,9 @@ def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
     return True
 
 
-def account_service(user: AccountSchema, db: Session) -> Any:
+def account_service(
+    user: AccountSchema, db: Session, background_tasks: BackgroundTasks
+) -> Any:
     """Create a new user account and associated authentication record.
 
     Args:
@@ -221,6 +225,16 @@ def account_service(user: AccountSchema, db: Session) -> Any:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
+
+    background_tasks.add_task(
+        send_company_email_api,
+        subject="Welcome to Dream Affairs",
+        recipient_email=user.email,
+        organization_id=org.id,
+        template="_email_verification.html",
+        db=db,
+        kwargs={"name": user.first_name, "verification_link": ...},
+    )
     return True, None
 
 

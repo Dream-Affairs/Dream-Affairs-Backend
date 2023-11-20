@@ -11,6 +11,7 @@ from app.api.models.budget_expenditure_models import (  # noqa: F401
     Budget,
     Expenditure,
 )
+from app.api.models.email_models import TrackEmail  # noqa: F401
 from app.api.models.gift_models import (  # noqa: F401
     BankDetail,
     Gift,
@@ -133,6 +134,7 @@ class Organization(Base):  # type: ignore
     wallet_details = relationship(
         "WalletDetail", back_populates="organization", lazy="joined"
     )
+    track_email = relationship("TrackEmail", back_populates="organization")
 
 
 class OrganizationDetail(Base):  # type: ignore
