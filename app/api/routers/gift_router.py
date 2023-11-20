@@ -3,15 +3,17 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
 from app.database.connection import get_db
 from app.services.gift_services import (
     add_product_gift,
     delete_a_gift,
     edit_product_gift,
+    fetch_all_gifts,
     fetch_gift,
 )
 
@@ -141,3 +143,35 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
         raise exception
 
     return response
+
+
+@gift_router.get("/all-gifts")
+async def get_all_gifts(db: Session = Depends(get_db)) -> CustomResponse:
+    """Get all gifts from the Registry.
+
+    Request:
+
+        Method: GET
+
+        db(Session): the database session
+
+    Response:
+
+        Returns CustomResponse with 200 status code, message,
+        and data: a List[Dict[str,Any]] containing all the gifts.
+
+
+    Exception:
+
+        CustomException: If no gifts found or server error.
+    """
+
+    try:
+        all_gifts = fetch_all_gifts(db)
+    except Exception as e:
+        raise e
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Gifts retrieved successfully",
+        data=all_gifts,
+    )

@@ -188,7 +188,7 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def filter_all_gifts(db: Session) -> List[Dict[str, Any]]:
+def fetch_all_gifts(db: Session) -> List[Dict[str, Any]]:
     """Fetch all gifts that are not deleted.
 
     Args:
@@ -206,12 +206,12 @@ def filter_all_gifts(db: Session) -> List[Dict[str, Any]]:
             message="No gifts found",
         )
     # an empty list to append gifts that are not deleted
-    gifts = []
+    all_gifts = []
     for gift in gift_instance:
         # check if not deleted or hidden
         if not gift.is_deleted and not gift.is_gift_hidden:
             # append the gift details to gifts excluding
             # organization details.
-            gifts.append(jsonable_encoder(gift, exclude=["organization"]))
+            all_gifts.append(jsonable_encoder(gift, exclude=["organization"]))
 
-    return gifts
+    return all_gifts
