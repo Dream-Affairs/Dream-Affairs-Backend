@@ -188,16 +188,16 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def fetch_all_gifts(db: Session) -> Any:
+def fetch_all_gifts(db: Session) -> tuple[Any, Any]:
     """Fetch all gifts that are not deleted.
 
     Args:
         db (Session): The database session.
 
     Returns:
-        List: [Dict[str,Any]], a list of dictionaries containing
-        gift details.
+        Tuple: [None,Exception] or [Response,Nonw]
     """
+
     gift_instance = (
         db.query(Gift)
         .filter(Gift.is_deleted is False, Gift.is_gift_hidden is False)
@@ -205,9 +205,15 @@ def fetch_all_gifts(db: Session) -> Any:
     )
 
     if not gift_instance:
-        raise CustomException(
+        exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message="No gifts found",
         )
+        return None, exception
 
-    return jsonable_encoder(gift_instance, exclude=["organization"])
+    response = CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Gifts retrieved successfully",
+        data=jsonable_encoder(gift_instance, exclude=["organization"]),
+    )
+    return response, None
