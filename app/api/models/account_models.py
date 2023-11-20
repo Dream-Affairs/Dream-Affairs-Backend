@@ -51,7 +51,7 @@ class Account(Base):  # type: ignore
     email = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     phone_number = Column(String(16))
-    is_verfiied = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
     is_2fa_enabled = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
 
