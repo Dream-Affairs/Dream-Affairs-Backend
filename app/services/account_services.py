@@ -128,6 +128,53 @@ def verify_access_token(
     return TokenData(id=account_id)
 
 
+def process_token(
+    token_data: Union[ResetPasswordData, VerifyAccountTokenData],
+    db: Session,
+    expected_context: str,
+) -> Any:
+    """Process a JWT token, validate its context, and retrieve the
+    corresponding account.
+
+    Args:
+        token_data :The data associated with the JWT token.
+        db (Session): The database session.
+        expected_context (str): The expected context for the token.
+
+    Returns:
+        Account:
+            The account associated with the token.
+
+    Raises:
+        CustomException:
+            If the token context does not match the expected context,
+            or if the account is not found in the database.
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired link",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    account_id, context = decode_jwt_token(
+        token_data.token, credentials_exception
+    )
+
+    if context != expected_context:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Invalid or expired link",
+        )
+
+    account = db.query(Account).filter(Account.id == account_id).first()
+    if not account:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
+        )
+
+    return account
+
+
 def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     """Get the current user based on the provided access token.
 
@@ -265,27 +312,7 @@ def verify_account_service(
         CustomException: If wrong token context, the token is invalid
         or expired, or the account is not found.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired link",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    account_id, context = decode_jwt_token(
-        token_data.token, credentials_exception
-    )
-
-    if context != "verify-account":
-        raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            message="Invalid or expired link",
-        )
-
-    account = db.query(Account).filter(Account.id == account_id).first()
-    if not account:
-        raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
-        )
+    account = process_token(token_data, db, expected_context="verify-account")
 
     account.is_verified = True
     add_to_db(db, account)
@@ -381,7 +408,7 @@ def forgot_password_service(
             print(e)
 
     raise CustomException(
-        status_code=500, detail="An unexpected error occurred"
+        status_code=500, message="An unexpected error occurred"
     )
 
 
@@ -409,27 +436,7 @@ def reset_password_service(
             message="Passwords do not match",
         )
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired link",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    account_id, context = decode_jwt_token(
-        token_data.token, credentials_exception
-    )
-
-    if context != "reset-password":
-        raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            message="Invalid or expired link",
-        )
-
-    account = db.query(Account).filter(Account.id == account_id).first()
-    if not account:
-        raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
-        )
+    account = process_token(token_data, db, expected_context="reset-password")
 
     # Set the new password
     hashed_password = hash_password(token_data.password)
