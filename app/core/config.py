@@ -36,5 +36,10 @@ class Settings:
     KEY = config("KEY", default="")
     CONNECTION_STRING = config("CONNECTION_STRING", default="")
 
+    FRONT_END_HOST = config(
+        "FRONT_END_HOST",
+        default="https://dream-affairs-frontend-dev.vercel.app",
+    )
+
 
 settings = Settings()

@@ -234,8 +234,7 @@ def account_service(
         data={"account_id": new_user.id, "context": "verify-account"},
         expire_mins=10,
     )
-    url = f"/api/v1/auth/verify-account?token={access_token}"
-    print("verify accout url: ", url)
+    url = f"{settings.FRONT_END_HOST}/auth/verify-account?token={access_token}"
 
     background_tasks.add_task(
         send_company_email_api,
@@ -362,7 +361,8 @@ def forgot_password_service(
             data={"account_id": account.id, "context": "reset-password"},
             expire_mins=10,
         )
-        url = f"/api/v1/auth/reset-password?token={access_token}"
+        url = f"{settings.FRONT_END_HOST}/auth/reset-password\
+?token={access_token}"
         print(url)  # temporary
 
         try:
