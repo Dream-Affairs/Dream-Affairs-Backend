@@ -12,6 +12,7 @@ from app.services.gift_services import (
     add_product_gift,
     delete_a_gift,
     edit_product_gift,
+    fetch_all_gifts,
     fetch_gift,
 )
 
@@ -137,6 +138,34 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     """
 
     response, exception = delete_a_gift(gift_id, db)
+    if exception:
+        raise exception
+
+    return response
+
+
+@gift_router.get("/all-gifts")
+async def get_all_gifts(db: Session = Depends(get_db)) -> Any:
+    """Get all gifts from the Registry.
+
+    Request:
+
+        Method: GET
+
+        db(Session): the database session
+
+    Response:
+
+        Returns CustomResponse with 200 status code, message,
+        and data: a List[Dict[str,Any]] containing all the gifts.
+
+
+    Exception:
+
+        CustomException: If no gifts found or server error.
+    """
+
+    response, exception = fetch_all_gifts(db)
     if exception:
         raise exception
 
