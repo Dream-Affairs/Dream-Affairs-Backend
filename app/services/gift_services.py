@@ -199,9 +199,7 @@ def fetch_all_gifts(db: Session) -> tuple[Any, Any]:
     """
 
     gift_instance = (
-        db.query(Gift)
-        .filter(Gift.is_deleted is False, Gift.is_gift_hidden is False)
-        .all()
+        db.query(Gift).filter_by(is_deleted=False, is_gift_hidden=False).all()
     )
 
     if not gift_instance:
