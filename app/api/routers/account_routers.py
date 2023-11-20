@@ -18,7 +18,6 @@ from app.services.account_services import (
     login_service,
     reset_password_service,
 )
-from app.services.email_services import send_company_email_api
 
 BASE_URL = "/auth"
 
@@ -50,18 +49,10 @@ def signup(
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
-    _, err = account_service(user, db)
+    _, err = account_service(user, db, background_tasks)
 
     if err:
         raise err
-
-    background_tasks.add_task(
-        send_company_email_api,
-        subject="Welcome to Dream Affairs",
-        recipient_email=user.email,
-        template="_email_verification.html",
-        kwargs={"name": user.first_name, "verification_link": ...},
-    )
 
     return CustomResponse(
         status_code=status.HTTP_201_CREATED,
