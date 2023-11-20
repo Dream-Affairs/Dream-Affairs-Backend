@@ -1,9 +1,11 @@
 """This module contains the email router services for the API."""
-from typing import Any, Dict
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
-from app.services.email_services import send_email_api
+from app.api.schemas.email_schemas import EmailSchema
+from app.database.connection import get_db
+from app.services.email_services import send_company_email_api
 
 email_router = APIRouter(prefix="/email")
 
@@ -14,12 +16,8 @@ email_router = APIRouter(prefix="/email")
     tags=["Email"],
 )
 def send_email(
-    kwargs: Dict[str, Any],
-    subject: str,
-    recipient: str,
-    sender: str,
-    sender_name: str,
-    template: str,
+    request: EmailSchema,
+    db: Session = Depends(get_db),
 ) -> None:
     """This function is used to send an email to the recipient using the API.
 
@@ -32,6 +30,11 @@ def send_email(
             It is the name in the env file.
         template: This is the template of the email.
     """
-    send_email_api(
-        subject, recipient, sender, sender_name, template, kwargs=kwargs
+    send_company_email_api(
+        request.subject,
+        request.recipient,
+        request.organization_id,
+        request.template,
+        db=db,
+        kwargs=request.kwargs,
     )
