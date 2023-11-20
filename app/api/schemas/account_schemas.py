@@ -46,6 +46,16 @@ class ForgotPasswordData(BaseModel):  # type: ignore
     email: EmailStr
 
 
+class VerifyAccountTokenData(BaseModel):  # type: ignore
+    """Data model for verifiying an account.
+
+    Attributes:
+        token (str): The account verification token.
+    """
+
+    token: str
+
+
 class ResetPasswordData(BaseModel):  # type: ignore
     """Data model for resetting a password.
 
