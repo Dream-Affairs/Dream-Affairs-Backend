@@ -1,5 +1,6 @@
 """This module contains function that ensure a Meal is created properly."""
 
+import json
 from typing import Any
 
 from fastapi import UploadFile, status
@@ -10,9 +11,7 @@ from sqlalchemy.orm import Session
 from app.api.models.meal_models import Meal, MealCategory
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
-
-# Using the blod in gift router to store images
-from app.services.blob_service import upload_image_to_azure_blob
+from app.services.file_services import create_blob
 
 
 def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
@@ -43,9 +42,12 @@ def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
         )
 
     # Checking if the meal category name already exists
-    existing_name = (
-        db.query(MealCategory).filter(MealCategory.name == schema.name).first()
-    )
+    existing_name = False
+
+    for category in valid_organization.meal_categories:
+        if category.name == schema.name:
+            existing_name = True
+            break
 
     if existing_name:
         raise CustomException(
@@ -110,6 +112,20 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
     # Convert the SQLAlchemy objects into dictionaries
     meal_category_list = []
     for meal_category in meal_categories:
+        # Serialize meals into dictionaries before push to meal_category_dict
+        meal_list = []
+        for meal in meal_category.meals:
+            meal_dict = {
+                "type": "meal",
+                "id": meal.id,
+                "name": meal.name,
+                "description": meal.description,
+                "image_url": meal.image_url,
+                "tags": meal.meal_tags
+                # Add other relevant fields from Meal model here
+            }
+            meal_list.append(meal_dict)
+
         meal_category_dict = {
             "id": meal_category.id,
             "name": meal_category.name,
@@ -118,7 +134,7 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
                 "name": meal_category.organization.name,
                 "id": meal_category.organization.id,
             },
-            "meals": meal_category.meals,
+            "meals": meal_list,  # Serialize meals as dictionaries
         }
         meal_category_list.append(meal_category_dict)
 
@@ -163,13 +179,22 @@ def create_meal_service(
         )
 
     # upload a blob and retrieve the url
-    image_url = upload_image_to_azure_blob(
-        meal_category_id, meal_img, meal_schema["name"]
-    )
+    image_url, exception = create_blob(meal_category_id, meal_img)
+
+    if exception is not None:
+        # Handle the exception, for example:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message=exception
+        )
+
+    # Extract the image url if there was no exception
+    img_dict = json.loads(image_url.body)
+    # Access the "product_image_url" value
+    product_image_url = img_dict["data"]["product_image_url"]
 
     # meal_schema = meal.model_dump()
     meal_schema["meal_category_id"] = meal_category_id
-    meal_schema["image_url"] = image_url
+    meal_schema["image_url"] = product_image_url
 
     # Compiling attributes to make up a meal model
     new_meal = Meal(**meal_schema)
