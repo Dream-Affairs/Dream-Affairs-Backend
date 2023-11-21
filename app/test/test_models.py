@@ -36,7 +36,7 @@ account = Account(
     email="test@email.com",
     password_hash="password",
     phone_number="1234567890",
-    is_verfiied=False,
+    is_verified=False,
     is_2fa_enabled=False,
     is_deleted=False,
 )
@@ -222,7 +222,7 @@ def test_account_model(
     assert account.last_name == "Doe"
     assert account.email == account.email
     assert account.password_hash == "password"
-    assert account.is_verfiied is False
+    assert account.is_verified is False
     assert account.is_2fa_enabled is False
     assert account.is_deleted is False
 

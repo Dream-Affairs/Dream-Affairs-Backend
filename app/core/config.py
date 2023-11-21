@@ -26,15 +26,24 @@ class Settings:
     PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
     DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")
 
-    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
-    EMAIL_PORT = config("EMAIL_PORT", default="587")
+    EMAIL_API_URI = config(
+        "EMAIL_API_URI", default="https://api.elasticemail.com/v2"
+    )
+    EMAIL_SENDER = config(
+        "EMAIL_SENDER", default="dream-affairs@owoborodeseye.online"
+    )
     EMAIL_NAME = config("EMAIL_NAME", default="admin")
-    EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="password")
-    EMAIL_ADDRESS = config("EMAIL_ADDRESS", default="")
+    EMAIL_API_KEY = config("EMAIL_API_KEY", default="")
+    EMAIL_REQUEST_TIMEOUT = config("EMAIL_REQUEST_TIMEOUT", default=10)
 
     ACCOUNT_NAME = config("ACCOUNT_NAME", default="")
     KEY = config("KEY", default="")
     CONNECTION_STRING = config("CONNECTION_STRING", default="")
+
+    FRONT_END_HOST = config(
+        "FRONT_END_HOST",
+        default="https://dream-affairs-frontend-dev.vercel.app",
+    )
 
 
 settings = Settings()
