@@ -210,34 +210,39 @@ def gift_filter(
     if not base_query:
         exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="No gifts found",
+            message="No gifts found in Registry",
         )
         return None, exception
 
-    # Apply dynamic filters based on parameters without date
+    # Apply dynamic filters based on parameters passed
     param = filter_param.lower()
     if param == "all":
-        if not start_date and end_date:
-            # query all gifts by date created
-            query = base_query.filter(Gift.created_at <= end_date)
-        elif start_date and end_date:
-            query = base_query.filter(
-                Gift.created_at >= end_date, Gift.created_at <= end_date
-            )
-        else:
+        if not start_date and not end_date:
             # return all gifts
             query = base_query
+        if end_date and not start_date:
+            # query all gifts by date created
+            query = base_query.filter(Gift.created_at <= end_date)
+        if start_date and end_date:
+            query = base_query.filter(
+                Gift.created_at >= start_date, Gift.created_at <= end_date
+            )
 
     elif "purchase" in param or "reserved" in param:
         # query purchased or reserved gifts by date updated
-        if not start_date and end_date:
+        if not start_date and not end_date:
+            # if no date passed return all gifts under
+            # specified param
+            query = base_query.filter(Gift.gift_status == param)
+
+        if end_date and not start_date:
             query = base_query.filter(
                 Gift.gift_status == param, Gift.updated_at <= end_date
             )
-        elif start_date and end_date:
+        if start_date and end_date:
             query = base_query.filter(
                 Gift.gift_status == param,
-                Gift.updated_at >= end_date,
+                Gift.updated_at >= start_date,
                 Gift.updated_at <= end_date,
             )
     else:
@@ -251,7 +256,7 @@ def gift_filter(
     if not gifts:
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="No gifts found under that category",
+            message=f"No gifts found under {param} category",
         )
 
     # return a custom response

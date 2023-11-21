@@ -152,8 +152,8 @@ async def filter_gifts(
     | None = Query(
         default=False,
     ),
-    start_date: datetime = Query(None),
-    end_date: datetime = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
     db: Session = Depends(get_db),
 ) -> Any:
     """Filter gifts from the Registry.
@@ -180,7 +180,7 @@ async def filter_gifts(
 
         Returns CustomResponse with 200 status code, message,
         and data: a List[Dict[str,Any]] containing all the gifts under
-        the filterparameter.
+        the filter parameter.
 
 
     Exception:
