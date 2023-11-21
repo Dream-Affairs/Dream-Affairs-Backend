@@ -18,3 +18,9 @@ class TrackEmailSchema(BaseModel):  # type: ignore
     """This class is used to validate the data passed to the email service."""
 
     unique_id: str
+
+
+class EmailSubscriptionSchema(BaseModel):  # type: ignore
+    """This class is used to validate the data passed to the email service."""
+
+    email: EmailStr

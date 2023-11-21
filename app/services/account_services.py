@@ -24,7 +24,7 @@ from app.api.schemas.account_schemas import (
     VerifyAccountTokenData,
 )
 from app.core.config import settings
-from app.services.email_services import send_company_email_api
+from app.services.email_services import send_email_api
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -237,7 +237,7 @@ def account_service(
     url = f"{settings.FRONT_END_HOST}/auth/verify-account?token={access_token}"
 
     background_tasks.add_task(
-        send_company_email_api,
+        send_email_api,
         subject="Welcome to Dream Affairs",
         recipient_email=user.email,
         template="_email_verification.html",
