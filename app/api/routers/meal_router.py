@@ -76,7 +76,7 @@ def get_all_meal_category(
     category_list: list[dict[str, Any]] = get_all(org_id, db)
 
     return CustomResponse(
-        status_code=201,
+        status_code=200,
         message="All Meal Category Successfully fetched",
         data=category_list,
     )
