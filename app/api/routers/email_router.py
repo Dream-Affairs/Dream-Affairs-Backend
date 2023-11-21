@@ -1,7 +1,6 @@
 """This module contains the email router services for the API."""
 
 from fastapi import APIRouter, Depends, status
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
@@ -58,12 +57,7 @@ def subscribe(
     Args:
         email: This is the email of the user.
     """
-    return CustomResponse(
-        status_code=status.HTTP_200_OK,
-        message="Email subscription has not been fully implemented dues to \
-            lack of emailing service subscription.",
-        data=jsonable_encoder(subscribe_email_service(request.email, db)),
-    )
+    return subscribe_email_service(request.email, db)
 
 
 @email_router.post("/unsubscribe")
