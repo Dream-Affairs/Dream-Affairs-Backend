@@ -1,9 +1,10 @@
 """This module defines the FastAPI API endpoints for registry/gift."""
 
 
+from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
@@ -12,8 +13,8 @@ from app.services.gift_services import (
     add_product_gift,
     delete_a_gift,
     edit_product_gift,
-    fetch_all_gifts,
     fetch_gift,
+    gift_filter,
 )
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
@@ -144,20 +145,42 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.get("/all-gifts")
-async def get_all_gifts(db: Session = Depends(get_db)) -> Any:
-    """Get all gifts from the Registry.
+@gift_router.get("/filter-gifts")
+async def filter_gifts(
+    param: str = Query(default="all"),
+    filter_by_date: bool
+    | None = Query(
+        default=False,
+    ),
+    start_date: datetime = Query(None),
+    end_date: datetime = Query(None),
+    db: Session = Depends(get_db),
+) -> Any:
+    """Filter gifts from the Registry.
 
     Request:
 
         Method: GET
+
+        param: `str` specific parameter (e.g all, purchased,
+        available, reserved ...) for filtering gifts; default is `all`.
+
+        filter_by_date: `bool` if true, filtering by date is enabled.
+
+        start_date: UTC datetime string, it must be less than end date.
+
+            If only end_date is specified, the gifts will be filtered
+            from current date to the end date.
+
+        end_date: UTC datetime string, it must be greater than start date.
 
         db(Session): the database session
 
     Response:
 
         Returns CustomResponse with 200 status code, message,
-        and data: a List[Dict[str,Any]] containing all the gifts.
+        and data: a List[Dict[str,Any]] containing all the gifts under
+        the filterparameter.
 
 
     Exception:
@@ -165,8 +188,16 @@ async def get_all_gifts(db: Session = Depends(get_db)) -> Any:
         CustomException: If no gifts found or server error.
     """
 
-    response, exception = fetch_all_gifts(db)
+    # check if filter_by_day enabled
+    if filter_by_date:
+        if start_date and end_date:
+            response, exception = gift_filter(param, db, start_date, end_date)
+        if not start_date and end_date:
+            response, exception = gift_filter(param, db, None, end_date)
+
+    if not filter_by_date:
+        response, exception = gift_filter(param, db)
+
     if exception:
         raise exception
-
     return response

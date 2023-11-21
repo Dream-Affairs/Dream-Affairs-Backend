@@ -188,7 +188,12 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def fetch_all_gifts(db: Session) -> tuple[Any, Any]:
+def gift_filter(
+    filter_param: str,
+    db: Session,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+) -> tuple[Any, Any]:
     """Fetch all gifts that are not deleted.
 
     Args:
@@ -197,21 +202,62 @@ def fetch_all_gifts(db: Session) -> tuple[Any, Any]:
     Returns:
         Tuple: [None,Exception] or [Response,Nonw]
     """
-
-    gift_instance = (
-        db.query(Gift).filter_by(is_deleted=False, is_gift_hidden=False).all()
+    # instance of a base query
+    base_query = db.query(Gift).filter_by(
+        is_deleted=False, is_gift_hidden=False
     )
 
-    if not gift_instance:
+    if not base_query:
         exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message="No gifts found",
         )
         return None, exception
 
+    # Apply dynamic filters based on parameters without date
+    param = filter_param.lower()
+    if param == "all":
+        if not start_date and end_date:
+            # query all gifts by date created
+            query = base_query.filter(Gift.created_at <= end_date)
+        elif start_date and end_date:
+            query = base_query.filter(
+                Gift.created_at >= end_date, Gift.created_at <= end_date
+            )
+        else:
+            # return all gifts
+            query = base_query
+
+    elif "purchase" in param or "reserved" in param:
+        # query purchased or reserved gifts by date updated
+        if not start_date and end_date:
+            query = base_query.filter(
+                Gift.gift_status == param, Gift.updated_at <= end_date
+            )
+        elif start_date and end_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at >= end_date,
+                Gift.updated_at <= end_date,
+            )
+    else:
+        # if not all, if not purchased nor reserved, and
+        # no specified date query gifts based on the param
+        query = base_query.filter(Gift.gift_status == param)
+
+    # Execute the final query
+    gifts = query.all()
+
+    if not gifts:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="No gifts found under that category",
+        )
+
+    # return a custom response
     response = CustomResponse(
         status_code=status.HTTP_200_OK,
         message="Gifts retrieved successfully",
-        data=jsonable_encoder(gift_instance, exclude=["organization"]),
+        data=jsonable_encoder(gifts, exclude=["organization"]),
     )
     return response, None
