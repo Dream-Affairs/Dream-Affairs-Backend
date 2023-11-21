@@ -75,9 +75,4 @@ def unsubscribe(
     Args:
         email: This is the email of the user.
     """
-    return CustomResponse(
-        status_code=status.HTTP_200_OK,
-        message="Email subscription has not been fully implemented dues to \
-            lack of emailing service subscription.",
-        data=jsonable_encoder(unsubscribe_email_service(request.email, db)),
-    )
+    return unsubscribe_email_service(request.email, db)
