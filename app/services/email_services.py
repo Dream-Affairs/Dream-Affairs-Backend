@@ -362,3 +362,30 @@ def subscribe_email_service(
     return CustomResponse(
         status_code=200, message="Email subscribed successfully", data=""
     )
+
+
+def unsubscribe_email_service(
+    email: str,
+    db: Session,
+) -> CustomResponse:
+    """This function is used to unsubscribe an email.
+
+    Args:
+        email: This is the email address of the recipient.
+        db: This is the database session.
+
+    Returns:
+        This returns the response of the request.
+    """
+    # Email.unsubscribe_email(email)
+    db_email: EmailList = (
+        db.query(EmailList).filter(EmailList.email == email).first()
+    )
+    if db_email:
+        db_email.is_subscribed = False
+        db_email.date_unsubscribed = datetime.utcnow()
+        db.commit()
+        db.refresh(db_email)
+    return CustomResponse(
+        status_code=200, message="Email unsubscribed successfully", data=""
+    )
