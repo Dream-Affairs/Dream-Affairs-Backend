@@ -268,11 +268,12 @@ def gift_filter(
     gifts = query.all()
 
     if not gifts:
-        raise CustomException(
+        exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message=f"No gifts found under {param} category"
             f" or specified date",
         )
+        return None, exception
 
     # return a custom response
     response = CustomResponse(
