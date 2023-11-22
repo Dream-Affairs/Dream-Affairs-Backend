@@ -9,6 +9,7 @@ from app.api.responses.custom_responses import (
     custom_http_exception_handler,
 )
 from app.api.routers.account_routers import router as account_routers
+from app.api.routers.checklist_router import router as checklist_routers
 from app.api.routers.email_router import email_router as email_routers
 from app.api.routers.file_router import router as file_routers
 from app.api.routers.gift_router import gift_router as gift_routers
@@ -45,9 +46,18 @@ v1_router.include_router(
     invite_routers,
 )
 
-v1_router.include_router(meal_routers)
-v1_router.include_router(gift_routers)
-v1_router.include_router(file_routers)
+v1_router.include_router(
+    meal_routers,
+)
+v1_router.include_router(
+    gift_routers,
+)
+v1_router.include_router(
+    file_routers,
+)
+v1_router.include_router(
+    checklist_routers,
+)
 
 app = FastAPI(
     title="Dream Affairs API",

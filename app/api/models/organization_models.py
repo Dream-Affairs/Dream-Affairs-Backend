@@ -241,7 +241,9 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
-    invite_token = Column(String, nullable=False)
+    invite_token = Column(
+        String,
+    )
     is_accepted = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
@@ -254,6 +256,16 @@ class OrganizationMember(Base):  # type: ignore
     account = relationship("Account", backref="member_account", lazy="joined")
     member_role = relationship(
         "OrganizationRole", back_populates="members", lazy="joined"
+    )
+    created_checklist = relationship(
+        "Checklist",
+        back_populates="created_by_member",
+        foreign_keys="Checklist.created_by",
+    )
+    assigned_checklist = relationship(
+        "Checklist",
+        back_populates="assigned_to_member",
+        foreign_keys="Checklist.assigned_to",
     )
 
 
@@ -389,6 +401,16 @@ class Checklist(Base):  # type: ignore
 
     __tablename__ = "checklist"
     id = Column(String, primary_key=True, default=uuid4().hex)
+    created_by = Column(
+        String,
+        ForeignKey("organization_member.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    assigned_to = Column(
+        String,
+        ForeignKey("organization_member.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     organization_id = Column(
         String,
         ForeignKey("organization.id", ondelete="CASCADE"),
@@ -403,12 +425,21 @@ class Checklist(Base):  # type: ignore
         nullable=False,
     )
     is_completed = Column(Boolean, default=False)
-    is_hidden = Column(Boolean, default=False)
-
+    due_date = Column(DateTime)
     completed_at = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
-    organization = relationship(
-        "Organization", back_populates="checklist", lazy="joined"
+    created_by_member = relationship(
+        "OrganizationMember",
+        back_populates="created_checklist",
+        foreign_keys=[created_by],
+        lazy="joined",
     )
+    assigned_to_member = relationship(
+        "OrganizationMember",
+        back_populates="assigned_checklist",
+        foreign_keys=[assigned_to],
+        lazy="joined",
+    )
+    organization = relationship("Organization", back_populates="checklist")
