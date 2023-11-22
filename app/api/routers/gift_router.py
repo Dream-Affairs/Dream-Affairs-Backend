@@ -150,7 +150,7 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
 
 @gift_router.post("/filter-gifts")
 async def filter_gifts(
-    filter_parameters: FilterGiftSchema,
+    request: FilterGiftSchema,
     db: Session = Depends(get_db),
 ) -> Any:
     """Filter gifts from the Registry.
@@ -189,7 +189,7 @@ async def filter_gifts(
         CustomException: If no gifts found or server error.
     """
 
-    response, exception = gift_filter(filter_parameters, db)
+    response, exception = gift_filter(request, db)
 
     if exception:
         raise exception

@@ -11,7 +11,11 @@ from sqlalchemy.orm import Session
 
 from app.api.models.gift_models import Gift
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
+from app.api.schemas.gift_schemas import (
+    AddProductGift,
+    EditProductGift,
+    FilterGiftSchema,
+)
 from app.services.account_services import fake_authenticate
 
 
@@ -189,18 +193,23 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
 
 
 def gift_filter(
-    filter_param: str,
+    params: FilterGiftSchema,
     db: Session,
-    start_date: datetime | None = None,
-    end_date: datetime | None = None,
 ) -> tuple[Any, Any]:
-    """Fetch all gifts that are not deleted.
+    """Fetch all gifts that are not deleted and not hidden under a specified
+    parameter.
 
     Args:
+        params(FilterGiftSchema):
+            filter_parameter: str,
+            filter_by_date:bool,
+            start_date: datetime,
+            end_date: datetime
+
         db (Session): The database session.
 
     Returns:
-        Tuple: [None,Exception] or [Response,Nonw]
+        Tuple: [None,Exception] or [Response,None]
     """
     # instance of a base query
     base_query = db.query(Gift).filter_by(
@@ -215,35 +224,36 @@ def gift_filter(
         return None, exception
 
     # Apply dynamic filters based on parameters passed
-    param = filter_param.lower()
+    param = params.filter_parameter.lower()
     if param == "all":
-        if not start_date and not end_date:
+        if not params.start_date and not params.end_date:
             # return all gifts
             query = base_query
-        if end_date and not start_date:
+        if params.end_date and not params.start_date:
             # query all gifts by date created
-            query = base_query.filter(Gift.created_at <= end_date)
-        if start_date and end_date:
+            query = base_query.filter(Gift.created_at <= params.end_date)
+        if params.start_date and params.end_date:
             query = base_query.filter(
-                Gift.created_at >= start_date, Gift.created_at <= end_date
+                Gift.created_at >= params.start_date,
+                Gift.created_at <= params.end_date,
             )
 
     elif "purchase" in param or "reserved" in param:
         # query purchased or reserved gifts by date updated
-        if not start_date and not end_date:
+        if not params.start_date and not params.end_date:
             # if no date passed return all gifts under
             # specified param
             query = base_query.filter(Gift.gift_status == param)
 
-        if end_date and not start_date:
+        if params.end_date and not params.start_date:
             query = base_query.filter(
-                Gift.gift_status == param, Gift.updated_at <= end_date
+                Gift.gift_status == param, Gift.updated_at <= params.end_date
             )
-        if start_date and end_date:
+        if params.start_date and params.end_date:
             query = base_query.filter(
                 Gift.gift_status == param,
-                Gift.updated_at >= start_date,
-                Gift.updated_at <= end_date,
+                Gift.updated_at >= params.start_date,
+                Gift.updated_at <= params.end_date,
             )
     else:
         # if not all, if not purchased nor reserved, and
