@@ -14,7 +14,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.models.account_models import Account, Auth
-from app.api.models.organization_models import Organization, OrganizationDetail
+from app.api.models.organization_models import (
+    Organization,
+    OrganizationDetail,
+    OrganizationMember,
+)
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
@@ -224,7 +228,12 @@ def account_service(
         event_date=user.event_date,
     )
 
-    if not add_to_db(db, new_user, auth, org, org_detail):
+    organization_member = OrganizationMember(
+        id=uuid4().hex,
+        organization_id=org.id,
+        account_id=new_user.id,
+    )
+    if not add_to_db(db, new_user, auth, org, org_detail, organization_member):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
