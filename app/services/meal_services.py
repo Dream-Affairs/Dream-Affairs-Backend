@@ -1,9 +1,8 @@
 """This module contains function that ensure a Meal is created properly."""
 
-import json
 from typing import Any
 
-from fastapi import UploadFile, status
+from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
@@ -11,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.api.models.meal_models import Meal, MealCategory
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.services.file_services import create_blob
+from app.api.schemas.meal_schema import MealSchema
 
 
 def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
@@ -62,14 +61,6 @@ def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
         db.add(new_category)
         db.commit()
         db.refresh(new_category)
-
-        # Returning a success response
-        return CustomResponse(
-            status_code=201,
-            message="Meal Category Successfully Created",
-            data=jsonable_encoder(new_category),
-        )
-
     except InternalError as e:
         print(e)
         db.rollback()
@@ -77,6 +68,9 @@ def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message=f"Failed to {new_category.name} Meal Category",
         ) from e  # Using 'from' to preserve the original exception context
+
+    # Returning a success response
+    return jsonable_encoder(new_category)
 
 
 def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
@@ -143,19 +137,17 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
 
 def create_meal_service(
     meal_category_id: str,
-    meal_img: UploadFile,
-    meal_schema: dict[str, Any],
+    meal_schema: MealSchema,
     db: Session,
 ) -> Any:
     """Creates a new meal tied to a specific meal category.
 
     This function checks if the meal category exists. If not, it reports an
-    error. Then, it uploads an image, prepares meal details, and creates a
-    new meal. If everything goes well, it confirms the addition of the meal.
+    error. Then creates a new meal. If everything goes well, it confirms the
+    addition of the meal.
 
     Args:
         meal_category_id (str): ID of the meal's category.
-        meal_img (UploadFile): Image file for the meal.
         meal_schema (MealSchema): Details of the new meal.
         db (Session): Database session.
 
@@ -178,26 +170,11 @@ def create_meal_service(
             message="Meal Category not found",
         )
 
-    # upload a blob and retrieve the url
-    image_url, exception = create_blob(meal_category_id, meal_img)
-
-    if exception is not None:
-        # Handle the exception, for example:
-        raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message=exception
-        )
-
-    # Extract the image url if there was no exception
-    img_dict = json.loads(image_url.body)
-    # Access the "product_image_url" value
-    product_image_url = img_dict["data"]["product_image_url"]
-
-    # meal_schema = meal.model_dump()
-    meal_schema["meal_category_id"] = meal_category_id
-    meal_schema["image_url"] = product_image_url
+    meal_item = meal_schema.model_dump()
+    meal_item["meal_category_id"] = meal_category_id
 
     # Compiling attributes to make up a meal model
-    new_meal = Meal(**meal_schema)
+    new_meal = Meal(**meal_item)
 
     try:
         db.add(new_meal)

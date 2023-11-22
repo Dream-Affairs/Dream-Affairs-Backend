@@ -38,4 +38,5 @@ class MealSchema(BaseModel):  # type: ignore
     name: str
     description: Optional[str] = ""
     is_hidden: Optional[bool] = False
+    image_url: str
     quantity: int = 0

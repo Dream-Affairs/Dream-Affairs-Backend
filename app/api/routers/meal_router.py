@@ -1,13 +1,13 @@
 """This module defines the FastAPI API endpoints for meal management."""
 
 
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
-from app.api.schemas.meal_schema import MealCategorySchema
+from app.api.schemas.meal_schema import MealCategorySchema, MealSchema
 from app.database.connection import get_db
 from app.services.meal_services import create_mc_service, create_meal_service
 from app.services.meal_services import get_meal_categories as get_all
@@ -39,16 +39,25 @@ def create_meal_category(
             meal category. The response includes the newly created meal
             category's details
     """
+    try:
+        new_meal_category = create_mc_service(
+            org_id, schema=meal_category, db=db
+        )
 
-    new_meal_category = create_mc_service(org_id, schema=meal_category, db=db)
+    except Exception as e:
+        raise e
 
-    return new_meal_category
+    return CustomResponse(
+        status_code=201,
+        message="Meal Category Successfully Created",
+        data=new_meal_category,
+    )
 
 
 @meal_router.get("/get-all-meal-category")
 def get_all_meal_category(
     org_id: str, db: Session = Depends(get_db)
-) -> list[dict[str, Any]]:
+) -> CustomResponse:
     """Retrieves all Meal Categories associated with a specific organization.
 
     This endpoint fetches all existing meal categories associated with the
@@ -72,8 +81,11 @@ def get_all_meal_category(
                 including its name and ID.
             - meals (List[Meal]): The list of meals associated with category.
     """
+    try:
+        category_list: list[dict[str, Any]] = get_all(org_id, db)
 
-    category_list: list[dict[str, Any]] = get_all(org_id, db)
+    except Exception as e:
+        raise e
 
     return CustomResponse(
         status_code=200,
@@ -84,12 +96,8 @@ def get_all_meal_category(
 
 @meal_router.post("/create-meal")
 def create_meal(
-    meal_category_id: Annotated[str, Form()],
-    meal_img: Annotated[UploadFile, File()],
-    meal_name: Annotated[str, Form()],
-    meal_description: Annotated[str, Form()],
-    meal_quantity: Annotated[int, Form()],
-    is_hidden: Annotated[bool | None, Form()] = False,
+    meal_category_id: str,
+    create_meal_schema: MealSchema,
     db: Session = Depends(get_db),
 ) -> Any:
     """Creates a new meal entry for a specified meal category.
@@ -115,18 +123,16 @@ def create_meal(
         created meal if successful. Raises CustomException if an error occurs
         during the process.
     """
-    meal_schema = {
-        "name": meal_name,
-        "description": meal_description,
-        "is_hidden": is_hidden,
-        "quantity": meal_quantity,
-    }
 
-    response, exception = create_meal_service(
-        meal_category_id, meal_img, meal_schema, db=db
-    )
-    if exception:
-        # Raise the captured exception to handle it at a higher level
-        raise exception
+    try:
+        response, exception = create_meal_service(
+            meal_category_id, create_meal_schema, db=db
+        )
+        if exception:
+            # Raise the captured exception to handle it at a higher level
+            raise exception
+
+    except Exception as e:
+        raise e
 
     return response
