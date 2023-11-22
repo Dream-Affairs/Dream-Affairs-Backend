@@ -21,6 +21,15 @@ class GiftAmountType(str, Enum):
     ANY = "any"
 
 
+class FilterParamEnum(str, Enum):
+    """Represents the enum for filter_parameter."""
+
+    ALL = "all"
+    AVAILABLE = "available"
+    RESERVED = "reserved"
+    PURCHASED = "purchased"
+
+
 class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
@@ -60,7 +69,7 @@ class EditProductGift(AddProductGift):
 class FilterGiftSchema(BaseModel):  # type: ignore
     """Represents the schema for filtering gifts."""
 
-    filter_parameter: str = "all"
-    filter_by_date: bool = False
+    filter_parameter: FilterParamEnum = FilterParamEnum.ALL
+    filter_by_date: bool | None = False
     start_date: datetime | None = None
     end_date: datetime | None = None

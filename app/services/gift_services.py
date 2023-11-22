@@ -216,53 +216,52 @@ def gift_filter(
         is_deleted=False, is_gift_hidden=False
     )
 
-    if not base_query:
-        exception = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            message="No gifts found in Registry",
-        )
-        return None, exception
-
     # Apply dynamic filters based on parameters passed
-    param = params.filter_parameter.lower()
+    param = params.filter_parameter.value
     if param == "all":
-        if params.filter_by_date:
+        if params.filter_by_date and params.end_date and not params.start_date:
             # filter by date enabled
-            if params.end_date and not params.start_date:
-                # query all gifts by date created
-                query = base_query.filter(Gift.created_at <= params.end_date)
-            if params.start_date and params.end_date:
-                query = base_query.filter(
-                    Gift.created_at >= params.start_date,
-                    Gift.created_at <= params.end_date,
-                )
+            # query all gifts by date created
+            query = base_query.filter(Gift.created_at <= params.end_date)
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.created_at >= params.start_date,
+                Gift.created_at <= params.end_date,
+            )
+        elif (
+            params.filter_by_date and params.start_date and not params.end_date
+        ):
+            query = base_query.filter(Gift.created_at >= params.start_date)
 
-        # return all gifts
-        query = base_query
+        else:
+            # return all gifts
+            query = base_query
 
-    elif "purchase" in param or "reserved" in param:
+    elif "purchased" in param or "reserved" in param:
         # query purchased or reserved gifts by date updated
-        if not params.start_date and not params.end_date:
-            # if no date passed return all gifts under
-            # specified param
+
+        if params.filter_by_date and params.end_date and not params.start_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at <= params.end_date,
+            )
+
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at >= params.start_date,
+                Gift.updated_at <= params.end_date,
+            )
+        elif params.start_date and not params.end_date:
+            query = base_query.filter(Gift.created_at >= params.start_date)
+
+        else:
             query = base_query.filter(Gift.gift_status == param)
 
-        if params.filter_by_date:
-            # filter by date enabled
-            if params.end_date and not params.start_date:
-                query = base_query.filter(
-                    Gift.gift_status == param,
-                    Gift.updated_at <= params.end_date,
-                )
-            if params.start_date and params.end_date:
-                query = base_query.filter(
-                    Gift.gift_status == param,
-                    Gift.updated_at >= params.start_date,
-                    Gift.updated_at <= params.end_date,
-                )
     else:
         # if not all, if not purchased nor reserved, and
         # no specified date query gifts based on the param
+        # this block is for future purpose, in case more param are needed
         query = base_query.filter(Gift.gift_status == param)
 
     # Execute the final query
@@ -271,7 +270,8 @@ def gift_filter(
     if not gifts:
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message=f"No gifts found under {param} category",
+            message=f"No gifts found under {param} category"
+            f" or specified date",
         )
 
     # return a custom response
