@@ -1,13 +1,16 @@
 """This module defines the FastAPI API endpoints for registry/gift."""
 
 
-from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
+from app.api.schemas.gift_schemas import (
+    AddProductGift,
+    EditProductGift,
+    FilterGiftSchema,
+)
 from app.database.connection import get_db
 from app.services.gift_services import (
     add_product_gift,
@@ -145,34 +148,32 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.get("/filter-gifts")
+@gift_router.post("/filter-gifts")
 async def filter_gifts(
-    param: str = Query(default="all"),
-    filter_by_date: bool
-    | None = Query(
-        default=False,
-    ),
-    start_date: datetime | None = Query(None),
-    end_date: datetime | None = Query(None),
+    filter_parameters: FilterGiftSchema,
     db: Session = Depends(get_db),
 ) -> Any:
     """Filter gifts from the Registry.
 
     Request:
 
-        Method: GET
+        Method: POST
 
-        param: `str` specific parameter (e.g all, purchased,
-        available, reserved ...) for filtering gifts; default is `all`.
+        filter_parameters(Schema):
 
-        filter_by_date: `bool` if true, filtering by date is enabled.
+            filter_parameter: `str` specific parameter (e.g all, purchased,
+            available, reserved ...) to use for filtering gifts; default
+            is `all`.
 
-        start_date: UTC datetime string, it must be less than end date.
+            filter_by_date: `bool` if true, filtering by date is enabled,
+            default is `false`.
 
-            If only end_date is specified, the gifts will be filtered
-            from current date to the end date.
+            start_date: UTC datetime string, it must be less than end date.
 
-        end_date: UTC datetime string, it must be greater than start date.
+                If only end_date is specified, the gifts will be filtered
+                by dates <= end_date.
+
+            end_date: UTC datetime string, it must be greater than start date.
 
         db(Session): the database session
 
@@ -188,15 +189,7 @@ async def filter_gifts(
         CustomException: If no gifts found or server error.
     """
 
-    # check if filter_by_day enabled
-    if filter_by_date:
-        if start_date and end_date:
-            response, exception = gift_filter(param, db, start_date, end_date)
-        if not start_date and end_date:
-            response, exception = gift_filter(param, db, None, end_date)
-
-    if not filter_by_date:
-        response, exception = gift_filter(param, db)
+    response, exception = gift_filter(filter_parameters, db)
 
     if exception:
         raise exception
