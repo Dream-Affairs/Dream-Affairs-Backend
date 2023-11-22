@@ -226,17 +226,19 @@ def gift_filter(
     # Apply dynamic filters based on parameters passed
     param = params.filter_parameter.lower()
     if param == "all":
-        if not params.start_date and not params.end_date:
-            # return all gifts
-            query = base_query
-        if params.end_date and not params.start_date:
-            # query all gifts by date created
-            query = base_query.filter(Gift.created_at <= params.end_date)
-        if params.start_date and params.end_date:
-            query = base_query.filter(
-                Gift.created_at >= params.start_date,
-                Gift.created_at <= params.end_date,
-            )
+        if params.filter_by_date:
+            # filter by date enabled
+            if params.end_date and not params.start_date:
+                # query all gifts by date created
+                query = base_query.filter(Gift.created_at <= params.end_date)
+            if params.start_date and params.end_date:
+                query = base_query.filter(
+                    Gift.created_at >= params.start_date,
+                    Gift.created_at <= params.end_date,
+                )
+
+        # return all gifts
+        query = base_query
 
     elif "purchase" in param or "reserved" in param:
         # query purchased or reserved gifts by date updated
@@ -245,16 +247,19 @@ def gift_filter(
             # specified param
             query = base_query.filter(Gift.gift_status == param)
 
-        if params.end_date and not params.start_date:
-            query = base_query.filter(
-                Gift.gift_status == param, Gift.updated_at <= params.end_date
-            )
-        if params.start_date and params.end_date:
-            query = base_query.filter(
-                Gift.gift_status == param,
-                Gift.updated_at >= params.start_date,
-                Gift.updated_at <= params.end_date,
-            )
+        if params.filter_by_date:
+            # filter by date enabled
+            if params.end_date and not params.start_date:
+                query = base_query.filter(
+                    Gift.gift_status == param,
+                    Gift.updated_at <= params.end_date,
+                )
+            if params.start_date and params.end_date:
+                query = base_query.filter(
+                    Gift.gift_status == param,
+                    Gift.updated_at >= params.start_date,
+                    Gift.updated_at <= params.end_date,
+                )
     else:
         # if not all, if not purchased nor reserved, and
         # no specified date query gifts based on the param
