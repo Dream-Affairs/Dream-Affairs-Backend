@@ -9,16 +9,14 @@ from app.api.responses.custom_responses import (
     custom_http_exception_handler,
 )
 from app.api.routers.account_routers import router as account_routers
+from app.api.routers.checklist_router import router as checklist_routers
 from app.api.routers.email_router import email_router as email_routers
+from app.api.routers.file_router import router as file_routers
 from app.api.routers.gift_router import gift_router as gift_routers
+from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
+from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
-
-# ============ add imported routers here ============= #
-
-
-# ==================================================== #
-
 
 # ============ Sentry Initialization ============= #
 
@@ -41,9 +39,25 @@ v1_router.include_router(
 v1_router.include_router(
     email_routers,
 )
+v1_router.include_router(
+    role_routers,
+)
+v1_router.include_router(
+    invite_routers,
+)
 
-v1_router.include_router(meal_routers)
-v1_router.include_router(gift_routers)
+v1_router.include_router(
+    meal_routers,
+)
+v1_router.include_router(
+    gift_routers,
+)
+v1_router.include_router(
+    file_routers,
+)
+v1_router.include_router(
+    checklist_routers,
+)
 
 app = FastAPI(
     title="Dream Affairs API",
@@ -68,9 +82,9 @@ app.add_middleware(
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
-    raise CustomResponse(
+    return CustomResponse(
         status_code=200,
-        detail="Healthy",
+        message="Healthy",
     )
 
 

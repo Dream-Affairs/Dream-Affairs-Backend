@@ -1,26 +1,27 @@
 """This module contains the email router services for the API."""
-from typing import Any, Dict
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
-from app.services.email_services import send_email_api
+from app.api.responses.custom_responses import CustomResponse
+from app.api.schemas.email_schemas import EmailSchema, EmailSubscriptionSchema
+from app.database.connection import get_db
+from app.services.email_services import (
+    send_email_api,
+    subscribe_email_service,
+    unsubscribe_email_service,
+)
 
-email_router = APIRouter(prefix="/email")
+email_router = APIRouter(prefix="/email", tags=["Email"])
 
 
 @email_router.post(
     "/send-email",
-    status_code=status.HTTP_200_OK,
-    tags=["Email"],
 )
 def send_email(
-    kwargs: Dict[str, Any],
-    subject: str,
-    recipient: str,
-    sender: str,
-    sender_name: str,
-    template: str,
-) -> None:
+    request: EmailSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
     """This function is used to send an email to the recipient using the API.
 
     Args:
@@ -33,5 +34,39 @@ def send_email(
         template: This is the template of the email.
     """
     send_email_api(
-        subject, recipient, sender, sender_name, template, kwargs=kwargs
+        request.subject,
+        request.recipient,
+        request.organization_id,
+        request.template,
+        db=db,
+        kwargs=request.kwargs,
     )
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Email sent successfully.",
+        data="",
+    )
+
+
+@email_router.post("/subscribe")
+def subscribe(
+    request: EmailSubscriptionSchema, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """This function is used to subscribe a user to the email list.
+
+    Args:
+        email: This is the email of the user.
+    """
+    return subscribe_email_service(request.email, db)
+
+
+@email_router.post("/unsubscribe")
+def unsubscribe(
+    request: EmailSubscriptionSchema, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """This function is used to unsubscribe a user from the email list.
+
+    Args:
+        email: This is the email of the user.
+    """
+    return unsubscribe_email_service(request.email, db)

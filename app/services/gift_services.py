@@ -1,110 +1,54 @@
 """This module provides functions for handling registry/gift related
 operations."""
 
-
+from datetime import datetime
 from typing import Any
 
-from azure.storage.blob import BlobServiceClient, ContainerClient
-from fastapi import UploadFile, status
+from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
 from app.api.models.gift_models import Gift
-from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.core.config import settings
-
-account_name = settings.ACCOUNT_NAME
-account_key = settings.KEY
-connection_string = settings.CONNECTION_STRING
-
-
-def check_for_container(container_name: str) -> None:
-    """Check if azure container exist
-    Args:
-        container_name: used for naming container
-        checks if container exists.
-    Return: True or False
-    """
-    container = ContainerClient.from_connection_string(
-        conn_str=connection_string, container_name=container_name
-    )
-    if not container.exists():
-        container.create_container()
+from app.api.schemas.gift_schemas import (
+    AddProductGift,
+    EditProductGift,
+    FilterGiftSchema,
+)
+from app.services.account_services import fake_authenticate
 
 
-def create_blob(container_name: str, raw_file: UploadFile) -> str:
-    """Create a Blob on azure
-    Args:
-        container_name: used to create a container if
-            it doesn't exists
-        raw_file: the file to save as blob
-    Return:
-        Return the url to the blob on azure
-    """
-    # check and create a container if not exist
-    check_for_container(container_name)
-
-    # process the file and upload blob
-    blob_name = raw_file.filename
-    blob_data = raw_file.file.read()
-    blob_service_client = BlobServiceClient.from_connection_string(
-        connection_string
-    )
-    blob_client = blob_service_client.get_blob_client(
-        container=container_name, blob=blob_name
-    )
-    if not blob_client.exists():
-        blob_client.upload_blob(blob_data)
-
-    # the lines below is to meet up with max line length
-    acct = account_name
-    cont = container_name
-
-    # general format for azure blob url
-    blob_url = f"https://{acct}.blob.core.windows.net/{cont}/{blob_name}"
-
-    return blob_url
-
-
-def add_cash_gift(
-    payment_data: dict[str, Any],
-    gift_image: UploadFile,
+def add_product_gift(
+    gift_item: AddProductGift,
     member_id: str,
     db: Session,
 ) -> tuple[Any, Any]:
     """Add Cash funds gift to the associated authenticated user/organization.
 
     Args:
-        payment_data (Dict): The gift data to be added.
-        gift_image:
+        gift_item (Dict): The gift data to be added.
+
         db (Session): The database session.
 
     Returns:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse
     """
-    authenticate_member = (
-        db.query(Organization).filter(Organization.owner == member_id).first()
-    )
+    member_org_id = fake_authenticate(member_id, db)
 
-    if not authenticate_member:
+    if not member_org_id:
         exception = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Invalid Member ID"
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid member_id"
         )
         return None, exception
 
-    org_id = authenticate_member.id
+    org_id = member_org_id
 
-    # upload a blob and retrieve the url
-    image_file_path = create_blob(org_id, gift_image)
+    gift_item = gift_item.model_dump()
+    gift_item["organization_id"] = org_id
 
-    # payment_data = gift.model_dump(), used for schema dump.
-    payment_data["organization_id"] = org_id
-    payment_data["product_image_url"] = image_file_path
-
-    new_gift = Gift(**payment_data)
+    new_gift = Gift(**gift_item)
 
     try:
         db.add(new_gift)
@@ -113,8 +57,8 @@ def add_cash_gift(
 
         response = CustomResponse(
             status_code=status.HTTP_201_CREATED,
-            message="Cash funds gift successfully added",
-            data=jsonable_encoder(new_gift),
+            message="Gift successfully added",
+            data=jsonable_encoder(new_gift, exclude=["organization"]),
         )
         return response, None
 
@@ -126,3 +70,215 @@ def add_cash_gift(
         )
 
         return None, exception
+
+
+def edit_product_gift(
+    gift_item: EditProductGift,
+    gift_id: str,
+    db: Session,
+) -> tuple[Any, Any]:
+    """Edit product gift  associated with user/organization.
+
+    Args:
+        gift_item(Dict): The gift data to be updated.
+        db (Session): The database session.
+
+    Returns:
+        List: [None,Exception] or [Respoonse,None]. return an exception
+        or a CustomResponse
+    """
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+
+    if not gift_instance:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid gift_id"
+        )
+        return None, exception
+
+    gift_item = gift_item.model_dump(exclude_unset=True)
+
+    try:
+        for key, value in gift_item.items():
+            setattr(gift_instance, key, value)
+        db.commit()
+        db.refresh(gift_instance)
+
+        response = CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Gift successfully updated",
+            data=jsonable_encoder(gift_instance, exclude=["organization"]),
+        )
+        return response, None
+
+    except InternalError:
+        db.rollback()
+        exception = CustomException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to update gift",
+        )
+
+        return None, exception
+
+
+def fetch_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
+    """Fetch a gift associated with the gift_id.
+
+    Args:
+        gift_id(str): The specific gift ID
+        db (Session): The database session.
+
+    Returns:
+        List: [None,Exception] or [Respoonse,None]. return an exception
+        or a CustomResponse containing gift data.
+    """
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+
+    if not gift_instance:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND, message="Invalid gift_id"
+        )
+        return None, exception
+    if gift_instance.is_deleted:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The gift doesn't exist, It must have been deleted",
+        )
+        return None, exception
+
+    response = CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="success",
+        data=jsonable_encoder(gift_instance, exclude=["organization"]),
+    )
+    return response, None
+
+
+def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
+    """Delete a gift associated with the gift_id.
+
+    Args:
+        gift_id(str): The specific gift ID
+        db (Session): The database session.
+
+    Returns:
+        List: [None,Exception] or [Respoonse,None]. return an exception
+        or a CustomResponse containing gift data.
+    """
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+
+    if not gift_instance:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Invalid gift_id",
+        )
+        return None, exception
+
+    if gift_instance.is_deleted:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The gift doesn't exist, It must have been deleted",
+        )
+        return None, exception
+
+    gift_instance.is_deleted = True
+    gift_instance.deleted_at = datetime.utcnow()
+    db.commit()
+    db.refresh(gift_instance)
+
+    response = CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Gift deleted successfully",
+    )
+    return response, None
+
+
+def gift_filter(
+    params: FilterGiftSchema,
+    db: Session,
+) -> tuple[Any, Any]:
+    """Fetch all gifts that are not deleted and not hidden under a specified
+    parameter.
+
+    Args:
+        params(FilterGiftSchema):
+            filter_parameter: str,
+            filter_by_date:bool,
+            start_date: datetime,
+            end_date: datetime
+
+        db (Session): The database session.
+
+    Returns:
+        Tuple: [None,Exception] or [Response,None]
+    """
+    # instance of a base query
+    base_query = db.query(Gift).filter_by(
+        is_deleted=False, is_gift_hidden=False
+    )
+
+    # Apply dynamic filters based on parameters passed
+    param = params.filter_parameter.value
+    if param == "all":
+        if params.filter_by_date and params.end_date and not params.start_date:
+            # filter by date enabled
+            # query all gifts by date created
+            query = base_query.filter(Gift.created_at <= params.end_date)
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.created_at >= params.start_date,
+                Gift.created_at <= params.end_date,
+            )
+        elif (
+            params.filter_by_date and params.start_date and not params.end_date
+        ):
+            query = base_query.filter(Gift.created_at >= params.start_date)
+
+        else:
+            # return all gifts
+            query = base_query
+
+    elif "purchased" in param or "reserved" in param:
+        # query purchased or reserved gifts by date updated
+
+        if params.filter_by_date and params.end_date and not params.start_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at <= params.end_date,
+            )
+
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at >= params.start_date,
+                Gift.updated_at <= params.end_date,
+            )
+        elif params.start_date and not params.end_date:
+            query = base_query.filter(Gift.created_at >= params.start_date)
+
+        else:
+            query = base_query.filter(Gift.gift_status == param)
+
+    else:
+        # if not all, if not purchased nor reserved, and
+        # no specified date query gifts based on the param
+        # this block is for future purpose, in case more param are needed
+        query = base_query.filter(Gift.gift_status == param)
+
+    # Execute the final query
+    gifts = query.all()
+
+    if not gifts:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message=f"No gifts found under {param} category"
+            f" or specified date",
+        )
+        return None, exception
+
+    # return a custom response
+    response = CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Gifts retrieved successfully",
+        data=jsonable_encoder(gifts, exclude=["organization"]),
+    )
+    return response, None

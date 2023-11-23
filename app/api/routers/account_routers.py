@@ -5,11 +5,12 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from app.api.responses.custom_responses import CustomException, CustomResponse
+from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
     ForgotPasswordData,
     ResetPasswordData,
+    VerifyAccountTokenData,
 )
 from app.database.connection import get_db
 from app.services.account_services import (
@@ -17,8 +18,8 @@ from app.services.account_services import (
     forgot_password_service,
     login_service,
     reset_password_service,
+    verify_account_service,
 )
-from app.services.email_services import send_company_email_api
 
 BASE_URL = "/auth"
 
@@ -50,17 +51,11 @@ def signup(
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
-    if not account_service(user, db):
-        raise CustomException(
-            status_code=500, message="Failed to create account"
-        )
-    background_tasks.add_task(
-        send_company_email_api,
-        subject="Welcome to Dream Affairs",
-        recipient_email=user.email,
-        template="_email_verification.html",
-        kwargs={"name": user.first_name, "verification_link": ...},
-    )
+    _, err = account_service(user, background_tasks, db)
+
+    if err:
+        raise err
+
     return CustomResponse(
         status_code=status.HTTP_201_CREATED,
         message="Account created successfully",
@@ -86,6 +81,23 @@ def login(
         HTTPException: If the provided credentials are invalid.
     """
     return login_service(db, user_credentials)
+
+
+@router.post("/verify-account")
+def verify_account(
+    token_data: VerifyAccountTokenData, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """Reset the password for an account.
+
+    Args:
+        token_data: The data associated with the reset password token.
+        db: The database session.
+
+    Returns:
+        The result of the `reset_password_service` function.
+    """
+
+    return verify_account_service(token_data, db)
 
 
 @router.post("/forgot-password")
