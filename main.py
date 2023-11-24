@@ -1,7 +1,7 @@
 """Main module for the API."""
 import sentry_sdk
 import uvicorn
-from fastapi import APIRouter, FastAPI, HTTPException
+from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.responses.custom_responses import (
@@ -17,9 +17,17 @@ from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
 from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
+from app.database.connection import get_db_unyield
+from app.services.permission_services import APP_PERMISSION
 
 # ============ Sentry Initialization ============= #
 
+
+b = BackgroundTasks()
+if settings.DB_TYPE == "postgresql":
+    b.add_task(APP_PERMISSION.create_permissions, get_db_unyield())
+else:
+    APP_PERMISSION.create_permissions(get_db_unyield())
 
 sentry_sdk.init(
     settings.PRD_SENTRY_DSN,
