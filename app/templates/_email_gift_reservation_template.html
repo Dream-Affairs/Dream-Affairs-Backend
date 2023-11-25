@@ -106,7 +106,7 @@
                     padding: 0;
                   "
                 >
-                  You haven’t finished sending your gift to Chinonye and John
+                  You haven’t finished sending your gift to {{kwargs.organizer_name}}
                   yet!
                 </p>
               </div>
@@ -129,9 +129,9 @@
                     line-height: 19.6px;
                   "
                 >
-                  $400.00 for honeymoon<br /><br />
-                  Send with <b> PAYPAL </b>to @lydia<br /><br />
-                  You reserved this gift today on Chinonye & John’s registry
+                  {{kwargs.product_amount}} for {{kwargs.product_name}}<br /><br />
+                  Send with <b> {{kwargs.payment_link}} </b>to {{kwargs.payment_name}}<br /><br />
+                  You reserved this gift today on {{kwargs.organizer_name}}’s registry
                   finish sending your gift,<br /><br />
                   click Send Now.
                 </p>
