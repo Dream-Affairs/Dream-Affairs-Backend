@@ -10,7 +10,6 @@ from app.api.models.organization_models import Organization, OrganizationRole
 from app.api.models.role_permission_models import Permission, RolePermission
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.role_schemas import RoleCreate
-from app.core.config import settings
 from app.services.custom_services import model_to_dict
 from app.services.permission_services import PermissionManager
 
@@ -292,10 +291,7 @@ class Role(BaseModel):  # type: ignore
         db.commit()
         db.refresh(role_intance)
 
-        if settings.DB_TYPE == "postgresql":
-            back_task.add_task(self.assign_permissions(db, role_intance.id))
-        else:
-            self.assign_permissions(db, role_intance.id)
+        self.assign_permissions(db, role_intance.id)
 
         return role_intance.id
 
