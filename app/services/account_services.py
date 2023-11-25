@@ -422,7 +422,8 @@ def forgot_password_service(
             print(e)
 
     raise CustomException(
-        status_code=500, detail="An unexpected error occurred"
+        status_code=status.HTTP_404_NOT_FOUND,
+        message="No account found with that email",
     )
 
 
