@@ -281,6 +281,7 @@ class Role(BaseModel):  # type: ignore
                 data={"role_name": self.name},
             )
         role_intance = OrganizationRole(
+            id=uuid4().hex,
             name=self.name,
             description=self.description,
             organization_id=self.organization_id,
