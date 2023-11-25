@@ -349,9 +349,25 @@ def login_service(
             expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
+        user_org = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.account_id == user.id)
+            .first()
+        )
+
         return CustomResponse(
             status_code=status.HTTP_200_OK,
-            data={"access_token": access_token, "token_type": "bearer"},
+            data={
+                "user": {
+                    "id": user.id,
+                },
+                "organization": {
+                    "organization_id": user_org.organization_id,
+                    "organization_member_id": user_org.id,
+                },
+                "access_token": access_token,
+                "token_type": "bearer",
+            },
         )
 
     raise CustomException(
