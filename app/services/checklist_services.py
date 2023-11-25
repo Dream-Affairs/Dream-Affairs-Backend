@@ -1,12 +1,13 @@
 """This module contains the services for the checklist model."""
 
 from datetime import datetime
-from typing import Union
+from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
 from app.api.models.organization_models import Checklist
+from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.checklist_schemas import ChecklistResponse
 
 
@@ -63,17 +64,104 @@ def create_checklist(
     )
 
 
-# def update_task():
-#     ...
+def update_checklist(
+    checklist_id: str,
+    db: Session,
+    **kwargs: Dict[str, Any],
+) -> ChecklistResponse:
+    """Update a checklist."""
+    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    if checklist_instance:
+        setattr(checklist_instance, "updated_at", datetime.utcnow())
+        for key, value in kwargs.items():
+            setattr(checklist_instance, key, value)
+        db.commit()
+        return ChecklistResponse(
+            id=checklist_instance.id,
+            created_by=checklist_instance.created_by,
+            assigned_to=checklist_instance.assigned_to,
+            title=checklist_instance.title,
+            description=checklist_instance.description,
+            status=checklist_instance.status,
+            due_date=checklist_instance.due_date,
+            organization_id=checklist_instance.organization_id,
+            created_at=checklist_instance.created_at,
+        )
+    return CustomException(
+        status_code=404,
+        message="Checklist not found",
+    )
 
 
-# def delete_task():
-#     ...
+def delete_checklist(
+    checklist_id: str,
+    db: Session,
+) -> str:
+    """Delete a checklist."""
+    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    if checklist_instance:
+        db.delete(checklist_instance)
+        db.commit()
+        return ""
+    return CustomException(
+        status_code=404,
+        message="Checklist not found",
+    )
 
 
-# def get_task():
-#     ...
+def get_checklist(
+    checklist_id: str,
+    db: Session,
+) -> ChecklistResponse:
+    """Get a checklist."""
+    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    if checklist_instance:
+        d = ChecklistResponse(
+            id=checklist_instance.id,
+            created_by=checklist_instance.created_by,
+            assigned_to=checklist_instance.assigned_to,
+            title=checklist_instance.title,
+            description=checklist_instance.description,
+            status=checklist_instance.status,
+            due_date=checklist_instance.due_date,
+            organization_id=checklist_instance.organization_id,
+            created_at=checklist_instance.created_at,
+        )
+        return CustomResponse(
+            status_code=200,
+            message="Checklist retrieved successfully",
+            data=d,
+        )
+    return CustomException(
+        status_code=404,
+        message="Checklist not found",
+    )
 
 
-# def get_all_tasks():
-#     ...
+def get_all_checklists(
+    organization_id: str,
+    db: Session,
+) -> List[ChecklistResponse]:
+    """Get all checklists."""
+    checklist_instance = (
+        db.query(Checklist).filter_by(organization_id=organization_id).all()
+    )
+    if checklist_instance:
+        return [
+            ChecklistResponse(
+                id=checklist.id,
+                created_by=checklist.created_by,
+                assigned_to=checklist.assigned_to,
+                title=checklist.title,
+                description=checklist.description,
+                status=checklist.status,
+                due_date=checklist.due_date,
+                organization_id=checklist.organization_id,
+                created_at=checklist.created_at,
+            )
+            for checklist in checklist_instance
+        ]
+    return CustomException(
+        status_code=404,
+        message="No checklists found",
+    )
