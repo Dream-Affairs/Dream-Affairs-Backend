@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Union
 from uuid import uuid4
 
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.models.organization_models import Checklist
@@ -116,7 +117,7 @@ def get_checklist(
     """Get a checklist."""
     checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
     if checklist_instance:
-        d = ChecklistResponse(
+        data = ChecklistResponse(
             id=checklist_instance.id,
             created_by=checklist_instance.created_by,
             assigned_to=checklist_instance.assigned_to,
@@ -130,7 +131,7 @@ def get_checklist(
         return CustomResponse(
             status_code=200,
             message="Checklist retrieved successfully",
-            data=d,
+            data=jsonable_encoder(data),
         )
     return CustomException(
         status_code=404,
