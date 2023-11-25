@@ -6,14 +6,18 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
+from app.api.schemas.gift_schemas import (
+    AddProductGift,
+    EditProductGift,
+    FilterGiftSchema,
+)
 from app.database.connection import get_db
 from app.services.gift_services import (
     add_product_gift,
     delete_a_gift,
     edit_product_gift,
-    fetch_all_gifts,
     fetch_gift,
+    gift_filter,
 )
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
@@ -144,20 +148,40 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.get("/all-gifts")
-async def get_all_gifts(db: Session = Depends(get_db)) -> Any:
-    """Get all gifts from the Registry.
+@gift_router.post("/filter-gifts")
+async def filter_gifts(
+    request: FilterGiftSchema,
+    db: Session = Depends(get_db),
+) -> Any:
+    """Filter gifts from the Registry.
 
     Request:
 
-        Method: GET
+        Method: POST
+
+        filter_parameters(Schema):
+
+            filter_parameter: `str` specific parameter (e.g all, purchased,
+            available, reserved ...) to use for filtering gifts; default
+            is `all`.
+
+            filter_by_date: `bool` if true, filtering by date is enabled,
+            default is `false`.
+
+            start_date: UTC datetime string, it must be less than end date.
+
+                If only end_date is specified, the gifts will be filtered
+                by dates <= end_date.
+
+            end_date: UTC datetime string, it must be greater than start date.
 
         db(Session): the database session
 
     Response:
 
         Returns CustomResponse with 200 status code, message,
-        and data: a List[Dict[str,Any]] containing all the gifts.
+        and data: a List[Dict[str,Any]] containing all the gifts under
+        the filter parameter.
 
 
     Exception:
@@ -165,8 +189,8 @@ async def get_all_gifts(db: Session = Depends(get_db)) -> Any:
         CustomException: If no gifts found or server error.
     """
 
-    response, exception = fetch_all_gifts(db)
+    response, exception = gift_filter(request, db)
+
     if exception:
         raise exception
-
     return response

@@ -1,15 +1,14 @@
 """This module is used to send an email to the recipient."""
-import json
 import os
 from datetime import datetime
 from typing import Any, Dict, Tuple, Union
-from uuid import uuid4
 
 from jinja2 import Environment, FileSystemLoader
 from requests import get, post, put  # type: ignore
 from sqlalchemy.orm import Session
 
-from app.api.models.email_models import TrackEmail
+from app.api.models.email_models import EmailList, TrackEmail
+from app.api.responses.custom_responses import CustomResponse
 from app.core.config import settings
 
 TEMP_FOLDER = os.path.join(os.path.abspath(settings.TEMPLATE_DIR))
@@ -84,12 +83,12 @@ class EmailService:
     def send_mail(
         self,
         subject: str,
-        semder_email: str,
+        sender_email: str,
         sender_name: str,
         to: str,
         body_html: Union[str, None] = None,
-        body_text: Union[str, None] = None,
-    ) -> Dict[str, Any]:
+        reply_to: Union[str, None] = None,
+    ) -> Dict[str, str]:
         """This function is used to send an email to the recipient.
 
         Args:
@@ -111,144 +110,69 @@ class EmailService:
             url="/email/send",
             data={
                 "subject": subject,
-                "from": semder_email,
+                "from": sender_email,
                 "fromName": sender_name,
                 "to": to,
                 "body_html": body_html,
-                "body_text": body_text,
+                "replyTo": reply_to,
+                "isTransactional": True,
+                "trackOpens": True,
+                "trackClicks": True,
+                "charset": "utf-8",
             },
         )
         return mail_instance
 
-    def log_email(
-        self,
-        unique_id: str,
-        email_id: str,
-        organization_id: str,
-        subject: str,
-        recipient: str,
-        template: str,
-        status: str,
-        reason: str,
-        db: Session,
-        is_read: bool = False,
-    ) -> str:
-        """This function is used to log the email sent to the recipient.
+    def get_email_status(self, message_id: str) -> Dict[str, Any]:
+        """This function is used to get the status of the email.
 
         Args:
-            unique_id: This is the unique id of the email.
-            email_id: This is the email id of the email.
-            organization_id: This is the organization id of the email.
-            subject: This is the subject of the email.
-            recipient: This is the email address of the recipient.
-            template: This is the template of the email.
-            status: This is the status of the email.
-            reason: This is the reason of the email.
-            is_read: This is the boolean value of the email.
-            sent_at: This is the date the email was sent.
-            created_at: This is the date the email was created.
-            updated_at: This is the date the email was updated.
-            db: This is the database session.
+            message_id: This is the email id of the email.
 
         Returns:
-            This returns the unique id of the email.
+            This returns the response of the request.
         """
-
-        db_email = TrackEmail(
-            email_id=email_id,
-            organization_id=organization_id,
-            subject=subject,
-            recipient=recipient,
-            template=template,
-            status=status,
-            reason=reason,
-            is_read=is_read,
-            created_at=datetime.utcnow(),
-            last_updated_at=datetime.utcnow(),
-            unique_id=unique_id,
+        mail_instance = self.elastic_email_request(
+            method="GET",
+            url="/email/getstatus",
+            data={"messageID": message_id},
         )
-        try:
-            db.add(db_email)
-            db.commit()
-            db.refresh(db_email)
-        except Exception as e:
-            db.rollback()
-            raise e
-        return unique_id
+        return mail_instance
 
-    def track_email(
-        self,
-        unique_id: str,
-        db: Session,
-    ) -> str:
-        """This function is used to track the email sent to the recipient.
+    def subscribe_email(self, email: str) -> Dict[str, Any]:
+        """This function is used to subscribe an email.
 
         Args:
-            unique_id: This is the unique id of the email.
-            db: This is the database session.
+            email: This is the email address of the recipient.
 
         Returns:
-            This returns the unique id of the email.
+            This returns the response of the request.
         """
-        db_email: TrackEmail = (
-            db.query(TrackEmail)
-            .filter(TrackEmail.unique_id == unique_id)
-            .first()
+        mail_instance = self.elastic_email_request(
+            method="GET",
+            url="/contact/add",
+            data={"email": email},
         )
-        if db_email:
-            db_email.is_read = True
-            db_email.last_updated_at = datetime.utcnow()
-            db.commit()
-            db.refresh(db_email)
-        return "Email tracked successfully"
+        return mail_instance
+
+    def unsubscribe_email(self, email: str) -> Dict[str, Any]:
+        """This function is used to unsubscribe an email.
+
+        Args:
+            email: This is the email address of the recipient.
+
+        Returns:
+            This returns the response of the request.
+        """
+        mail_instance = self.elastic_email_request(
+            method="GET",
+            url="/contact/remove",
+            data={"email": email},
+        )
+        return mail_instance
 
 
-email = EmailService(settings.EMAIL_API_KEY)
-
-
-def send_company_email_api(
-    subject: str,
-    recipient_email: str,
-    organization_id: str,
-    template: str,
-    kwargs: Dict[str, Any],
-    db: Session,
-) -> str:
-    """This function is used to send an email to the recipient.
-
-    Args:
-        subject: This is the subject of the email.
-        recipient_email: This is the email address of the recipient.
-        organization_id: This is the organization id of the email.
-        template: This is the template of the email.
-        kwargs: This is the dictionary of the arguments.
-
-    Returns:
-        This returns the unique id of the email.
-    """
-    data = email.send_mail(
-        subject=subject,
-        semder_email=settings.EMAIL_SENDER,
-        sender_name=settings.EMAIL_NAME,
-        to=recipient_email,
-        body_html=generate_html(template, kwargs=kwargs),
-    )
-    if data["success"] is True:
-        status = "sent"
-    else:
-        status = "failed"
-
-    return email.log_email(
-        email_id=data.get("data")["messageid"],  # type: ignore
-        organization_id=organization_id,
-        subject=subject,
-        recipient=recipient_email,
-        template=template,
-        status=status,
-        unique_id=uuid4().hex,
-        reason=json.dumps(data),
-        db=db,
-    )
+Email = EmailService(settings.EMAIL_API_KEY)
 
 
 def generate_html(
@@ -272,3 +196,196 @@ def formataddr(address: Tuple[str, str]) -> str:
     """This function is used to format the email address."""
     name, email_address = address
     return f"{name} <{email_address}>"
+
+
+def track_email(
+    message_id: str,
+    db: Session,
+) -> str:
+    """This function is used to track the email sent to the recipient.
+
+    Args:
+        message_id: This is the message id of the email.
+        db: This is the database session.
+
+    Returns:
+        This returns the message id of the email.
+    """
+    db_email: TrackEmail = (
+        db.query(TrackEmail)
+        .filter(TrackEmail.message_id == message_id)
+        .first()
+    )
+    if db_email:
+        db_email.is_read = True
+        db_email.last_updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(db_email)
+    return "Email tracked successfully"
+
+
+def log_email(
+    message_id: str,
+    organization_id: str,
+    subject: str,
+    recipient: str,
+    template: str,
+    status: str,
+    reason: str,
+    db: Session,
+    is_read: bool = False,
+    number_of_links_in_email: int = 0,
+) -> str:
+    """This function is used to log the email sent to the recipient.
+
+    Args:
+        unique_id: This is the unique id of the email.
+        message_id: This is the email id of the email.
+        organization_id: This is the organization id of the email.
+        subject: This is the subject of the email.
+        recipient: This is the email address of the recipient.
+        template: This is the template of the email.
+        status: This is the status of the email.
+        reason: This is the reason of the email.
+        is_read: This is the boolean value of the email.
+        sent_at: This is the date the email was sent.
+        created_at: This is the date the email was created.
+        updated_at: This is the date the email was updated.
+        db: This is the database session.
+
+    Returns:
+        This returns the unique id of the email.
+    """
+
+    db_email = TrackEmail(
+        message_id=message_id,
+        organization_id=organization_id,
+        subject=subject,
+        recipient=recipient,
+        template=template,
+        status=status,
+        reason=reason,
+        is_read=is_read,
+        number_of_links_in_email=number_of_links_in_email,
+        created_at=datetime.utcnow(),
+        last_updated_at=datetime.utcnow(),
+    )
+    try:
+        db.add(db_email)
+        db.commit()
+        db.refresh(db_email)
+    except Exception as e:
+        db.rollback()
+        raise e
+    return "Email logged successfully"
+
+
+def send_email_api(
+    subject: str,
+    recipient_email: str,
+    organization_id: str,
+    template: str,
+    kwargs: Dict[str, Any],
+    db: Session,
+) -> str:
+    """This function is used to send an email to the recipient.
+
+    Args:
+        subject: This is the subject of the email.
+        recipient_email: This is the email address of the recipient.
+        organization_id: This is the organization id of the email.
+        template: This is the template of the email.
+        kwargs: This is the dictionary of the arguments.
+
+    Returns:
+        This returns the unique id of the email.
+    """
+
+    # count number of links in email
+    count = len([key for key in kwargs if "_link" in key])
+
+    data: Dict[str, Any] = Email.send_mail(
+        subject=subject,
+        sender_email=settings.EMAIL_SENDER,
+        sender_name=settings.EMAIL_NAME,
+        to=recipient_email,
+        body_html=generate_html(template, kwargs=kwargs),
+    )
+    if data["success"] is True:
+        status = "sent"
+        reason = "Email sent successfully"
+    else:
+        status = "failed"
+        reason = data.get("error", "")
+
+    return log_email(
+        message_id=data.get("data")["messageid"],  # type: ignore
+        organization_id=organization_id,
+        subject=subject,
+        recipient=recipient_email,
+        template=template,
+        status=status,
+        number_of_links_in_email=count,
+        reason=reason,
+        db=db,
+    )
+
+
+def subscribe_email_service(
+    email: str,
+    db: Session,
+) -> CustomResponse:
+    """This function is used to subscribe an email.
+
+    Args:
+        email: This is the email address of the recipient.
+        db: This is the database session.
+
+    Returns:
+        This returns the response of the request.
+    """
+    # Email.subscribe_email(email)
+    db_email = EmailList(
+        email=email,
+        is_subscribed=True,
+        date_subscribed=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        last_updated_at=datetime.utcnow(),
+    )
+    try:
+        db.add(db_email)
+        db.commit()
+        db.refresh(db_email)
+    except Exception as e:
+        db.rollback()
+        raise e
+    return CustomResponse(
+        status_code=200, message="Email subscribed successfully", data=""
+    )
+
+
+def unsubscribe_email_service(
+    email: str,
+    db: Session,
+) -> CustomResponse:
+    """This function is used to unsubscribe an email.
+
+    Args:
+        email: This is the email address of the recipient.
+        db: This is the database session.
+
+    Returns:
+        This returns the response of the request.
+    """
+    # Email.unsubscribe_email(email)
+    db_email: EmailList = (
+        db.query(EmailList).filter(EmailList.email == email).first()
+    )
+    if db_email:
+        db_email.is_subscribed = False
+        db_email.date_unsubscribed = datetime.utcnow()
+        db.commit()
+        db.refresh(db_email)
+    return CustomResponse(
+        status_code=200, message="Email unsubscribed successfully", data=""
+    )

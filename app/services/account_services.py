@@ -14,7 +14,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.models.account_models import Account, Auth
-from app.api.models.organization_models import Organization, OrganizationDetail
+from app.api.models.organization_models import (
+    Organization,
+    OrganizationDetail,
+    OrganizationMember,
+)
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
     AccountSchema,
@@ -24,7 +28,9 @@ from app.api.schemas.account_schemas import (
     VerifyAccountTokenData,
 )
 from app.core.config import settings
-from app.services.email_services import send_company_email_api
+from app.services.email_services import send_email_api
+from app.services.permission_services import APP_PERMISSION
+from app.services.roles_services import Role
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -190,6 +196,7 @@ def account_service(
     existing_user = (
         db.query(Account).filter(Account.email == user.email).first()
     )
+
     if existing_user:
         return None, CustomException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -224,11 +231,27 @@ def account_service(
         event_date=user.event_date,
     )
 
+    default_admin = Role(
+        name="Admin",
+        description="Default Admin Role",
+        organization_id=org.id,
+        permissions=APP_PERMISSION,
+        is_default=True,
+    )
+
     if not add_to_db(db, new_user, auth, org, org_detail):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
+
+    organization_member = OrganizationMember(
+        id=uuid4().hex,
+        organization_id=org.id,
+        account_id=new_user.id,
+        organization_role_id=default_admin.create_role(db),
+    )
+    add_to_db(db, organization_member)
 
     access_token = create_access_token(
         data={"account_id": new_user.id, "context": "verify-account"},
@@ -237,10 +260,12 @@ def account_service(
     url = f"{settings.FRONT_END_HOST}/auth/verify-account?token={access_token}"
 
     background_tasks.add_task(
-        send_company_email_api,
+        send_email_api,
         subject="Welcome to Dream Affairs",
         recipient_email=user.email,
         template="_email_verification.html",
+        organization_id=org.id,
+        db=db,
         kwargs={"name": user.first_name, "verification_link": url},
     )
 

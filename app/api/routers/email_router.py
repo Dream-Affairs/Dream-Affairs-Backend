@@ -3,22 +3,25 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.api.schemas.email_schemas import EmailSchema
+from app.api.responses.custom_responses import CustomResponse
+from app.api.schemas.email_schemas import EmailSchema, EmailSubscriptionSchema
 from app.database.connection import get_db
-from app.services.email_services import send_company_email_api
+from app.services.email_services import (
+    send_email_api,
+    subscribe_email_service,
+    unsubscribe_email_service,
+)
 
-email_router = APIRouter(prefix="/email")
+email_router = APIRouter(prefix="/email", tags=["Email"])
 
 
 @email_router.post(
     "/send-email",
-    status_code=status.HTTP_200_OK,
-    tags=["Email"],
 )
 def send_email(
     request: EmailSchema,
     db: Session = Depends(get_db),
-) -> None:
+) -> CustomResponse:
     """This function is used to send an email to the recipient using the API.
 
     Args:
@@ -30,7 +33,7 @@ def send_email(
             It is the name in the env file.
         template: This is the template of the email.
     """
-    send_company_email_api(
+    send_email_api(
         request.subject,
         request.recipient,
         request.organization_id,
@@ -38,3 +41,32 @@ def send_email(
         db=db,
         kwargs=request.kwargs,
     )
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Email sent successfully.",
+        data="",
+    )
+
+
+@email_router.post("/subscribe")
+def subscribe(
+    request: EmailSubscriptionSchema, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """This function is used to subscribe a user to the email list.
+
+    Args:
+        email: This is the email of the user.
+    """
+    return subscribe_email_service(request.email, db)
+
+
+@email_router.post("/unsubscribe")
+def unsubscribe(
+    request: EmailSubscriptionSchema, db: Session = Depends(get_db)
+) -> CustomResponse:
+    """This function is used to unsubscribe a user from the email list.
+
+    Args:
+        email: This is the email of the user.
+    """
+    return unsubscribe_email_service(request.email, db)
