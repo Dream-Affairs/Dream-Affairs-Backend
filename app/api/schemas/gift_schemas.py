@@ -1,5 +1,6 @@
 """This module defines Pydantic schemas for registy/gift."""
 
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 
@@ -18,6 +19,15 @@ class GiftAmountType(str, Enum):
 
     FIXED = "fixed"
     ANY = "any"
+
+
+class FilterParamEnum(str, Enum):
+    """Represents the enum for filter_parameter."""
+
+    ALL = "all"
+    AVAILABLE = "available"
+    RESERVED = "reserved"
+    PURCHASED = "purchased"
 
 
 class GiftSchema(BaseModel):  # type: ignore
@@ -54,3 +64,12 @@ class EditProductGift(AddProductGift):
         """Repersents the config model for this Schema."""
 
         from_attributes = True
+
+
+class FilterGiftSchema(BaseModel):  # type: ignore
+    """Represents the schema for filtering gifts."""
+
+    filter_parameter: FilterParamEnum = FilterParamEnum.ALL
+    filter_by_date: bool | None = False
+    start_date: datetime | None = None
+    end_date: datetime | None = None

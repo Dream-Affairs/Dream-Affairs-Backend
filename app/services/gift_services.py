@@ -11,7 +11,11 @@ from sqlalchemy.orm import Session
 
 from app.api.models.gift_models import Gift
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.gift_schemas import AddProductGift, EditProductGift
+from app.api.schemas.gift_schemas import (
+    AddProductGift,
+    EditProductGift,
+    FilterGiftSchema,
+)
 from app.services.account_services import fake_authenticate
 
 
@@ -188,30 +192,93 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def fetch_all_gifts(db: Session) -> tuple[Any, Any]:
-    """Fetch all gifts that are not deleted.
+def gift_filter(
+    params: FilterGiftSchema,
+    db: Session,
+) -> tuple[Any, Any]:
+    """Fetch all gifts that are not deleted and not hidden under a specified
+    parameter.
 
     Args:
+        params(FilterGiftSchema):
+            filter_parameter: str,
+            filter_by_date:bool,
+            start_date: datetime,
+            end_date: datetime
+
         db (Session): The database session.
 
     Returns:
-        Tuple: [None,Exception] or [Response,Nonw]
+        Tuple: [None,Exception] or [Response,None]
     """
-
-    gift_instance = (
-        db.query(Gift).filter_by(is_deleted=False, is_gift_hidden=False).all()
+    # instance of a base query
+    base_query = db.query(Gift).filter_by(
+        is_deleted=False, is_gift_hidden=False
     )
 
-    if not gift_instance:
+    # Apply dynamic filters based on parameters passed
+    param = params.filter_parameter.value
+    if param == "all":
+        if params.filter_by_date and params.end_date and not params.start_date:
+            # filter by date enabled
+            # query all gifts by date created
+            query = base_query.filter(Gift.created_at <= params.end_date)
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.created_at >= params.start_date,
+                Gift.created_at <= params.end_date,
+            )
+        elif (
+            params.filter_by_date and params.start_date and not params.end_date
+        ):
+            query = base_query.filter(Gift.created_at >= params.start_date)
+
+        else:
+            # return all gifts
+            query = base_query
+
+    elif "purchased" in param or "reserved" in param:
+        # query purchased or reserved gifts by date updated
+
+        if params.filter_by_date and params.end_date and not params.start_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at <= params.end_date,
+            )
+
+        elif params.filter_by_date and params.start_date and params.end_date:
+            query = base_query.filter(
+                Gift.gift_status == param,
+                Gift.updated_at >= params.start_date,
+                Gift.updated_at <= params.end_date,
+            )
+        elif params.start_date and not params.end_date:
+            query = base_query.filter(Gift.created_at >= params.start_date)
+
+        else:
+            query = base_query.filter(Gift.gift_status == param)
+
+    else:
+        # if not all, if not purchased nor reserved, and
+        # no specified date query gifts based on the param
+        # this block is for future purpose, in case more param are needed
+        query = base_query.filter(Gift.gift_status == param)
+
+    # Execute the final query
+    gifts = query.all()
+
+    if not gifts:
         exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="No gifts found",
+            message=f"No gifts found under {param} category"
+            f" or specified date",
         )
         return None, exception
 
+    # return a custom response
     response = CustomResponse(
         status_code=status.HTTP_200_OK,
         message="Gifts retrieved successfully",
-        data=jsonable_encoder(gift_instance, exclude=["organization"]),
+        data=jsonable_encoder(gifts, exclude=["organization"]),
     )
     return response, None

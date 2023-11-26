@@ -17,9 +17,13 @@ from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
 from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
+from app.database.connection import get_db_unyield
+from app.services.permission_services import APP_PERMISSION
 
 # ============ Sentry Initialization ============= #
 
+
+APP_PERMISSION.create_permissions(get_db_unyield())
 
 sentry_sdk.init(
     settings.PRD_SENTRY_DSN,

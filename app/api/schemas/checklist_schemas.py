@@ -1,5 +1,6 @@
 """This module contains the schemas for the checklist route."""
 from datetime import datetime
+from typing import Any, Dict
 
 from pydantic import BaseModel
 
@@ -21,8 +22,10 @@ class ChecklistCreate(ChecklistBase):
     due_date: datetime
 
 
-class ChecklistUpdate(ChecklistBase):
+class ChecklistUpdate(BaseModel):  # type: ignore
     """Schema for updating a checklist."""
+
+    kwargs: Dict[str, Any]
 
 
 class ChecklistDelete(BaseModel):  # type: ignore

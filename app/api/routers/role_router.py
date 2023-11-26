@@ -4,7 +4,7 @@ from sqlalchemy.orm.session import Session
 
 from app.api.models.role_permission_models import Permission
 from app.api.responses.custom_responses import CustomResponse
-from app.api.schemas.invite_schemas import RoleCreate
+from app.api.schemas.role_schemas import RoleCreate
 from app.database.connection import get_db
 from app.services.custom_services import model_to_dict
 from app.services.roles_services import (
