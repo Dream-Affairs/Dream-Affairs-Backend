@@ -493,10 +493,12 @@ def fake_authenticate(member_id: str, db: Session) -> Any:
         if fails, return False.
     """
     authenticate_member = (
-        db.query(Organization).filter(Organization.owner == member_id).first()
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.id == member_id)
+        .first()
     )
     if not authenticate_member:
         return False
 
-    org_id = authenticate_member.id
+    org_id = authenticate_member.organization_id
     return org_id

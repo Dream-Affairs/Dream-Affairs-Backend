@@ -13,18 +13,18 @@ from app.api.schemas.gift_schemas import (
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
-    add_product_gift,
+    add_product_gift_,
     delete_a_gift,
-    edit_product_gift,
+    edit_product_gift_,
     fetch_gift,
-    gift_filter,
+    gifts_filter,
 )
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
 
 
 @gift_router.post("/add-product-gift")
-async def add_product(
+async def add_product_gift(
     member_id: str,
     gift_item: AddProductGift,
     db: Session = Depends(get_db),
@@ -51,7 +51,7 @@ async def add_product(
             a field is missing or internal server error.
     """
 
-    response, exception = add_product_gift(gift_item, member_id, db)
+    response, exception = add_product_gift_(gift_item, member_id, db)
     if exception:
         raise exception
 
@@ -59,7 +59,7 @@ async def add_product(
 
 
 @gift_router.patch("/edit-product-gift")
-async def edit_product(
+async def edit_product_gift(
     gift_id: str,
     gift_item: EditProductGift,
     db: Session = Depends(get_db),
@@ -85,7 +85,7 @@ async def edit_product(
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
-    response, exception = edit_product_gift(gift_item, gift_id, db)
+    response, exception = edit_product_gift_(gift_item, gift_id, db)
     if exception:
         raise exception
 
@@ -148,18 +148,20 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.post("/filter-gifts")
-async def filter_gifts(
+@gift_router.post("/get-gifts")
+async def get_all_gifts(
     request: FilterGiftSchema,
     db: Session = Depends(get_db),
 ) -> Any:
-    """Filter gifts from the Registry.
+    """Get gifts from the Registry.
 
     Request:
 
         Method: POST
 
-        filter_parameters(Schema):
+        request (Schema):
+
+            org_id : `str` the id of the organization
 
             filter_parameter: `str` specific parameter (e.g all, purchased,
             available, reserved ...) to use for filtering gifts; default
@@ -189,7 +191,7 @@ async def filter_gifts(
         CustomException: If no gifts found or server error.
     """
 
-    response, exception = gift_filter(request, db)
+    response, exception = gifts_filter(request, db)
 
     if exception:
         raise exception
