@@ -143,7 +143,7 @@ def get_all_checklists(
     limit: int,
     order: str,
     db: Session,
-) -> List[ChecklistResponse]:
+) -> Dict[str, Union[int, List[ChecklistResponse]]]:
     """Get all checklists."""
 
     if (
@@ -159,36 +159,32 @@ def get_all_checklists(
             status_code=403,
             message="You are not a member of this organization",
         )
-    checklist_instance = db.query(Checklist).filter_by(
-        organization_id=organization_id
-    )
+    query = db.query(Checklist).filter_by(organization_id=organization_id)
     if status != "all":
-        checklist_instance = checklist_instance.filter_by(status=status)
+        query = query.filter_by(status=status)
 
     if sort_by == "due_date":
-        checklist_instance = checklist_instance.order_by(
+        query = query.order_by(
             Checklist.due_date.desc()
             if order == "desc"
             else Checklist.due_date.asc()
         )
     elif sort_by == "assigned_to_me":
-        checklist_instance = checklist_instance.filter_by(
-            assigned_to=member_id
-        ).order_by(
+        query = query.filter_by(assigned_to=member_id).order_by(
             Checklist.due_date.desc()
             if order == "desc"
             else Checklist.due_date.asc()
         )
     elif sort_by == "assigned_by_me":
-        checklist_instance = checklist_instance.filter_by(
-            created_by=member_id
-        ).order_by(
+        query = query.filter_by(created_by=member_id).order_by(
             Checklist.due_date.desc()
             if order == "desc"
             else Checklist.due_date.asc()
         )
 
-    checklist_instance = checklist_instance.offset(offset).limit(limit).all()
+    total_count = query.count()
+    setattr(query, "total_count", total_count)
+    checklist_instance = query.offset(offset).limit(limit).all()
     data = [
         ChecklistResponse(
             id=checklist.id,
@@ -204,4 +200,7 @@ def get_all_checklists(
         for checklist in checklist_instance
     ]
 
-    return data
+    return {
+        "total_count": total_count,
+        "data": data,
+    }
