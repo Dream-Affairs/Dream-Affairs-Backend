@@ -3,6 +3,7 @@ operations."""
 
 from datetime import datetime
 from typing import Any
+from uuid import uuid4
 
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -19,7 +20,7 @@ from app.api.schemas.gift_schemas import (
 from app.services.account_services import fake_authenticate
 
 
-def add_product_gift(
+def add_product_gift_(
     gift_item: AddProductGift,
     member_id: str,
     db: Session,
@@ -48,7 +49,7 @@ def add_product_gift(
     gift_item = gift_item.model_dump()
     gift_item["organization_id"] = org_id
 
-    new_gift = Gift(**gift_item)
+    new_gift = Gift(**gift_item, id=uuid4().hex)
 
     try:
         db.add(new_gift)
@@ -72,7 +73,7 @@ def add_product_gift(
         return None, exception
 
 
-def edit_product_gift(
+def edit_product_gift_(
     gift_item: EditProductGift,
     gift_id: str,
     db: Session,
@@ -192,15 +193,16 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     return response, None
 
 
-def gift_filter(
+def gifts_filter(
     params: FilterGiftSchema,
     db: Session,
 ) -> tuple[Any, Any]:
     """Fetch all gifts that are not deleted and not hidden under a specified
-    parameter.
+    parameter based org_id provided.
 
     Args:
         params(FilterGiftSchema):
+            org_id : str,
             filter_parameter: str,
             filter_by_date:bool,
             start_date: datetime,
@@ -213,8 +215,15 @@ def gift_filter(
     """
     # instance of a base query
     base_query = db.query(Gift).filter_by(
-        is_deleted=False, is_gift_hidden=False
+        is_deleted=False, is_gift_hidden=False, organization_id=params.org_id
     )
+
+    if base_query.count() == 0:
+        exception = CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Invalid Org_id",
+        )
+        return None, exception
 
     # Apply dynamic filters based on parameters passed
     param = params.filter_parameter.value
@@ -228,10 +237,6 @@ def gift_filter(
                 Gift.created_at >= params.start_date,
                 Gift.created_at <= params.end_date,
             )
-        elif (
-            params.filter_by_date and params.start_date and not params.end_date
-        ):
-            query = base_query.filter(Gift.created_at >= params.start_date)
 
         else:
             # return all gifts
