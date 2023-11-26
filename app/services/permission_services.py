@@ -26,7 +26,7 @@ class PermissionSchema(BaseModel):  # type: ignore
     class Config:
         """Pydantic Config Class."""
 
-        orm_mode = True
+        from_attributes = True
         extra = "allow"
 
 

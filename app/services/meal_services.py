@@ -1,6 +1,7 @@
 """This module contains function that ensure a Meal is created properly."""
 
 from typing import Any
+from uuid import uuid4
 
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
@@ -55,7 +56,9 @@ def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
         )
 
     # Creating a new meal category
-    new_category = MealCategory(organization_id=org_id, name=schema.name)
+    new_category = MealCategory(
+        organization_id=org_id, name=schema.name, id=uuid4().hex
+    )
 
     try:
         db.add(new_category)
@@ -172,6 +175,7 @@ def create_meal_service(
 
     meal_item = meal_schema.model_dump()
     meal_item["meal_category_id"] = meal_category_id
+    meal_item["id"] = uuid4().hex
 
     # Compiling attributes to make up a meal model
     new_meal = Meal(**meal_item)
