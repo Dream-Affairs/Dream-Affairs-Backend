@@ -26,7 +26,7 @@ class PermissionSchema(BaseModel):  # type: ignore
     class Config:
         """Pydantic Config Class."""
 
-        orm_mode = True
+        from_attributes = True
         extra = "allow"
 
 
@@ -325,27 +325,57 @@ class PermissionManager(BaseModel):  # type: ignore
         Returns:
             None
         """
+
+        permissions_to_insert = []
+        permissions_to_update = []
         for _, value in self:
             for _, v in value:
-                permission = Permission(
-                    id=v.id,
-                    permission_class=v.permission_class,
-                    name=v.name,
-                    description=v.description,
-                )
-                if (
+                permission = (
                     db.query(Permission)
                     .filter(
                         Permission.permission_class == v.permission_class,
                         Permission.name == v.name,
                     )
                     .first()
-                ):
-                    print(f"found permission {v.name}")
-                    continue
-                db.add(permission)
-                db.commit()
-                db.refresh(permission)
+                )
+                if permission:
+                    # The permission already exists, so it needs to be updated
+                    permissions_to_update.append(
+                        {
+                            "id": permission.id,
+                            "permission_class": v.permission_class,
+                            "name": v.name,
+                            "description": v.description,
+                        }
+                    )
+                else:
+                    # The permission does not exist, so it needs to be inserted
+                    permissions_to_insert.append(
+                        {
+                            "id": v.id,
+                            "permission_class": v.permission_class,
+                            "name": v.name,
+                            "description": v.description,
+                        }
+                    )
+
+        # Use bulk_insert_mappings and refresh to insert and update permissions
+        db.bulk_update_mappings(Permission, permissions_to_update)
+        db.bulk_insert_mappings(Permission, permissions_to_insert)
+
+        # Refresh all permissions
+        for _, value in self:
+            for _, v in value:
+                permission = (
+                    db.query(Permission)
+                    .filter(
+                        Permission.permission_class == v.permission_class,
+                        Permission.name == v.name,
+                    )
+                    .first()
+                )
+                if permission:
+                    db.refresh(permission)
 
 
 APP_PERMISSION = PermissionManager(

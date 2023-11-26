@@ -4,11 +4,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Union
 from uuid import uuid4
 
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from app.api.models.organization_models import Checklist
-from app.api.responses.custom_responses import CustomException, CustomResponse
+from app.api.models.organization_models import Checklist, OrganizationMember
+from app.api.responses.custom_responses import CustomException
 from app.api.schemas.checklist_schemas import ChecklistResponse
 
 
@@ -117,7 +116,7 @@ def get_checklist(
     """Get a checklist."""
     checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
     if checklist_instance:
-        data = ChecklistResponse(
+        return ChecklistResponse(
             id=checklist_instance.id,
             created_by=checklist_instance.created_by,
             assigned_to=checklist_instance.assigned_to,
@@ -128,11 +127,7 @@ def get_checklist(
             organization_id=checklist_instance.organization_id,
             created_at=checklist_instance.created_at,
         )
-        return CustomResponse(
-            status_code=200,
-            message="Checklist retrieved successfully",
-            data=jsonable_encoder(data),
-        )
+
     return CustomException(
         status_code=404,
         message="Checklist not found",
@@ -141,28 +136,72 @@ def get_checklist(
 
 def get_all_checklists(
     organization_id: str,
+    member_id: str,
+    status: str,
+    sort_by: str,
+    offset: int,
+    limit: int,
+    order: str,
     db: Session,
 ) -> List[ChecklistResponse]:
     """Get all checklists."""
-    checklist_instance = (
-        db.query(Checklist).filter_by(organization_id=organization_id).all()
+
+    if (
+        db.query(OrganizationMember)
+        .filter(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.id == member_id,
+        )
+        .first()
+        is None
+    ):
+        raise CustomException(
+            status_code=403,
+            message="You are not a member of this organization",
+        )
+    checklist_instance = db.query(Checklist).filter_by(
+        organization_id=organization_id
     )
-    if checklist_instance:
-        return [
-            ChecklistResponse(
-                id=checklist.id,
-                created_by=checklist.created_by,
-                assigned_to=checklist.assigned_to,
-                title=checklist.title,
-                description=checklist.description,
-                status=checklist.status,
-                due_date=checklist.due_date,
-                organization_id=checklist.organization_id,
-                created_at=checklist.created_at,
-            )
-            for checklist in checklist_instance
-        ]
-    return CustomException(
-        status_code=404,
-        message="No checklists found",
-    )
+    if status != "all":
+        checklist_instance = checklist_instance.filter_by(status=status)
+
+    if sort_by == "due_date":
+        checklist_instance = checklist_instance.order_by(
+            Checklist.due_date.desc()
+            if order == "desc"
+            else Checklist.due_date.asc()
+        )
+    elif sort_by == "assigned_to_me":
+        checklist_instance = checklist_instance.filter_by(
+            assigned_to=member_id
+        ).order_by(
+            Checklist.due_date.desc()
+            if order == "desc"
+            else Checklist.due_date.asc()
+        )
+    elif sort_by == "assigned_by_me":
+        checklist_instance = checklist_instance.filter_by(
+            created_by=member_id
+        ).order_by(
+            Checklist.due_date.desc()
+            if order == "desc"
+            else Checklist.due_date.asc()
+        )
+
+    checklist_instance = checklist_instance.offset(offset).limit(limit).all()
+    data = [
+        ChecklistResponse(
+            id=checklist.id,
+            created_by=checklist.created_by,
+            assigned_to=checklist.assigned_to,
+            title=checklist.title,
+            description=checklist.description,
+            status=checklist.status,
+            due_date=checklist.due_date,
+            organization_id=checklist.organization_id,
+            created_at=checklist.created_at,
+        )
+        for checklist in checklist_instance
+    ]
+
+    return data

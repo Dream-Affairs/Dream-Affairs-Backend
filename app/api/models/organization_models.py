@@ -421,7 +421,7 @@ class Checklist(Base):  # type: ignore
         String,
     )
     status = Column(
-        ENUM("completed", "pending", "Overdue", name="checklist_status"),
+        ENUM("completed", "pending", "overdue", name="checklist_status"),
         nullable=False,
     )
     is_completed = Column(Boolean, default=False)
