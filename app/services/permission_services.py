@@ -325,7 +325,6 @@ class PermissionManager(BaseModel):  # type: ignore
         Returns:
             None
         """
-
         permissions_to_insert = []
         permissions_to_update = []
         for _, value in self:
@@ -360,7 +359,9 @@ class PermissionManager(BaseModel):  # type: ignore
                     )
 
         # Use bulk_insert_mappings and refresh to insert and update permissions
+        print("updating existing permissions...")
         db.bulk_update_mappings(Permission, permissions_to_update)
+        print("inserting new permissions...")
         db.bulk_insert_mappings(Permission, permissions_to_insert)
 
         # Refresh all permissions
@@ -376,6 +377,7 @@ class PermissionManager(BaseModel):  # type: ignore
                 )
                 if permission:
                     db.refresh(permission)
+        db.close()
 
 
 APP_PERMISSION = PermissionManager(

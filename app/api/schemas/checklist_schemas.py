@@ -45,22 +45,7 @@ class ChecklistCreate(ChecklistBase):
     organization_id: str
     status: ChecklistStatus
 
-    due_date: Optional[datetime] | str = "Example(2021-09-01T00:00:00.000Z)"
-
-    class Config:
-        """Config for the schema."""
-
-        json_schema_extra = {
-            "example": {
-                "title": "Checklist title",
-                "description": "Checklist description" or None,
-                "assigned_to": "" or None,
-                "created_by": "member_id",
-                "organization_id": "organization_id",
-                "status": "pending",
-                "due_date": "Example(2021-09-01T00:00:00.000Z)" or None,
-            }
-        }
+    due_date: Optional[datetime] | None = None
 
 
 class ChecklistUpdate(BaseModel):  # type: ignore
@@ -89,5 +74,5 @@ class ChecklistResponse(BaseModel):  # type: ignore
     created_by: str
     organization_id: str
     status: str
-    due_date: datetime
+    due_date: datetime | None
     created_at: datetime

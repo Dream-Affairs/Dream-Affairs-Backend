@@ -11,7 +11,6 @@ from app.api.models.budget_expenditure_models import (  # noqa: F401
     Budget,
     Expenditure,
 )
-from app.api.models.email_models import TrackEmail  # noqa: F401
 from app.api.models.gift_models import (  # noqa: F401
     BankDetail,
     Gift,
@@ -24,6 +23,7 @@ from app.api.models.meal_models import (  # noqa: F401
     MealCategory,
     MealTag,
 )
+from app.api.models.notification_models import TrackEmail  # noqa: F401
 from app.api.models.role_permission_models import (  # noqa: F401
     Permission,
     RolePermission,

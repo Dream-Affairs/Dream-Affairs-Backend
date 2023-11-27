@@ -3,6 +3,7 @@ import sentry_sdk
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import (
     CustomResponse,
@@ -22,8 +23,6 @@ from app.services.permission_services import APP_PERMISSION
 
 # ============ Sentry Initialization ============= #
 
-
-APP_PERMISSION.create_permissions(get_db_unyield())
 
 sentry_sdk.init(
     settings.PRD_SENTRY_DSN,
@@ -96,4 +95,6 @@ app.include_router(v1_router)
 
 
 if __name__ == "__main__":
+    db: Session = get_db_unyield()
+    APP_PERMISSION.create_permissions(db=db)
     uvicorn.run(app="main:app", port=8000, reload=True)

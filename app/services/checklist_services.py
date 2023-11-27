@@ -15,8 +15,8 @@ def create_checklist(
     created_by: str,
     title: str,
     organization_id: str,
-    due_date: datetime,
     db: Session,
+    due_date: datetime | None = None,
     assigned_to: str | None = None,
     description: str | None = None,
 ) -> ChecklistResponse:
