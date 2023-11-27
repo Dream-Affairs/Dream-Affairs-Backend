@@ -183,6 +183,14 @@ class OrganizationDetail(Base):  # type: ignore
     event_end_time = Column(
         DateTime,
     )
+    shipment_name = Column(String)
+    shipment_primary_address = Column(String)
+    shipment_secondary_address = Column(String)
+    shipment_city = Column(String)
+    shipment_state = Column(String)
+    shipment_zip_code = Column(String)
+    shipment_country = Column(String)
+    shipment_phone_number = Column(String)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
