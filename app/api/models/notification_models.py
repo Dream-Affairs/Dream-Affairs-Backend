@@ -46,3 +46,32 @@ class EmailList(Base):  # type: ignore
     date_unsubscribed = Column(DateTime)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+# class Notification(Base):  # type: ignore
+#     """This table is used to store the notifications."""
+
+#     __tablename__ = "notification"
+
+#     id = Column(String, primary_key=True, default=uuid4().hex)
+#     title = Column(String)
+#     message = Column(String)
+#     recipient = Column(String)
+#     is_read = Column(Boolean, default=False)
+#     created_at = Column(DateTime, default=datetime.utcnow)
+#     last_updated_at = Column(DateTime, default=datetime.utcnow)
+
+# class NotificationSettings(Base): # type: ignore
+#     """This table is used to store the notification settings."""
+
+#     __tablename__ = "notification_settings"
+
+#     id = Column(String, primary_key=True, default=uuid4().hex)
+#     organization_id = Column(String, ForeignKey("organization.id"))
+#     email = Column(Boolean, default=False)
+#     sms = Column(Boolean, default=False)
+#     push_notification = Column(Boolean, default=False)
+
+#     # organization = relationship(
+#     #     "Organization", back_populates="notification_settings"
+#     # )

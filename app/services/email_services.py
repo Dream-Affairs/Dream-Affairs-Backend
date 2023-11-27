@@ -7,7 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 from requests import get, post, put  # type: ignore
 from sqlalchemy.orm import Session
 
-from app.api.models.email_models import EmailList, TrackEmail
+from app.api.models.notification_models import EmailList, TrackEmail
 from app.api.responses.custom_responses import CustomResponse
 from app.core.config import settings
 
