@@ -1,7 +1,7 @@
 """This module contains the schemas for the checklist route."""
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -34,17 +34,33 @@ class ChecklistBase(BaseModel):  # type: ignore
     """Base schema for a checklist."""
 
     title: str
-    description: str
+    description: Optional[str] | None
 
 
 class ChecklistCreate(ChecklistBase):
     """Schema for creating a checklist."""
 
-    assigned_to: str
+    assigned_to: Optional[str] | None = None
     created_by: str
     organization_id: str
     status: ChecklistStatus
-    due_date: datetime
+
+    due_date: Optional[datetime] | str = "Example(2021-09-01T00:00:00.000Z)"
+
+    class Config:
+        """Config for the schema."""
+
+        json_schema_extra = {
+            "example": {
+                "title": "Checklist title",
+                "description": "Checklist description" or None,
+                "assigned_to": "" or None,
+                "created_by": "member_id",
+                "organization_id": "organization_id",
+                "status": "pending",
+                "due_date": "Example(2021-09-01T00:00:00.000Z)" or None,
+            }
+        }
 
 
 class ChecklistUpdate(BaseModel):  # type: ignore
@@ -68,8 +84,8 @@ class ChecklistResponse(BaseModel):  # type: ignore
 
     id: str
     title: str
-    description: str
-    assigned_to: str
+    description: str | None
+    assigned_to: str | None
     created_by: str
     organization_id: str
     status: str

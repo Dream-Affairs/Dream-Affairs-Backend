@@ -417,7 +417,6 @@ class Checklist(Base):  # type: ignore
     assigned_to = Column(
         String,
         ForeignKey("organization_member.id", ondelete="CASCADE"),
-        nullable=False,
     )
     organization_id = Column(
         String,

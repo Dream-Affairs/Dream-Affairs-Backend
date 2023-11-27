@@ -13,12 +13,12 @@ from app.api.schemas.checklist_schemas import ChecklistResponse
 
 def create_checklist(
     created_by: str,
-    assigned_to: str,
     title: str,
     organization_id: str,
     due_date: datetime,
     db: Session,
-    description: Union[str, None] = None,
+    assigned_to: str | None = None,
+    description: str | None = None,
 ) -> ChecklistResponse:
     """Create a checklist.
 

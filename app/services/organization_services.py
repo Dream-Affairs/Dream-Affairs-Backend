@@ -6,8 +6,16 @@ from sqlalchemy.orm import Session
 from app.api.models.organization_models import Organization, OrganizationMember
 
 
-def check_organization_name_exists(name: str, db: Session) -> Any:
+def check_organization_exists(
+    db: Session, name: str | None = None, organization_id: str | None = None
+) -> Any:
     """Check if an organization name exists."""
+    if organization_id:
+        return (
+            db.query(Organization)
+            .filter(Organization.id == organization_id)
+            .first()
+        )
     return db.query(Organization).filter(Organization.name == name).first()
 
 

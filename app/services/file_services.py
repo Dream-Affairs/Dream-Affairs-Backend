@@ -2,101 +2,75 @@
 operations."""
 
 
-from typing import Any
+from typing import Any, Dict
 
-from azure.storage.blob import (
-    BlobServiceClient,
-    ContainerClient,
-    ContentSettings,
-)
-from fastapi import UploadFile, status
-from fastapi.responses import Response
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
+from fastapi import UploadFile
+from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.core.config import settings
+from app.services.organization_services import check_organization_exists
 
-account_name = settings.ACCOUNT_NAME
-account_key = settings.KEY
-connection_string = settings.CONNECTION_STRING
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+    secure=True,
+).signature_algorithm = "sha256"
 
 
-def check_for_container(container_name: str) -> None:
-    """Check if azure container exist
+def upload_file_to_cloudinary(
+    file: UploadFile, organization_id: str, db: Session
+) -> CustomResponse:
+    """Upload a file to cloudinary.
+
     Args:
-        container_name: used for naming container\
-        checks if container exists.
-    Return: True or False
+        file (UploadFile): The file to be uploaded.
+        organization_id (str): The id of the organization.
+        db (Session): The database session.
+
+    Raises:
+        CustomException: Raised if the organization does not exist.
+
+    Returns:
+        CustomResponse: The response for the uploaded file.
+
+    Examples:
+        ```python
+        from fastapi import FastAPI, File, UploadFile
+        from sqlalchemy.orm import Session
+
+        from app.api.responses.custom_responses import CustomResponse
+        from app.services.file_services import upload_file_to_cloudinary
+        from app.database.connection import get_db
+
+        app = FastAPI()
+
+        @app.post("/upload")
+        async def upload_file(organization_id:str, file: UploadFile =\
+              File(...), db: Session = Depends(get_db)) -> CustomResponse:
+            return upload_file_to_cloudinary(file=file, \
+                organization_id="organization_id", db=db)
+        ```
     """
-    container = ContainerClient.from_connection_string(
-        settings.CONNECTION_STRING, container_name
-    )
-    if not container.exists():
-        container.create_container()
 
-
-def create_blob(container_name: str, raw_file: UploadFile) -> tuple[Any, Any]:
-    """Create a Blob on azure
-    Args:
-        container_name: used to create a container if
-            it doesn't exists
-        raw_file: the file to save as blob
-    Return:
-        Return a tuple [None,Response] or [Response,None]
-    """
-    # check and create a container if not exist
-    check_for_container(container_name)
-
-    # process the file and upload blob
-    blob_name = raw_file.filename
-    blob_data = raw_file.file.read()
-
-    blob_service_client = BlobServiceClient.from_connection_string(
-        settings.CONNECTION_STRING
-    )
-    blob_client = blob_service_client.get_blob_client(
-        container_name, blob_name
-    )
-
-    if not blob_client.exists():
-        content_settings = ContentSettings(content_type=raw_file.content_type)
-        blob_client.upload_blob(blob_data, content_settings=content_settings)
-
-    # general format for azure blob url
-    blob_url = f"https://{settings.ACCOUNT_NAME}.blob.core.windows.net"
-    blob_url += f"/{container_name}/{blob_name}"
-
-    response = CustomResponse(
-        status_code=status.HTTP_201_CREATED,
-        message="image uploaded successfully",
-        data={"product_image_url": blob_url},
-    )
-    return response
-
-
-def fetch_blob(url: str) -> Response:
-    """
-    Fetch a blob from azure
-    Args:
-        url: the url of the blob
-    Return:
-        returns a response containing the blob
-    """
-    url_split = url.split("/")
-    container_name = url_split[-2]
-    blob_name = url_split[-1]
-    blob_service_client = BlobServiceClient.from_connection_string(
-        settings.CONNECTION_STRING
-    )
-    blob_client = blob_service_client.get_blob_client(
-        container_name, blob_name
-    )
-
-    if not blob_client.exists():
+    if check_organization_exists(db, organization_id=organization_id) is None:
         raise CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Blob not found"
+            status_code=404, message="Organization not found"
         )
-    file = blob_client.download_blob()
-    return Response(
-        content=file.readall(),
-        media_type=file.properties.content_settings.content_type,
+    result: Dict[str, Any] = cloudinary.uploader.upload(
+        file.file,
+        folder=organization_id,
+        resource_type="auto",
+        overwrite=True,
+        tags=[file.filename],
+    )
+
+    return CustomResponse(
+        status_code=201,
+        message="File uploaded successfully",
+        data=result.get("secure_url"),
     )
