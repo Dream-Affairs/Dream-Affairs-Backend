@@ -3,7 +3,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
-from fastapi_pagination import add_pagination
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
@@ -27,7 +26,6 @@ router = APIRouter(
     prefix="/checklist",
     tags=["checklist"],
 )
-add_pagination(router)
 
 
 @router.post(
