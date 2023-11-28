@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class ChecklistStatus(str, Enum):
     """Enum for checklist status."""
 
+    ALL = "all"
     PENDING = "pending"
     COMPLETED = "completed"
     OVERDUE = "overdue"

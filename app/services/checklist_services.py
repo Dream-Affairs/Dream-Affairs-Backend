@@ -5,8 +5,9 @@ from typing import Any, Dict, List, Union
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import desc
 
-from app.api.models.organization_models import Checklist, OrganizationMember
+from app.api.models.organization_models import Checklist
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.checklist_schemas import ChecklistResponse
 
@@ -138,6 +139,7 @@ def get_all_checklists(
     organization_id: str,
     member_id: str,
     status: str,
+    due_date: datetime | None,
     sort_by: str,
     offset: int,
     limit: int,
@@ -145,62 +147,47 @@ def get_all_checklists(
     db: Session,
 ) -> Dict[str, Union[int, List[ChecklistResponse]]]:
     """Get all checklists."""
-
-    if (
-        db.query(OrganizationMember)
-        .filter(
-            OrganizationMember.organization_id == organization_id,
-            OrganizationMember.id == member_id,
-        )
-        .first()
-        is None
-    ):
-        raise CustomException(
-            status_code=403,
-            message="You are not a member of this organization",
-        )
     query = db.query(Checklist).filter_by(organization_id=organization_id)
+    if sort_by == "all":
+        query = db.query(Checklist).filter_by(organization_id=organization_id)
+
+    elif sort_by == "due_date":
+        query = db.query(Checklist).filter_by(
+            organization_id=organization_id, due_date=due_date
+        )
+    elif sort_by == "assigned_to_me":
+        query = db.query(Checklist).filter_by(
+            organization_id=organization_id, assigned_to=member_id
+        )
+    elif sort_by == "assigned_by_me":
+        query = db.query(Checklist).filter_by(
+            organization_id=organization_id, created_by=member_id
+        )
+
     if status != "all":
         query = query.filter_by(status=status)
 
-    if sort_by == "due_date":
-        query = query.order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
-    elif sort_by == "assigned_to_me":
-        query = query.filter_by(assigned_to=member_id).order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
-    elif sort_by == "assigned_by_me":
-        query = query.filter_by(created_by=member_id).order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
-
-    total_count = query.count()
-    setattr(query, "total_count", total_count)
-    checklist_instance = query.offset(offset).limit(limit).all()
-    data = [
-        ChecklistResponse(
-            id=checklist.id,
-            created_by=checklist.created_by,
-            assigned_to=checklist.assigned_to,
-            title=checklist.title,
-            description=checklist.description,
-            status=checklist.status,
-            due_date=checklist.due_date,
-            organization_id=checklist.organization_id,
-            created_at=checklist.created_at,
-        )
-        for checklist in checklist_instance
-    ]
+    total = query.count()
+    query = query.offset(offset).limit(limit)
+    if order == "desc":
+        query = query.order_by(desc(Checklist.created_at))
+    else:
+        query = query.all()
 
     return {
-        "total_count": total_count,
-        "data": data,
+        "total": total,
+        "items": [
+            ChecklistResponse(
+                id=checklist.id,
+                created_by=checklist.created_by,
+                assigned_to=checklist.assigned_to,
+                title=checklist.title,
+                description=checklist.description,
+                status=checklist.status,
+                due_date=checklist.due_date,
+                organization_id=checklist.organization_id,
+                created_at=checklist.created_at,
+            )
+            for checklist in query
+        ],
     }
