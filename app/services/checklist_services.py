@@ -185,10 +185,10 @@ def get_all_checklists(
         next_offset = offset + limit
         if next_offset < total:
             next_url = f"/checklist/{organization_id}/{member_id}?offset=\
-{next_offset}&limit={limit}&sort_by={sort_by}&order={order}"
+{next_offset}&limit={limit}&sort_by={sort_by}&order={order}&status={status}"
         if offset - limit >= 0:
             previous_url = f"/checklist/{organization_id}/{member_id}?offset=\
-{offset - limit}&limit={limit}&sort_by={sort_by}&order={order}"
+{offset - limit}&limit={limit}&sort_by={sort_by}&order={order}&status={status}"
 
     # Fetch the data
     query = query.all()
