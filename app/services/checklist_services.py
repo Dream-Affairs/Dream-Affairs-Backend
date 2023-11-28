@@ -139,7 +139,6 @@ def get_all_checklists(
     organization_id: str,
     member_id: str,
     status: str,
-    due_date: datetime | None,
     sort_by: str,
     offset: int,
     limit: int,
@@ -152,8 +151,12 @@ def get_all_checklists(
         query = db.query(Checklist).filter_by(organization_id=organization_id)
 
     elif sort_by == "due_date":
-        query = db.query(Checklist).filter_by(
-            organization_id=organization_id, due_date=due_date
+        query = (
+            db.query(Checklist)
+            .filter_by(
+                organization_id=organization_id,
+            )
+            .order_by(Checklist.due_date)
         )
     elif sort_by == "assigned_to_me":
         query = db.query(Checklist).filter_by(

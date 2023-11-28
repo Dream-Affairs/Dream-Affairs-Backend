@@ -1,5 +1,4 @@
 """This module contains the checklist router."""
-from datetime import datetime
 
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
@@ -59,7 +58,6 @@ async def get_all_tasks(
     status: ChecklistStatus,
     sort_by: ChecklistSortBy,
     order: ChelistSortOrder,
-    due_date: datetime | None,
     offset: int = 0,
     limit: int = 20,
     db: Session = Depends(get_db),
@@ -73,7 +71,6 @@ async def get_all_tasks(
                 organization_id,
                 member_id,
                 status,
-                due_date,
                 sort_by,
                 offset,
                 limit,
