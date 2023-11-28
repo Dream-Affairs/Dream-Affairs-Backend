@@ -19,7 +19,6 @@ class ChecklistSortBy(str, Enum):
     """Enum for checklist sort by."""
 
     ALL = "all"
-    DUE_DATE = "due_date"
     ASSIGNED_TO_ME = "assigned_to_me"
     ASSIGNED_BY_ME = "assigned_by_me"
 

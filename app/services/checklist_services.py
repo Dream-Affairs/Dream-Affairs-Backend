@@ -1,7 +1,7 @@
 """This module contains the services for the checklist model."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
@@ -144,24 +144,18 @@ def get_all_checklists(
     limit: int,
     order: str,
     db: Session,
-) -> Dict[str, Union[int, List[ChecklistResponse]]]:
+) -> Any:
     """Get all checklists."""
     query = db.query(Checklist).filter_by(organization_id=organization_id)
+
     if sort_by == "all":
         query = db.query(Checklist).filter_by(organization_id=organization_id)
 
-    elif sort_by == "due_date":
-        query = (
-            db.query(Checklist)
-            .filter_by(
-                organization_id=organization_id,
-            )
-            .order_by(Checklist.due_date)
-        )
     elif sort_by == "assigned_to_me":
         query = db.query(Checklist).filter_by(
             organization_id=organization_id, assigned_to=member_id
         )
+
     elif sort_by == "assigned_by_me":
         query = db.query(Checklist).filter_by(
             organization_id=organization_id, created_by=member_id
@@ -171,26 +165,50 @@ def get_all_checklists(
         query = query.filter_by(status=status)
 
     total = query.count()
-    query = query.offset(offset).limit(limit)
+
+    # Order the query
     if order == "desc":
         query = query.order_by(desc(Checklist.created_at))
     else:
-        query = query.all()
+        query = query.order_by(Checklist.created_at)
+
+    # Calculate total count before applying limit and offset
+    total = query.count()
+
+    # Initialize next_url and previous_url
+    next_url = None
+    previous_url = None
+
+    # Apply limit and offset
+    if total > 1:
+        query = query.offset(offset).limit(limit)
+        next_offset = offset + limit
+        if next_offset < total:
+            next_url = f"/checklist/{organization_id}/{member_id}?offset=\
+{next_offset}&limit={limit}&sort_by={sort_by}&order={order}"
+        if offset - limit >= 0:
+            previous_url = f"/checklist/{organization_id}/{member_id}?offset=\
+{offset - limit}&limit={limit}&sort_by={sort_by}&order={order}"
+
+    # Fetch the data
+    query = query.all()
 
     return {
         "total": total,
-        "items": [
-            ChecklistResponse(
-                id=checklist.id,
-                created_by=checklist.created_by,
-                assigned_to=checklist.assigned_to,
-                title=checklist.title,
-                description=checklist.description,
-                status=checklist.status,
-                due_date=checklist.due_date,
-                organization_id=checklist.organization_id,
-                created_at=checklist.created_at,
-            )
+        "next_page_url": next_url,
+        "previous_page_url": previous_url,
+        "checklists": [
+            {
+                "id": checklist.id,
+                "created_by": checklist.created_by,
+                "assigned_to": checklist.assigned_to,
+                "title": checklist.title,
+                "description": checklist.description,
+                "status": checklist.status,
+                "due_date": checklist.due_date,
+                "organization_id": checklist.organization_id,
+                "created_at": checklist.created_at,
+            }
             for checklist in query
         ],
     }
