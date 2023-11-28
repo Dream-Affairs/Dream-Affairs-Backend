@@ -36,9 +36,9 @@ class Settings:
     EMAIL_API_KEY = config("EMAIL_API_KEY", default="")
     EMAIL_REQUEST_TIMEOUT = config("EMAIL_REQUEST_TIMEOUT", default=10)
 
-    ACCOUNT_NAME = config("ACCOUNT_NAME", default="")
-    KEY = config("KEY", default="")
-    CONNECTION_STRING = config("CONNECTION_STRING", default="")
+    CLOUDINARY_CLOUD_NAME = config("CLOUDINARY_CLOUD_NAME", default="")
+    CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
+    CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
 
     FRONT_END_HOST = config(
         "FRONT_END_HOST",

@@ -11,7 +11,6 @@ from app.api.models.budget_expenditure_models import (  # noqa: F401
     Budget,
     Expenditure,
 )
-from app.api.models.email_models import TrackEmail  # noqa: F401
 from app.api.models.gift_models import (  # noqa: F401
     BankDetail,
     Gift,
@@ -24,6 +23,7 @@ from app.api.models.meal_models import (  # noqa: F401
     MealCategory,
     MealTag,
 )
+from app.api.models.notification_models import TrackEmail  # noqa: F401
 from app.api.models.role_permission_models import (  # noqa: F401
     Permission,
     RolePermission,
@@ -183,6 +183,14 @@ class OrganizationDetail(Base):  # type: ignore
     event_end_time = Column(
         DateTime,
     )
+    shipment_name = Column(String)
+    shipment_primary_address = Column(String)
+    shipment_secondary_address = Column(String)
+    shipment_city = Column(String)
+    shipment_state = Column(String)
+    shipment_zip_code = Column(String)
+    shipment_country = Column(String)
+    shipment_phone_number = Column(String)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -409,7 +417,6 @@ class Checklist(Base):  # type: ignore
     assigned_to = Column(
         String,
         ForeignKey("organization_member.id", ondelete="CASCADE"),
-        nullable=False,
     )
     organization_id = Column(
         String,
@@ -421,7 +428,7 @@ class Checklist(Base):  # type: ignore
         String,
     )
     status = Column(
-        ENUM("completed", "pending", "Overdue", name="checklist_status"),
+        ENUM("completed", "pending", "overdue", name="checklist_status"),
         nullable=False,
     )
     is_completed = Column(Boolean, default=False)

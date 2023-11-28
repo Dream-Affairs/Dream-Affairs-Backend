@@ -33,6 +33,7 @@ class Permission(Base):  # type: ignore
     __tablename__ = "permission"
     id = Column(String, primary_key=True, default=uuid4().hex)
     name = Column(String, nullable=False)
+    permission_class = Column(String, nullable=False)
     description = Column(String, nullable=False)
 
 

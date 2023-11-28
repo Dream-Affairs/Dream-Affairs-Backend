@@ -29,6 +29,8 @@ from app.api.schemas.account_schemas import (
 )
 from app.core.config import settings
 from app.services.email_services import send_email_api
+from app.services.permission_services import APP_PERMISSION
+from app.services.roles_services import Role
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -194,6 +196,7 @@ def account_service(
     existing_user = (
         db.query(Account).filter(Account.email == user.email).first()
     )
+
     if existing_user:
         return None, CustomException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -228,16 +231,27 @@ def account_service(
         event_date=user.event_date,
     )
 
-    organization_member = OrganizationMember(
-        id=uuid4().hex,
+    default_admin = Role(
+        name="Admin",
+        description="Default Admin Role",
         organization_id=org.id,
-        account_id=new_user.id,
+        permissions=APP_PERMISSION,
+        is_default=True,
     )
-    if not add_to_db(db, new_user, auth, org, org_detail, organization_member):
+
+    if not add_to_db(db, new_user, auth, org, org_detail):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
+
+    organization_member = OrganizationMember(
+        id=uuid4().hex,
+        organization_id=org.id,
+        account_id=new_user.id,
+        organization_role_id=default_admin.create_role(db),
+    )
+    add_to_db(db, organization_member)
 
     access_token = create_access_token(
         data={"account_id": new_user.id, "context": "verify-account"},
@@ -250,6 +264,8 @@ def account_service(
         subject="Welcome to Dream Affairs",
         recipient_email=user.email,
         template="_email_verification.html",
+        organization_id=org.id,
+        db=db,
         kwargs={"name": user.first_name, "verification_link": url},
     )
 
@@ -333,9 +349,25 @@ def login_service(
             expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 
+        user_org = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.account_id == user.id)
+            .first()
+        )
+
         return CustomResponse(
             status_code=status.HTTP_200_OK,
-            data={"access_token": access_token, "token_type": "bearer"},
+            data={
+                "user": {
+                    "id": user.id,
+                },
+                "organization": {
+                    "organization_id": user_org.organization_id,
+                    "organization_member_id": user_org.id,
+                },
+                "access_token": access_token,
+                "token_type": "bearer",
+            },
         )
 
     raise CustomException(
@@ -390,7 +422,8 @@ def forgot_password_service(
             print(e)
 
     raise CustomException(
-        status_code=500, detail="An unexpected error occurred"
+        status_code=status.HTTP_404_NOT_FOUND,
+        message="No account found with that email",
     )
 
 
@@ -460,10 +493,12 @@ def fake_authenticate(member_id: str, db: Session) -> Any:
         if fails, return False.
     """
     authenticate_member = (
-        db.query(Organization).filter(Organization.owner == member_id).first()
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.id == member_id)
+        .first()
     )
     if not authenticate_member:
         return False
 
-    org_id = authenticate_member.id
+    org_id = authenticate_member.organization_id
     return org_id

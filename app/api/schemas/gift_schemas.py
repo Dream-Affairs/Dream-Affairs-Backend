@@ -69,6 +69,7 @@ class EditProductGift(AddProductGift):
 class FilterGiftSchema(BaseModel):  # type: ignore
     """Represents the schema for filtering gifts."""
 
+    org_id: str
     filter_parameter: FilterParamEnum = FilterParamEnum.ALL
     filter_by_date: bool | None = False
     start_date: datetime | None = None
