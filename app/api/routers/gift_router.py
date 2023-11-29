@@ -6,13 +6,16 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import (
     AddProductGift,
+    BankSchema,
     EditProductGift,
     FilterGiftSchema,
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
+    add_bank_account,
     add_product_gift_,
     delete_a_gift,
     edit_product_gift_,
@@ -196,3 +199,28 @@ async def get_all_gifts(
     if exception:
         raise exception
     return response
+
+
+@gift_router.post("/payment-options/bank")
+async def add_bank_details(
+    request: BankSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Add new Bank Details.
+
+    Args:
+        request (BankSchema): Bank details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: Created bank details
+    """
+
+    try:
+        bank_details = add_bank_account(request, db)
+    except Exception as e:
+        raise e
+    return bank_details
