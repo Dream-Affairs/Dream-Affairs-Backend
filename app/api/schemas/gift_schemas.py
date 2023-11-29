@@ -74,3 +74,13 @@ class FilterGiftSchema(BaseModel):  # type: ignore
     filter_by_date: bool | None = False
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+
+class BankSchema(BaseModel):  # type: ignore
+    """Represents the schema for adding bank account details."""
+
+    name: str
+    account_name: str
+    account_number: str
+    is_default: bool | None = False
+    organization_id: str

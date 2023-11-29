@@ -10,10 +10,12 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
-from app.api.models.gift_models import Gift
+from app.api.models.gift_models import BankDetail, Gift
+from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
     AddProductGift,
+    BankSchema,
     EditProductGift,
     FilterGiftSchema,
 )
@@ -287,3 +289,106 @@ def gifts_filter(
         data=jsonable_encoder(gifts, exclude=["organization"]),
     )
     return response, None
+
+
+def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
+    """Add  bank detatils to the the organization provided.
+
+    Args:
+        bank_details(BankSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == bank_details.organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": bank_details.organization_id},
+        )
+
+    bank_detail = bank_details.model_dump()
+
+    # bankdetail base query
+    bank_instance = db.query(BankDetail)
+
+    if bank_instance.count() == 0:
+        # automatically set as default, nothing in the db table
+        bank_detail["is_default"] = True
+        try:
+            bank_data = BankDetail(**bank_detail, id=uuid4().hex)
+            db.add(bank_data)
+            db.commit()
+            db.refresh(bank_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added bank details successfully",
+                data=jsonable_encoder(bank_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add bank details",
+                data={},
+            ) from exception
+
+    # check if default exist
+    default_exist = bank_instance.filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and bank_details.is_default:
+        try:
+            # reset the default_exist
+            setattr(default_exist, "is_default", False)
+            db.commit()
+            db.refresh(default_exist)
+
+            # insert the new data
+            bank_data = BankDetail(**bank_detail, id=uuid4().hex)
+            db.add(bank_data)
+            db.commit()
+            db.refresh(bank_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added bank details successfully",
+                data=jsonable_encoder(bank_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add bank details",
+                data={},
+            ) from exception
+
+    # try to just add not as default
+    try:
+        bank_data = BankDetail(**bank_detail, id=uuid4().hex)
+        db.add(bank_data)
+        db.commit()
+        db.refresh(bank_data)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Added bank details successfully",
+            data=jsonable_encoder(bank_data, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to add bank details",
+            data={},
+        ) from exception
