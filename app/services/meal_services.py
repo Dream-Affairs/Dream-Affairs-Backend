@@ -122,7 +122,7 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
                     "name": tag.organization_tag.name,
                     "tag_type": tag.organization_tag.tag_type,
                     "organization_tag_id": tag.organization_tag_id,
-                    "created_at": tag.created_at,
+                    # "created_at": tag.created_at,
                 }
                 meal_tags.append(tag_dict)
 
@@ -222,7 +222,7 @@ def create_meal_service(
 def create_meal_tag(
     org_id: str, meal_id: str, tag_name: str, db: Session
 ) -> MealTagSchema:
-    """Create Meal docs."""
+    """Create a Meal Tag / Organization Tag."""
 
     # Check if the organization tag name exists else create it
     existing_tag = (

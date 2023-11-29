@@ -150,20 +150,18 @@ def add_meal_tag(
     tag_name: str,
     db: Session = Depends(get_db),
 ) -> Any:
-    """This endpoint allows the creation of a new meal category under a
-    specific organization. The meal category data is provided in the request
-    body as a JSON object.
+    """This endpoint allows the addition of a meal tag to an existing meal. The
+    meal tag data is provided in the request body as a JSON object.
 
     Args:
         org_id (str): The unique identifier of the organization under which the
-        meal id is being created.
-        meal_category (MealCategorySchema): The schema representing the meal
-        category to be created.
+        meal_id (str): The unique identifier of a meal.
+        tag_name (str): The name of the tag to be added created.
         db (Session): The database session. (Dependency)
 
     Returns:
         CustomResponse: Custom response contains information about the created
-            meal category. The response includes the newly created meal
+            meal tag. The response includes the newly created meal
             category's details
     """
     try:
