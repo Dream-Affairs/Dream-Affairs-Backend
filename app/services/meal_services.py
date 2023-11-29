@@ -110,34 +110,6 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
     meal_category_list = []
     for meal_category in meal_categories:
         # Serialize meals into dictionaries before push to meal_category_dict
-        meal_list = []
-        for meal in meal_category.meals:
-            meal_tags = []
-            for tag in meal.meal_tags:
-                # Append meal tags to meal_tags array
-                tag_dict = {
-                    "type": "tag",
-                    "meal_id": tag.meal_id,
-                    "id": tag.id,
-                    "name": tag.organization_tag.name,
-                    "tag_type": tag.organization_tag.tag_type,
-                    "organization_tag_id": tag.organization_tag_id,
-                    # "created_at": tag.created_at,
-                }
-                meal_tags.append(tag_dict)
-
-            # Append Meal to meal_list array
-            meal_dict = {
-                "type": "meal",
-                "id": meal.id,
-                "name": meal.name,
-                "description": meal.description,
-                "image_url": meal.image_url,
-                "tags": meal_tags
-                # Add other relevant fields from Meal model here
-            }
-            meal_list.append(meal_dict)
-
         meal_category_dict = {
             "id": meal_category.id,
             "name": meal_category.name,
@@ -146,7 +118,6 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
                 "name": meal_category.organization.name,
                 "id": meal_category.organization.id,
             },
-            "meals": meal_list,  # Serialize meals as dictionaries
         }
         meal_category_list.append(meal_category_dict)
 
