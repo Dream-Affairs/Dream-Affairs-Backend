@@ -172,6 +172,6 @@ def add_meal_tag(
 
     return CustomResponse(
         status_code=201,
-        message="Meal Category Successfully Created",
+        message="Meal Tag Successfully Added",
         data=jsonable_encoder(new_meal_tag),
     )
