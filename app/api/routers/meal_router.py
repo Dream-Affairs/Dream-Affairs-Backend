@@ -14,6 +14,7 @@ from app.services.meal_services import (
     create_mc_service,
     create_meal_service,
     create_meal_tag,
+    delete_meal_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
 
@@ -141,6 +142,34 @@ def create_meal(
         raise e
 
     return response
+
+
+@meal_router.delete("/meal/{meal_id}")
+def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
+    """Delete a meal entry for a specified meal category.
+
+    This endpoint deletes a meal
+
+    Args:
+        meal_id (str): The ID of the meal to be deleted.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing information about the
+        created meal if successful. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        delete_meal_service(meal_id, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Has Been Successfully Deleted",
+    )
 
 
 @meal_router.post("/meal-tag")

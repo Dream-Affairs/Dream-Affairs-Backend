@@ -219,6 +219,24 @@ def create_meal_service(
         return None, exception
 
 
+def delete_meal_service(meal_id: str, db: Session) -> bool:
+    """Delete a meal from the meal database."""
+
+    # check if the meal exists
+    existing_meal = db.query(Meal).filter(Meal.id == meal_id).first()
+
+    if existing_meal:
+        db.delete(existing_meal)
+        db.commit()
+    else:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The meal_id provided doesn't exist",
+        )
+
+    return True
+
+
 def create_meal_tag(
     org_id: str, meal_id: str, tag_name: str, db: Session
 ) -> MealTagSchema:
