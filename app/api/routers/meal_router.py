@@ -4,12 +4,17 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.meal_schema import MealCategorySchema, MealSchema
 from app.database.connection import get_db
-from app.services.meal_services import create_mc_service, create_meal_service
+from app.services.meal_services import (
+    create_mc_service,
+    create_meal_service,
+    create_meal_tag,
+)
 from app.services.meal_services import get_meal_categories as get_all
 
 BASE_URL = "/{org_id}/meal-management"
@@ -17,7 +22,7 @@ BASE_URL = "/{org_id}/meal-management"
 meal_router = APIRouter(prefix=BASE_URL, tags=["Meal Management"])
 
 
-@meal_router.post("/create-meal-category")
+@meal_router.post("/meal-category")
 def create_meal_category(
     org_id: str,
     meal_category: MealCategorySchema,
@@ -54,7 +59,7 @@ def create_meal_category(
     )
 
 
-@meal_router.get("/get-all-meal-category")
+@meal_router.get("/meal-category")
 def get_all_meal_category(
     org_id: str, db: Session = Depends(get_db)
 ) -> CustomResponse:
@@ -82,7 +87,7 @@ def get_all_meal_category(
             - meals (List[Meal]): The list of meals associated with category.
     """
     try:
-        category_list: list[dict[str, Any]] = get_all(org_id, db)
+        category_list = get_all(org_id, db)
 
     except Exception as e:
         raise e
@@ -94,7 +99,7 @@ def get_all_meal_category(
     )
 
 
-@meal_router.post("/create-meal")
+@meal_router.post("/meal")
 def create_meal(
     meal_category_id: str,
     create_meal_schema: MealSchema,
@@ -136,3 +141,39 @@ def create_meal(
         raise e
 
     return response
+
+
+@meal_router.post("/meal-tag")
+def add_meal_tag(
+    org_id: str,
+    meal_id: str,
+    tag_name: str,
+    db: Session = Depends(get_db),
+) -> Any:
+    """This endpoint allows the creation of a new meal category under a
+    specific organization. The meal category data is provided in the request
+    body as a JSON object.
+
+    Args:
+        org_id (str): The unique identifier of the organization under which the
+        meal id is being created.
+        meal_category (MealCategorySchema): The schema representing the meal
+        category to be created.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: Custom response contains information about the created
+            meal category. The response includes the newly created meal
+            category's details
+    """
+    try:
+        new_meal_tag = create_meal_tag(org_id, meal_id, tag_name, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Category Successfully Created",
+        data=jsonable_encoder(new_meal_tag),
+    )

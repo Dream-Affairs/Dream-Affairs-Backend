@@ -1,6 +1,7 @@
 """This module defines Pydantic schemas for meal management."""
 
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel
@@ -40,3 +41,28 @@ class MealSchema(BaseModel):  # type: ignore
     is_hidden: Optional[bool] = False
     image_url: str
     quantity: int = 0
+
+
+class TagType(str, Enum):
+    """Enum for Organization Tag."""
+
+    DIETARY = "dietary"
+    GUEST = "guest"
+
+
+class OrgTagSchema(BaseModel):  # type: ignore
+    """Represents the base schema for an Organization Tag."""
+
+    id: str
+    organization_id: str
+    name: str
+    tag_type: TagType
+    description: Optional[str]
+
+
+class MealTagSchema(BaseModel):  # type: ignore
+    """Represents the base schema for an Meal Tag."""
+
+    id: str
+    organization_tag_id: str
+    meal_id: str
