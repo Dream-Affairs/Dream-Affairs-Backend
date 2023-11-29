@@ -113,11 +113,9 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
         meal_category_dict = {
             "id": meal_category.id,
             "name": meal_category.name,
-            "organization_id": meal_category.organization_id,
-            "organization": {
-                "name": meal_category.organization.name,
-                "id": meal_category.organization.id,
-            },
+            "created at": meal_category.created_at.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
         }
         meal_category_list.append(meal_category_dict)
 
