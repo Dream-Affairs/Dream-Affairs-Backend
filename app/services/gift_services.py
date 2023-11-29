@@ -291,7 +291,7 @@ def gifts_filter(
     return response, None
 
 
-def add_bank_account(bank_details: BankSchema, db: Session) -> Any:
+def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
     """Add  bank detatils to the the organization provided.
 
     Args:
