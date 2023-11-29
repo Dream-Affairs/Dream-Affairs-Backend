@@ -82,4 +82,5 @@ class BankSchema(BaseModel):  # type: ignore
     name: str
     account_name: str
     account_number: str
-    is_default: bool | None
+    is_default: bool | None = False
+    organization_id: str
