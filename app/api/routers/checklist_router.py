@@ -1,4 +1,5 @@
 """This module contains the checklist router."""
+
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
@@ -54,11 +55,11 @@ async def create_task(
 async def get_all_tasks(
     organization_id: str,
     member_id: str,
-    status: ChecklistStatus | str = "pending",
-    sort_by: ChecklistSortBy | str = "all",
+    status: ChecklistStatus,
+    sort_by: ChecklistSortBy,
+    order: ChelistSortOrder,
     offset: int = 0,
     limit: int = 20,
-    order: ChelistSortOrder | str = "asc",
     db: Session = Depends(get_db),
 ) -> CustomResponse:
     """Get all tasks."""

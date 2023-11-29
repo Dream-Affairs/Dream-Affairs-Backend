@@ -18,15 +18,14 @@ async def upload_file(
 ) -> Any:
     """Upload a gift image to cloud.
 
+    Please note that you can only upload images of size less than 1MB.
+
     Args:
-        member_id: the id to authenticate the user
-        gift_image: the file to use as gift image
-        db: database session.
+        organization_id (str): The id of the organization.
+        file (UploadFile): The file to upload.
 
-    Return: returns CustomResponse containing the product_image_url
-
-    Exception:
-        raises a CustomException if failed to create blob
+    Returns:
+        url (str): The url of the uploaded file.
     """
     return upload_file_to_cloudinary(
         file=file, organization_id=organization_id, db=db

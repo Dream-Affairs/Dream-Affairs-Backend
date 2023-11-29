@@ -1,12 +1,13 @@
 """This module contains the services for the checklist model."""
 
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict
 from uuid import uuid4
 
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import desc
 
-from app.api.models.organization_models import Checklist, OrganizationMember
+from app.api.models.organization_models import Checklist
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.checklist_schemas import ChecklistResponse
 
@@ -143,64 +144,71 @@ def get_all_checklists(
     limit: int,
     order: str,
     db: Session,
-) -> Dict[str, Union[int, List[ChecklistResponse]]]:
+) -> Any:
     """Get all checklists."""
-
-    if (
-        db.query(OrganizationMember)
-        .filter(
-            OrganizationMember.organization_id == organization_id,
-            OrganizationMember.id == member_id,
-        )
-        .first()
-        is None
-    ):
-        raise CustomException(
-            status_code=403,
-            message="You are not a member of this organization",
-        )
     query = db.query(Checklist).filter_by(organization_id=organization_id)
+
+    if sort_by == "all":
+        query = db.query(Checklist).filter_by(organization_id=organization_id)
+
+    elif sort_by == "assigned_to_me":
+        query = db.query(Checklist).filter_by(
+            organization_id=organization_id, assigned_to=member_id
+        )
+
+    elif sort_by == "assigned_by_me":
+        query = db.query(Checklist).filter_by(
+            organization_id=organization_id, created_by=member_id
+        )
+
     if status != "all":
         query = query.filter_by(status=status)
 
-    if sort_by == "due_date":
-        query = query.order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
-    elif sort_by == "assigned_to_me":
-        query = query.filter_by(assigned_to=member_id).order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
-    elif sort_by == "assigned_by_me":
-        query = query.filter_by(created_by=member_id).order_by(
-            Checklist.due_date.desc()
-            if order == "desc"
-            else Checklist.due_date.asc()
-        )
+    total = query.count()
 
-    total_count = query.count()
-    setattr(query, "total_count", total_count)
-    checklist_instance = query.offset(offset).limit(limit).all()
-    data = [
-        ChecklistResponse(
-            id=checklist.id,
-            created_by=checklist.created_by,
-            assigned_to=checklist.assigned_to,
-            title=checklist.title,
-            description=checklist.description,
-            status=checklist.status,
-            due_date=checklist.due_date,
-            organization_id=checklist.organization_id,
-            created_at=checklist.created_at,
-        )
-        for checklist in checklist_instance
-    ]
+    # Order the query
+    if order == "desc":
+        query = query.order_by(desc(Checklist.created_at))
+    else:
+        query = query.order_by(Checklist.created_at)
+
+    # Calculate total count before applying limit and offset
+    total = query.count()
+
+    # Initialize next_url and previous_url
+    next_url = None
+    previous_url = None
+
+    # Apply limit and offset
+    if total > 1:
+        query = query.offset(offset).limit(limit)
+        next_offset = offset + limit
+        if next_offset < total:
+            next_url = f"/checklist/{organization_id}/{member_id}?offset=\
+{next_offset}&limit={limit}&sort_by={sort_by}&order={order}&status={status}"
+        if offset - limit >= 0:
+            previous_url = f"/checklist/{organization_id}/{member_id}?offset=\
+{offset - limit}&limit={limit}&sort_by={sort_by}&order={order}&status={status}"
+
+    # Fetch the data
+    query = query.all()
 
     return {
-        "total_count": total_count,
-        "data": data,
+        "total": total,
+        "next_page_url": next_url,
+        "previous_page_url": previous_url,
+        "checklists": [
+            {
+                "id": checklist.id,
+                "created_by": checklist.created_by,
+                "assigned_to": checklist.assigned_to,
+                "title": checklist.title,
+                "description": checklist.description,
+                "status": checklist.status,
+                "due_date": checklist.due_date,
+                "organization_id": checklist.organization_id,
+                "created_at": checklist.created_at,
+            }
+            for checklist in query
+        ],
     }
