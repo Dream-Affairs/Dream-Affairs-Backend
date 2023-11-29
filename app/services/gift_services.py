@@ -350,7 +350,7 @@ def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
     if default_exist and bank_details.is_default:
         try:
             # reset the default_exist
-            setattr(default_exist, "is_default", False)
+            default_exist.is_default = False
             db.commit()
             db.refresh(default_exist)
 
