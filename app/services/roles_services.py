@@ -2,237 +2,24 @@
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import BackgroundTasks
 from pydantic import BaseModel
 from sqlalchemy.orm.session import Session
 
-from app.api.models.organization_models import Organization, OrganizationRole
-from app.api.models.role_permission_models import Permission, RolePermission
-from app.api.responses.custom_responses import CustomException
-from app.api.schemas.role_schemas import RoleCreate
-from app.services.custom_services import model_to_dict
-from app.services.permission_services import PermissionManager
-
-back_task = BackgroundTasks()
-
-
-def create_new_role(db: Session, role: RoleCreate) -> Dict[str, Any]:
-    """Create new role.
-
-    Args:
-        db (Session): Database session
-        role (dict): Role details
-
-    Raises:
-        CustomException: If organization does not exist
-        CustomException: If role with same name already exists
-        CustomException: If permission does not exist
-
-    Returns:
-        dict: Role details
-    """
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == role.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": role.organization_id},
-        )
-
-    # Check if role with same name exists
-    role_exists = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == role.organization_id)
-        .filter(OrganizationRole.name == role.name)
-        .first()
-    )
-    if role_exists:
-        raise CustomException(
-            status_code=400,
-            message="Role with same name already exists",
-            data={"role_name": role.name},
-        )
-
-    # Create new role
-    try:
-        new_role = OrganizationRole(
-            name=role.name,
-            description=role.description,
-            organization_id=role.organization_id,
-        )
-        db.add(new_role)
-        db.commit()
-        db.refresh(new_role)
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to create new role",
-            data={"role_id": role.id},
-        ) from exc
-
-    permissions = []
-
-    for permission_id in role.permissions:
-        # Check if permission exists
-        permission = (
-            db.query(Permission).filter(Permission.id == permission_id).first()
-        )
-        if not permission:
-            raise CustomException(
-                status_code=400,
-                message="Permission does not exist",
-                data={"permission_id": permission_id},
-            )
-        try:
-            # Create new role permission
-            new_permission = RolePermission(
-                id=uuid4().hex,
-                organization_role_id=new_role.id,
-                permission_id=permission_id,
-            )
-            db.add(new_permission)
-            db.commit()
-            db.refresh(new_permission)
-        except Exception as exc:
-            raise CustomException(
-                status_code=500,
-                message="Failed to create new role permission",
-                data={"role_id": new_role.id},
-            ) from exc
-
-        permissions.append(
-            {
-                "id": permission_id,
-                "name": permission.name,
-                "description": permission.description,
-            }
-        )
-
-    return {
-        "id": new_role.id,
-        "name": new_role.name,
-        "description": new_role.description,
-        "permissions": permissions,
-    }
+from app.api.models.organization_models import (
+    OrganizationMember,
+    OrganizationRole,
+)
+from app.api.models.role_models import Role as RoleModel
+from app.api.models.role_models import RolePermission
+from app.database.connection import get_db_unyield
+from app.services.permission_services import (
+    APP_PERMISSION,
+    PermissionManager,
+    PermissionSchema,
+)
 
 
-def get_all_roles(db: Session, organization_id: str) -> List[Dict[str, Any]]:
-    """Get all roles.
-
-    Args:
-        db (Session): Database session
-        organization_id (str): Organization ID
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        list: List of roles
-    """
-    # Check if organization ab746d6exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": organization_id},
-        )
-    roles = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
-        .all()
-    )
-
-    roles_dict = model_to_dict(roles)
-
-    return roles_dict
-
-
-def get_role_details(
-    db: Session, organization_id: str, role_id: str
-) -> Dict[str, Any]:
-    """Get role details.
-
-    Args:
-        db (Session): Database session
-        organization_id (str): Organization ID
-        role_id (str): Role ID
-
-    Raises:
-        CustomException: If organization does not exist
-        CustomException: If role does not exist
-
-    Returns:
-        dict: Role details
-    """
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": organization_id},
-        )
-
-    # Check if role exists
-    role = (
-        db.query(OrganizationRole)
-        .filter(OrganizationRole.organization_id == organization_id)
-        .filter(OrganizationRole.id == role_id)
-        .first()
-    )
-    if not role:
-        raise CustomException(
-            status_code=404,
-            message="Role not found",
-            data={"role_id": role_id},
-        )
-
-    # Get role permissions
-    role_permissions = (
-        db.query(RolePermission)
-        .filter(RolePermission.organization_role_id == role.id)
-        .all()
-    )
-
-    permissions = []
-    for role_permission in role_permissions:
-        permission_details = (
-            db.query(Permission)
-            .filter(Permission.id == role_permission.permission_id)
-            .first()
-        )
-        if permission_details:
-            permissions.append(
-                {
-                    "id": permission_details.id,
-                    "name": permission_details.name,
-                    "description": permission_details.description,
-                }
-            )
-
-    return {
-        "id": role.id,
-        "name": role.name,
-        "description": role.description,
-        "permissions": permissions,
-    }
-
-
-class Role(BaseModel):  # type: ignore
+class RoleService(BaseModel):  # type: ignore
     """Role Model.
 
     Attributes:
@@ -248,16 +35,33 @@ class Role(BaseModel):  # type: ignore
         ValueError: If organization_id is not provided
     """
 
-    name: str
-    description: str
-    organization_id: str
-    permissions: Optional[PermissionManager]
+    name: str = ""
+    description: str = ""
+    organization_id: str = ""
+    is_super_admin: bool = False
+    permissions: Optional[List[PermissionSchema]]
     is_default: bool = False
 
     class Config:
         """Config for this model."""
 
         from_attributes = True
+
+    def get_default_role(self, db: Session, name: str) -> Any:
+        """Gets the default role.
+
+        Args:
+            db (Session): SQLAlchemy Session
+
+        Returns:
+            Optional[OrganizationRole]: Role if found, None otherwise.
+        """
+        role = (
+            db.query(RoleModel)
+            .filter(RoleModel.is_default is True, RoleModel.name == name)
+            .first()
+        )
+        return role
 
     def create_role(self, db: Session) -> Any:
         """Creates a new role.
@@ -268,57 +72,107 @@ class Role(BaseModel):  # type: ignore
         Returns:
             str: Role ID
         """
+        # check if role already exists
+        role = self.get_role_by_name(
+            db, self.name, self.is_default, self.is_super_admin
+        )
 
-        if (
-            self.get_role_by_name(
-                db, self.name, organization_id=self.organization_id
-            )
-            is not None
-        ):
-            raise CustomException(
-                status_code=400,
-                message="Role with same name already exists",
-                data={"role_name": self.name},
-            )
+        if role is None:
+            role = RoleModel(
+                id=uuid4().hex,
+                name=self.name,
+                description=self.description,
+                is_default=self.is_default,
+                is_super_admin=self.is_super_admin,
+            ).create_role(db)
+
+        if self.organization_id != "":
+            self.add_role_to_organization(db, self.organization_id, role.id)
+
+        if self.permissions is not None:
+            self.assign_permissions(db, role.id, self.permissions)
+
+        return role
+
+    def add_role_to_organization(
+        self, db: Session, organization_id: str, role_id: str
+    ) -> Any:
+        """Adds a role to an organization.
+
+        Args:
+            db (Session): SQLAlchemy Session
+            organization_id (str): Organization ID
+            role_id (str): Role ID
+        Returns:
+            str: Role ID
+        """
         role_intance = OrganizationRole(
             id=uuid4().hex,
-            name=self.name,
-            description=self.description,
-            organization_id=self.organization_id,
-            is_default=self.is_default,
+            organization_id=organization_id,
+            role_id=role_id,
         )
 
         db.add(role_intance)
         db.commit()
         db.refresh(role_intance)
 
-        self.assign_permissions(db, role_intance.id)
+        return role_intance
 
-        return role_intance.id
-
-    def assign_permissions(self, db: Session, role_id: str) -> bool:
-        """Assigns all permissions to a role.
+    def assign_permissions(
+        self, db: Session, role_id: str, permissions: List[PermissionSchema]
+    ) -> None:
+        """Assigns permissions to a role.
 
         Args:
             db (Session): SQLAlchemy Session
             role_id (str): Role ID
-
-        Returns:
-            bool: True if successful, False otherwise.
+            permissions (PermissionSchema): Permission Schema
         """
-        perm = PermissionManager.get_all_permissions(self, db)
-
-        for permission in perm:
-            role_permission = RolePermission(
-                id=uuid4().hex,
-                organization_role_id=role_id,
-                permission_id=permission[0],
-            )
-            db.add(role_permission)
+        #    bulk insert into role_permissions
+        # check if role has permissions
+        role_permissions = (
+            db.query(RolePermission)
+            .filter(RolePermission.role_id == role_id)
+            .all()
+        )
+        if role_permissions is not None:
+            db.query(RolePermission).filter(
+                RolePermission.role_id == role_id
+            ).delete()
             db.commit()
-            db.refresh(role_permission)
+        perm_list = []
+        perm_list = [
+            {
+                "id": uuid4().hex,
+                "role_id": role_id,
+                "permission_id": perm.id,
+            }
+            for perm in permissions
+        ]
 
-        return True
+        db.bulk_insert_mappings(RolePermission, perm_list)
+        db.commit()
+
+    def update_role_permissions(
+        self, db: Session, role_id: str, permissions: List[PermissionSchema]
+    ) -> Dict[str, Any]:
+        """Updates role permissions.
+
+        Args:
+            db (Session): SQLAlchemy Session
+            role_id (str): Role ID
+            permissions (List): Permission Manager
+        """
+        # delete existing permissions
+        db.query(RolePermission).filter(
+            RolePermission.role_id == role_id
+        ).delete()
+        db.commit()
+
+        # assign new permissions
+        self.assign_permissions(db, role_id, permissions)
+
+        return self.get_role(db, role_id)
 
     def get_role(self, db: Session, role_id: str) -> Dict[str, Any]:
         """Gets a role by ID.
@@ -332,50 +186,47 @@ class Role(BaseModel):  # type: ignore
         """
         role = (
             db.query(OrganizationRole)
-            .filter(OrganizationRole.id == role_id)
+            .filter(OrganizationRole.role_id == role_id)
             .first()
         )
-        return Role(
-            name=role.name,
-            description=role.description,
-            organization_id=role.organization_id,
-            permissions=PermissionManager.get_role_permissions(
-                self, db, role_id
+        return {
+            "id": role.role.id,
+            "name": role.role.name,
+            "description": role.role.description,
+            "is_default": role.role.is_default,
+            "is_super_admin": role.role.is_super_admin,
+            "permissions": PermissionManager.get_role_permissions(
+                self, db, role.role.id
             ),
-            is_default=role.is_default,
-        )
+        }
 
     def get_role_by_name(
-        self, db: Session, role_name: str, organization_id: str
+        self,
+        db: Session,
+        role_name: str,
+        is_default: bool = False,
+        is_super_admin: bool = False,
     ) -> Any:
         """Gets a role by name.
 
         Args:
             db (Session): SQLAlchemy Session
-            role_name (str): Role Name
+            role_name (str): Role name
 
         Returns:
             Optional[OrganizationRole]: Role if found, None otherwise.
         """
+
         role = (
-            db.query(OrganizationRole)
+            db.query(RoleModel)
             .filter(
-                OrganizationRole.name == role_name,
-                OrganizationRole.organization_id == organization_id,
+                RoleModel.name == role_name,
+                RoleModel.is_default == is_default,
+                RoleModel.is_super_admin == is_super_admin,
             )
             .first()
         )
-        if not role:
-            return None
-        return Role(
-            name=role.name,
-            description=role.description,
-            organization_id=role.organization_id,
-            permissions=PermissionManager.get_role_permissions(
-                self, db, role.id
-            ),
-            is_default=role.is_default,
-        )
+        return role
 
     def get_all_organization_roles(
         self, db: Session, organization_id: str
@@ -394,15 +245,67 @@ class Role(BaseModel):  # type: ignore
             .filter(OrganizationRole.organization_id == organization_id)
             .all()
         )
+        print(roles[0].role.__dict__)
         return [
-            Role(
-                name=role.name,
-                description=role.description,
-                organization_id=role.organization_id,
-                permissions=PermissionManager.get_role_permissions(
-                    self, db, role.id
+            {
+                "id": role.role.id,
+                "name": role.role.name,
+                "description": role.role.description,
+                "is_default": role.role.is_default,
+                "is_super_admin": role.role.is_super_admin,
+                "permissions": PermissionManager.get_role_permissions(
+                    self, db, role.role.id
                 ),
-                is_default=role.is_default,
-            )
+            }
             for role in roles
         ]
+
+    def assign_role(
+        self,
+        organization_id: str,
+        organization_role_id: str,
+        account_id: str,
+        db: Session,
+    ) -> None:
+        """Assigns a role to a user.
+
+        Args:
+            organization_role_id (str): Organization Role ID
+            user_id (str): User ID
+        """
+
+        # assign role to user
+        member = OrganizationMember(
+            id=uuid4().hex,
+            organization_id=organization_id,
+            account_id=account_id,
+            organization_role_id=organization_role_id,
+        )
+        db.add(member)
+        db.commit()
+        db.refresh(member)
+
+
+def create_default_roles(db: object = get_db_unyield) -> None:
+    """Creates default roles for an organization.
+
+    Args:
+        db (Session): SQLAlchemy Session
+        organization_id (str): Organization ID
+        is_super_admin (bool, optional): Is super admin. Defaults to False.
+    """
+    # create default roles
+    RoleService(
+        name="Admin",
+        description="Admin",
+        is_default=True,
+        is_super_admin=True,
+        permissions=APP_PERMISSION.get_all_permissions(db),
+    ).create_role(db)
+
+    # RoleService(
+    #     name="Event Planner",
+    #     description="Event Planner",
+    #     is_default=True,
+    #     is_super_admin=False,
+    #     permissions=PermissionManager.
