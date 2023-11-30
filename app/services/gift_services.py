@@ -605,3 +605,62 @@ def add_payment_link(link_details: LinkSchema, db: Session) -> CustomResponse:
             message="Failed to add payment link details",
             data={},
         ) from exception
+
+
+def get_account(
+    org_id: str,
+    payment_id: str,
+    payment_type: str,
+    db: Session,
+) -> CustomResponse:
+    """Get a payment account.
+
+    Args:
+        org_id, payment_id, payment_type
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization).filter(Organization.id == org_id).first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": org_id},
+        )
+
+    if payment_type == "bank":
+        payment_details = (
+            db.query(BankDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
+    elif payment_type == "wallet":
+        payment_details = (
+            db.query(WalletDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
+    else:
+        payment_details = (
+            db.query(LinkDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
+
+    if not payment_details:
+        raise CustomException(
+            status_code=404,
+            message="Payment account not found",
+            data={"payment_id": payment_id},
+        )
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Details retrieved successfully",
+        data=jsonable_encoder(payment_details, exclude=["organization"]),
+    )
