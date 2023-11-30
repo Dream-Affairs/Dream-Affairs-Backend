@@ -12,11 +12,13 @@ from app.api.schemas.gift_schemas import (
     BankSchema,
     EditProductGift,
     FilterGiftSchema,
+    LinkSchema,
     WalletSchema,
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
     add_bank_account,
+    add_payment_link,
     add_product_gift_,
     add_wallet,
     delete_a_gift,
@@ -251,3 +253,28 @@ async def add_wallet_details(
     except Exception as e:
         raise e
     return wallet_details
+
+
+@gift_router.post("/payment-options/link")
+async def add_payment_link_details(
+    request: LinkSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Add new Payment Link Details. (e.g PayPal,Payoneer,...)
+
+    Args:
+        request (LinkSchema): Wallet details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: Created payment link details
+    """
+
+    try:
+        link_details = add_payment_link(request, db)
+    except Exception as e:
+        raise e
+    return link_details
