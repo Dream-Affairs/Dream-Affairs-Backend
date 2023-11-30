@@ -10,7 +10,12 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
-from app.api.models.gift_models import BankDetail, Gift
+from app.api.models.gift_models import (
+    BankDetail,
+    Gift,
+    LinkDetail,
+    WalletDetail,
+)
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
@@ -18,6 +23,8 @@ from app.api.schemas.gift_schemas import (
     BankSchema,
     EditProductGift,
     FilterGiftSchema,
+    LinkSchema,
+    WalletSchema,
 )
 from app.services.account_services import fake_authenticate
 
@@ -350,7 +357,7 @@ def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
     if default_exist and bank_details.is_default:
         try:
             # reset the default_exist
-            setattr(default_exist, "is_default", False)
+            default_exist.is_default = False
             db.commit()
             db.refresh(default_exist)
 
@@ -390,5 +397,211 @@ def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
         raise CustomException(
             status_code=500,
             message="Failed to add bank details",
+            data={},
+        ) from exception
+
+
+def add_wallet(wallet_details: WalletSchema, db: Session) -> CustomResponse:
+    """Add  wallet detatils to the the organization provided.
+
+    Args:
+        wallet_details(WalletSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == wallet_details.organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": wallet_details.organization_id},
+        )
+
+    wallet_detail = wallet_details.model_dump()
+
+    # walletdetail base query
+    wallet_instance = db.query(WalletDetail)
+
+    if wallet_instance.count() == 0:
+        # automatically set as default, if nothing in the db table
+        wallet_detail["is_default"] = True
+        try:
+            wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
+            db.add(wallet_data)
+            db.commit()
+            db.refresh(wallet_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added wallet details successfully",
+                data=jsonable_encoder(wallet_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add wallet details",
+                data={},
+            ) from exception
+
+    # check if default exist
+    default_exist = wallet_instance.filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and wallet_details.is_default:
+        try:
+            # reset the default_exist
+            default_exist.is_default = False
+            db.commit()
+            db.refresh(default_exist)
+
+            # insert the new data
+            wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
+            db.add(wallet_data)
+            db.commit()
+            db.refresh(wallet_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added wallet details successfully",
+                data=jsonable_encoder(wallet_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add wallet details",
+                data={},
+            ) from exception
+
+    # try to just add not as default
+    try:
+        wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
+        db.add(wallet_data)
+        db.commit()
+        db.refresh(wallet_data)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Added wallet details successfully",
+            data=jsonable_encoder(wallet_data, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to add wallet details",
+            data={},
+        ) from exception
+
+
+def add_payment_link(link_details: LinkSchema, db: Session) -> CustomResponse:
+    """Add  link detatils to the the organization provided.
+
+    Args:
+        link_details(LinkSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+
+    # Check if organization exists
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == link_details.organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": link_details.organization_id},
+        )
+
+    link_detail = link_details.model_dump()
+
+    # linkdetail base query
+    link_instance = db.query(LinkDetail)
+
+    if link_instance.count() == 0:
+        # automatically set as default, if nothing in the db table
+        link_detail["is_default"] = True
+        try:
+            link_data = LinkDetail(**link_detail, id=uuid4().hex)
+            db.add(link_data)
+            db.commit()
+            db.refresh(link_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added payment link details successfully",
+                data=jsonable_encoder(link_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add payment link details",
+                data={},
+            ) from exception
+
+    # check if default exist
+    default_exist = link_instance.filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and link_details.is_default:
+        try:
+            # reset the default_exist
+            default_exist.is_default = False
+            db.commit()
+            db.refresh(default_exist)
+
+            # insert the new data
+            link_data = LinkDetail(**link_detail, id=uuid4().hex)
+            db.add(link_data)
+            db.commit()
+            db.refresh(link_data)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Added payment link details successfully",
+                data=jsonable_encoder(link_data, exclude=["organization"]),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to add payment link details",
+                data={},
+            ) from exception
+
+    # try to just add not as default
+    try:
+        link_data = LinkDetail(**link_detail, id=uuid4().hex)
+        db.add(link_data)
+        db.commit()
+        db.refresh(link_data)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Added payment link details successfully",
+            data=jsonable_encoder(link_data, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to add payment link details",
             data={},
         ) from exception
