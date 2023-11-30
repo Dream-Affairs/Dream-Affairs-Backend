@@ -73,7 +73,7 @@ def update_checklist(
     """Update a checklist."""
     checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
     if checklist_instance:
-        setattr(checklist_instance, "updated_at", datetime.utcnow())
+        checklist_instance.updated_at = datetime.utcnow()
         for key, value in kwargs.items():
             setattr(checklist_instance, key, value)
         db.commit()
