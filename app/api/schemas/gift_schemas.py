@@ -30,6 +30,14 @@ class FilterParamEnum(str, Enum):
     PURCHASED = "purchased"
 
 
+class PaymentType(str, Enum):
+    """Represents the enum for payment type."""
+
+    BANK = "bank"
+    WALLET = "wallet"
+    LINK = "link"
+
+
 class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
