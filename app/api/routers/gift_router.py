@@ -12,14 +12,20 @@ from app.api.schemas.gift_schemas import (
     BankSchema,
     EditProductGift,
     FilterGiftSchema,
+    LinkSchema,
+    PaymentType,
+    WalletSchema,
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
     add_bank_account,
+    add_payment_link,
     add_product_gift_,
+    add_wallet,
     delete_a_gift,
     edit_product_gift_,
     fetch_gift,
+    get_account,
     gifts_filter,
 )
 
@@ -224,3 +230,84 @@ async def add_bank_details(
     except Exception as e:
         raise e
     return bank_details
+
+
+@gift_router.post("/payment-options/wallet")
+async def add_wallet_details(
+    request: WalletSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Add new Payment Wallet Details.
+
+    Args:
+        request (WalletSchema): Wallet details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: Created wallet details
+    """
+
+    try:
+        wallet_details = add_wallet(request, db)
+    except Exception as e:
+        raise e
+    return wallet_details
+
+
+@gift_router.post("/payment-options/link")
+async def add_payment_link_details(
+    request: LinkSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Add new Payment Link Details. (e.g PayPal,Payoneer,...)
+
+    Args:
+        request (LinkSchema): Wallet details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: Created payment link details
+    """
+
+    try:
+        link_details = add_payment_link(request, db)
+    except Exception as e:
+        raise e
+    return link_details
+
+
+@gift_router.get("/payment-options/{organization_id}/{payment_account_id}")
+async def get_payment_account(
+    organization_id: str,
+    payment_account_id: str,
+    payment_type: PaymentType,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Get a single payment account details.
+    Args:
+        organization_id, payment_account_id, payment_type(bank,wallet,link).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization or payment account does not exist
+
+    Returns:
+        CustomResponse: Retrieved payment details
+    """
+    try:
+        payment_account = get_account(
+            organization_id,
+            payment_account_id,
+            payment_type,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return payment_account

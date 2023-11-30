@@ -30,6 +30,14 @@ class FilterParamEnum(str, Enum):
     PURCHASED = "purchased"
 
 
+class PaymentType(str, Enum):
+    """Represents the enum for payment type."""
+
+    BANK = "bank"
+    WALLET = "wallet"
+    LINK = "link"
+
+
 class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
@@ -77,10 +85,28 @@ class FilterGiftSchema(BaseModel):  # type: ignore
 
 
 class BankSchema(BaseModel):  # type: ignore
-    """Represents the schema for adding bank account details."""
+    """Represents the schema for bank account details."""
 
     name: str
     account_name: str
     account_number: str
+    is_default: bool | None = False
+    organization_id: str
+
+
+class WalletSchema(BaseModel):  # type: ignore
+    """Represents the schema for wallet details."""
+
+    name: str
+    wallet_tag: str
+    is_default: bool | None = False
+    organization_id: str
+
+
+class LinkSchema(BaseModel):  # type: ignore
+    """Represents the schema for payment link details."""
+
+    name: str
+    payment_link: str
     is_default: bool | None = False
     organization_id: str
