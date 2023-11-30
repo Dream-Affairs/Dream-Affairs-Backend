@@ -607,7 +607,7 @@ def add_payment_link(link_details: LinkSchema, db: Session) -> CustomResponse:
         ) from exception
 
 
-def get_single_payment_account(
+def get_account(
     org_id: str,
     payment_id: str,
     payment_type: str,
@@ -616,7 +616,7 @@ def get_single_payment_account(
     """Get a payment account.
 
     Args:
-        org_id, payment_id,payment_type
+        org_id, payment_id, payment_type
         db (Session): The database session.
 
     Returns:
@@ -633,13 +633,24 @@ def get_single_payment_account(
             data={"organization_id": org_id},
         )
 
-    # set the table name from the payment type
-    table_name = f"{payment_type.capitalize()}Detail"
-    payment_details = (
-        db.query(table_name)
-        .filter_by(organization_id=org_id, id=payment_id)
-        .first()
-    )
+    if payment_type == "bank":
+        payment_details = (
+            db.query(BankDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
+    elif payment_type == "wallet":
+        payment_details = (
+            db.query(WalletDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
+    else:
+        payment_details = (
+            db.query(LinkDetail)
+            .filter_by(organization_id=org_id, id=payment_id)
+            .first()
+        )
 
     if not payment_details:
         raise CustomException(
@@ -649,7 +660,7 @@ def get_single_payment_account(
         )
 
     return CustomResponse(
-        status_code=status.HTTP_200_CREATED,
+        status_code=status.HTTP_200_OK,
         message="Details retrieved successfully",
         data=jsonable_encoder(payment_details, exclude=["organization"]),
     )

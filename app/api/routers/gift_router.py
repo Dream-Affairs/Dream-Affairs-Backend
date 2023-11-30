@@ -13,6 +13,7 @@ from app.api.schemas.gift_schemas import (
     EditProductGift,
     FilterGiftSchema,
     LinkSchema,
+    PaymentType,
     WalletSchema,
 )
 from app.database.connection import get_db
@@ -24,6 +25,7 @@ from app.services.gift_services import (
     delete_a_gift,
     edit_product_gift_,
     fetch_gift,
+    get_account,
     gifts_filter,
 )
 
@@ -278,3 +280,34 @@ async def add_payment_link_details(
     except Exception as e:
         raise e
     return link_details
+
+
+@gift_router.get("/payment-options/{organization_id}/{payment_account_id}")
+async def get_payment_account(
+    organization_id: str,
+    payment_account_id: str,
+    payment_type: PaymentType,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Get a single payment account details.
+    Args:
+        organization_id, payment_account_id, payment_type(bank,wallet,link).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization or payment account does not exist
+
+    Returns:
+        CustomResponse: Retrieved payment details
+    """
+    try:
+        payment_account = get_account(
+            organization_id,
+            payment_account_id,
+            payment_type,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return payment_account
