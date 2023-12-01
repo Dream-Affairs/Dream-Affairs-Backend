@@ -757,3 +757,234 @@ def get_accounts(
         message="Details retrieved successfully",
         data=payment_details,
     )
+
+
+def update_bank(
+    payment_id: str, bank_details: BankSchema, db: Session
+) -> CustomResponse:
+    """Update  bank detatils of the the organization provided.
+
+    Args:
+        bank_details(BankSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+    # query to update the data
+    updated_details = (
+        db.query(BankDetail).filter(BankDetail.id == payment_id).first()
+    )
+    if not updated_details:
+        raise CustomException(
+            status_code=404,
+            message="Payment account not found",
+            data={"payment_account_id": payment_id},
+        )
+    _data = bank_details.model_dump()
+
+    # check if default exist
+    default_exist = db.query(BankDetail).filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and bank_details.is_default:
+        try:
+            # reset the default_exist
+            default_exist.is_default = False
+            db.commit()
+            db.refresh(default_exist)
+
+            for key, value in _data.items():
+                setattr(updated_details, key, value)
+            db.commit()
+            db.refresh(updated_details)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Updated bank details successfully",
+                data=jsonable_encoder(
+                    updated_details, exclude=["organization"]
+                ),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to update bank details",
+                data={},
+            ) from exception
+
+    # if no default set, just accept the update data
+    try:
+        for key, value in _data.items():
+            setattr(updated_details, key, value)
+        db.commit()
+        db.refresh(updated_details)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Updated bank details successfully",
+            data=jsonable_encoder(updated_details, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to update bank details",
+            data={},
+        ) from exception
+
+
+def update_wallet(
+    payment_id: str, wallet_details: WalletSchema, db: Session
+) -> CustomResponse:
+    """Update  wallet detatils of the the organization provided.
+
+    Args:
+        wallet_details(WalletSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+    # query to update the data
+    updated_details = (
+        db.query(WalletDetail).filter(WalletDetail.id == payment_id).first()
+    )
+    if not updated_details:
+        raise CustomException(
+            status_code=404,
+            message="Payment account not found",
+            data={"payment_account_id": payment_id},
+        )
+    _data = wallet_details.model_dump()
+
+    # check if default exist
+    default_exist = db.query(WalletDetail).filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and wallet_details.is_default:
+        try:
+            # reset the default_exist
+            default_exist.is_default = False
+            db.commit()
+            db.refresh(default_exist)
+
+            for key, value in _data.items():
+                setattr(updated_details, key, value)
+            db.commit()
+            db.refresh(updated_details)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Updated wallet details successfully",
+                data=jsonable_encoder(
+                    updated_details, exclude=["organization"]
+                ),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to update wallet details",
+                data={},
+            ) from exception
+
+    # if no default set, just accept the update data
+    try:
+        for key, value in _data.items():
+            setattr(updated_details, key, value)
+        db.commit()
+        db.refresh(updated_details)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Updated wallet details successfully",
+            data=jsonable_encoder(updated_details, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to update wallet details",
+            data={},
+        ) from exception
+
+
+def update_link(
+    payment_id: str, link_details: LinkSchema, db: Session
+) -> CustomResponse:
+    """Update  link detatils of the the organization provided.
+
+    Args:
+        link_details(linkSchema):
+
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+    # query to update the data
+    updated_details = (
+        db.query(LinkDetail).filter(LinkDetail.id == payment_id).first()
+    )
+    if not updated_details:
+        raise CustomException(
+            status_code=404,
+            message="Payment account not found",
+            data={"payment_account_id": payment_id},
+        )
+    _data = link_details.model_dump()
+
+    # check if default exist
+    default_exist = db.query(LinkDetail).filter_by(is_default=True).first()
+
+    # check if default_exist and new data is to be default
+    if default_exist and link_details.is_default:
+        try:
+            # reset the default_exist
+            default_exist.is_default = False
+            db.commit()
+            db.refresh(default_exist)
+
+            for key, value in _data.items():
+                setattr(updated_details, key, value)
+            db.commit()
+            db.refresh(updated_details)
+
+            return CustomResponse(
+                status_code=status.HTTP_201_CREATED,
+                message="Updated link details successfully",
+                data=jsonable_encoder(
+                    updated_details, exclude=["organization"]
+                ),
+            )
+
+        except Exception as exception:
+            raise CustomException(
+                status_code=500,
+                message="Failed to update link details",
+                data={},
+            ) from exception
+
+    # if no default set, just accept the update data
+    try:
+        for key, value in _data.items():
+            setattr(updated_details, key, value)
+        db.commit()
+        db.refresh(updated_details)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Updated link details successfully",
+            data=jsonable_encoder(updated_details, exclude=["organization"]),
+        )
+
+    except Exception as exception:
+        raise CustomException(
+            status_code=500,
+            message="Failed to update link details",
+            data={},
+        ) from exception
