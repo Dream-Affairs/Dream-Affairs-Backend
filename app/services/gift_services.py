@@ -664,3 +664,96 @@ def get_account(
         message="Details retrieved successfully",
         data=jsonable_encoder(payment_details, exclude=["organization"]),
     )
+
+
+def get_accounts(
+    org_id: str,
+    filter_by: str,
+    db: Session,
+) -> CustomResponse:
+    """Get  payment accounts.
+
+    Args:
+        org_id, filter_param
+        db (Session): The database session.
+
+    Returns:
+        return CustomeResponse
+    """
+    # Check if organization exists
+    organization = (
+        db.query(Organization).filter(Organization.id == org_id).first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": org_id},
+        )
+
+    # no handy solution to query and join 3 tables
+    if filter_by == "all":
+        payment_details = jsonable_encoder(
+            (
+                db.query(BankDetail)
+                .filter(BankDetail.organization_id == org_id)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+
+        wallets = jsonable_encoder(
+            (
+                db.query(WalletDetail)
+                .filter(WalletDetail.organization_id == org_id)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+
+        links = jsonable_encoder(
+            (
+                db.query(LinkDetail)
+                .filter(LinkDetail.organization_id == org_id)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+        payment_details.extend(wallets)
+        payment_details.extend(links)
+
+    if filter_by == "default":
+        payment_details = jsonable_encoder(
+            (
+                db.query(BankDetail)
+                .filter_by(organization_id=org_id, is_default=True)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+
+        wallets = jsonable_encoder(
+            (
+                db.query(WalletDetail)
+                .filter_by(organization_id=org_id, is_default=True)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+
+        links = jsonable_encoder(
+            (
+                db.query(LinkDetail)
+                .filter_by(organization_id=org_id, is_default=True)
+                .all()
+            ),
+            exclude=["organization"],
+        )
+        payment_details.extend(wallets)
+        payment_details.extend(links)
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Details retrieved successfully",
+        data=payment_details,
+    )
