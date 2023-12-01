@@ -29,6 +29,9 @@ from app.services.gift_services import (
     get_account,
     get_accounts,
     gifts_filter,
+    update_bank,
+    update_link,
+    update_wallet,
 )
 
 gift_router = APIRouter(prefix="/registry", tags=["Registry"])
@@ -346,3 +349,87 @@ async def get_payment_accounts(
         raise e
 
     return payment_accounts
+
+
+@gift_router.patch("/payment-options/bank/{bank_account_id}")
+async def update_bank_details(
+    bank_account_id: str,
+    request: BankSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Update bank account details.
+
+    Args:
+        bank_account_id, request(BankSchema).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+    Raises:
+        CustomException: If something goes wrong
+    Returns:
+        CustomResponse: Updated payment details
+    """
+    try:
+        updated_bank_details = update_bank(
+            bank_account_id,
+            request,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return updated_bank_details
+
+
+@gift_router.patch("/payment-options/wallet/{wallet_account_id}")
+async def update_wallet_details(
+    wallet_account_id: str,
+    request: WalletSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Update wallet account details.
+
+    Args:
+        wallet_account_id, request(WalletSchema).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+    Raises:
+        CustomException: If something goes wrong
+    Returns:
+        CustomResponse: Updated payment details
+    """
+    try:
+        updated_wallet_details = update_wallet(
+            wallet_account_id,
+            request,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return updated_wallet_details
+
+
+@gift_router.patch("/payment-options/link/{link_account_id}")
+async def update_link_details(
+    link_account_id: str,
+    request: LinkSchema,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Update link account details.
+
+    Args:
+        link_account_id, request(LinkSchema).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+    Raises:
+        CustomException: If something goes wrong
+    Returns:
+        CustomResponse: Updated payment details
+    """
+    try:
+        updated_link_details = update_link(
+            link_account_id,
+            request,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return updated_link_details
