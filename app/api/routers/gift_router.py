@@ -11,6 +11,7 @@ from app.api.schemas.gift_schemas import (
     AddProductGift,
     BankSchema,
     EditProductGift,
+    FilterAcountsEnum,
     FilterGiftSchema,
     LinkSchema,
     PaymentType,
@@ -26,6 +27,7 @@ from app.services.gift_services import (
     edit_product_gift_,
     fetch_gift,
     get_account,
+    get_accounts,
     gifts_filter,
 )
 
@@ -311,3 +313,36 @@ async def get_payment_account(
         raise e
 
     return payment_account
+
+
+@gift_router.get("/payment-options/{organization_id}")
+async def get_payment_accounts(
+    organization_id: str,
+    filter_by: FilterAcountsEnum,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Get  payment accounts details.
+
+    Args:
+        organization_id, filter_by(all,default).
+
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+
+        CustomException: If organization  does not exist
+
+    Returns:
+
+        CustomResponse: Retrieved payment details
+    """
+    try:
+        payment_accounts = get_accounts(
+            organization_id,
+            filter_by,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return payment_accounts
