@@ -38,6 +38,13 @@ class PaymentType(str, Enum):
     LINK = "link"
 
 
+class FilterAcountsEnum(str, Enum):
+    """Represents the enum for filtering payment accounts."""
+
+    ALL = "all"
+    DEFAULT = "default"
+
+
 class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
