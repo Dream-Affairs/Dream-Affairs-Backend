@@ -8,10 +8,10 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
-from app.api.models.meal_models import Meal, MealCategory
-from app.api.models.organization_models import Organization
+from app.api.models.meal_models import Meal, MealCategory, MealTag
+from app.api.models.organization_models import Organization, OrganizationTag
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.meal_schema import MealSchema
+from app.api.schemas.meal_schema import MealSchema, MealTagSchema
 
 
 def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
@@ -110,28 +110,12 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
     meal_category_list = []
     for meal_category in meal_categories:
         # Serialize meals into dictionaries before push to meal_category_dict
-        meal_list = []
-        for meal in meal_category.meals:
-            meal_dict = {
-                "type": "meal",
-                "id": meal.id,
-                "name": meal.name,
-                "description": meal.description,
-                "image_url": meal.image_url,
-                "tags": meal.meal_tags
-                # Add other relevant fields from Meal model here
-            }
-            meal_list.append(meal_dict)
-
         meal_category_dict = {
             "id": meal_category.id,
             "name": meal_category.name,
-            "organization_id": meal_category.organization_id,
-            "organization": {
-                "name": meal_category.organization.name,
-                "id": meal_category.organization.id,
-            },
-            "meals": meal_list,  # Serialize meals as dictionaries
+            "created at": meal_category.created_at.strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
         }
         meal_category_list.append(meal_category_dict)
 
@@ -202,3 +186,87 @@ def create_meal_service(
         )
 
         return None, exception
+
+
+def delete_meal_service(meal_id: str, db: Session) -> bool:
+    """Delete a meal from the meal database."""
+
+    # check if the meal exists
+    existing_meal = db.query(Meal).filter(Meal.id == meal_id).first()
+
+    if existing_meal:
+        db.delete(existing_meal)
+        db.commit()
+    else:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The meal_id provided doesn't exist",
+        )
+
+    return True
+
+
+def create_meal_tag(
+    org_id: str, meal_id: str, tag_name: str, db: Session
+) -> MealTagSchema:
+    """Create a Meal Tag / Organization Tag."""
+
+    # Check if the organization tag name exists else create it
+    existing_tag = (
+        db.query(OrganizationTag)
+        .filter(OrganizationTag.name == tag_name.lower())
+        .first()
+    )
+
+    if not existing_tag:
+        org_tag_data = OrganizationTag(
+            id=uuid4().hex,
+            organization_id=org_id,
+            name=tag_name.lower(),
+            tag_type="dietary",
+        )
+
+        db.add(org_tag_data)
+        db.commit()
+        db.refresh(org_tag_data)
+
+        tag: OrganizationTag = jsonable_encoder(org_tag_data)
+
+        tag_id = tag["id"]
+
+    else:
+        tag = jsonable_encoder(existing_tag)
+
+        # Check if the tag has been added to meal
+        unique_meal_tag = (
+            db.query(MealTag)
+            .filter(
+                MealTag.organization_tag_id == tag["id"],
+                MealTag.meal_id == meal_id,
+            )
+            .first()
+        )
+        # print(jsonable_encoder(unique_meal_tag))
+        if unique_meal_tag:
+            raise CustomException(
+                status_code=status.HTTP_409_CONFLICT,
+                message=f"{tag_name} tag has already been added to this meal",
+            )
+
+        tag_id = tag["id"]
+
+    # Create the meal tag with all the sufficient Ids available
+    meal_tag_data = MealTag(
+        id=uuid4().hex, organization_tag_id=tag_id, meal_id=meal_id
+    )
+
+    # return the tag jsonable encoder
+    db.add(meal_tag_data)
+    db.commit()
+    db.refresh(meal_tag_data)
+
+    return MealTagSchema(
+        id=meal_tag_data.id,
+        organization_tag_id=meal_tag_data.organization_tag_id,
+        meal_id=meal_tag_data.meal_id,
+    )
