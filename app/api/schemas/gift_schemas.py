@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -117,3 +117,24 @@ class LinkSchema(BaseModel):  # type: ignore
     payment_link: str
     is_default: bool | None = False
     organization_id: str
+
+
+class PaymentOption(BaseModel):  # type: ignore
+    """Represent the schema for a gift payment option."""
+
+    payment_type: PaymentType
+    payment_option_id: str
+
+
+class AddCashGift(GiftSchema):
+    """Represents the schema for cash funds gift."""
+
+    gift_amount_type: GiftAmountType
+    is_gift_amount_hidden: Optional[bool] = None
+    product_total_amount: Optional[float] = None
+    payment_options: List[PaymentOption]
+
+    class Config:
+        """Repersents the config model for this Schema."""
+
+        from_attributes = True
