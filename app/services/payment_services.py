@@ -9,7 +9,11 @@ from sqlalchemy.orm import Session
 from app.api.models.gift_models import BankDetail, LinkDetail, WalletDetail
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.gift_schemas import BankSchema, LinkSchema, WalletSchema
+from app.api.schemas.payment_schemas import (
+    BankSchema,
+    LinkSchema,
+    WalletSchema,
+)
 
 
 def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
