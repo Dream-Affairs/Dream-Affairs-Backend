@@ -439,7 +439,7 @@ async def update_link_details(
     return updated_link_details
 
 
-@gift_router.post("/{organization_id}/cash-gifts")
+@gift_router.post("/cash-gifts/{organization_id}")
 async def add_cash_funds_gift(
     organization_id: str,
     request: AddCashGift,
