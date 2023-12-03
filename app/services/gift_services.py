@@ -295,7 +295,7 @@ def add_cash_gift(
     org_id: str,
     gift_item: AddCashGift,
     db: Session,
-) -> tuple[Any, Any]:
+) -> CustomResponse:
     """Add Cash funds gift to the organization.
 
     Args:

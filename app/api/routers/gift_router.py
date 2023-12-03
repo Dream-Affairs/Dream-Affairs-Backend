@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import (
+    AddCashGift,
     AddProductGift,
     BankSchema,
     EditProductGift,
@@ -19,16 +20,19 @@ from app.api.schemas.gift_schemas import (
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
-    add_bank_account,
-    add_payment_link,
+    add_cash_gift,
     add_product_gift_,
-    add_wallet,
     delete_a_gift,
     edit_product_gift_,
     fetch_gift,
+    gifts_filter,
+)
+from app.services.payment_services import (
+    add_bank_account,
+    add_payment_link,
+    add_wallet,
     get_account,
     get_accounts,
-    gifts_filter,
     update_bank,
     update_link,
     update_wallet,
@@ -433,3 +437,31 @@ async def update_link_details(
         raise e
 
     return updated_link_details
+
+
+@gift_router.post("/{organization_id}/cash-gifts")
+async def add_cash_funds_gift(
+    organization_id: str,
+    request: AddCashGift,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Add a cash funds gift to organization registry.
+
+    Args:
+        organization_id, request(AddCashGift).
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+    Raises:
+        CustomException: If something goes wrong
+    Returns:
+        CustomResponse: Added gift details
+    """
+    try:
+        added_gift_details = add_cash_gift(
+            organization_id,
+            request,
+            db,
+        )
+    except Exception as e:
+        raise e
+
+    return added_gift_details
