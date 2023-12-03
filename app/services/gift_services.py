@@ -10,21 +10,14 @@ from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
-from app.api.models.gift_models import (
-    BankDetail,
-    Gift,
-    LinkDetail,
-    WalletDetail,
-)
+from app.api.models.gift_models import Gift, PaymentOption
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
+    AddCashGift,
     AddProductGift,
-    BankSchema,
     EditProductGift,
     FilterGiftSchema,
-    LinkSchema,
-    WalletSchema,
 )
 from app.services.account_services import fake_authenticate
 
@@ -34,7 +27,7 @@ def add_product_gift_(
     member_id: str,
     db: Session,
 ) -> tuple[Any, Any]:
-    """Add product gift to the associated authenticated user/organization.
+    """Add Physical gift to the associated organization.
 
     Args:
         gift_item (Dict): The gift data to be added.
@@ -298,310 +291,64 @@ def gifts_filter(
     return response, None
 
 
-def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
-    """Add  bank detatils to the the organization provided.
+def add_cash_gift(
+    org_id: str,
+    gift_item: AddCashGift,
+    db: Session,
+) -> CustomResponse:
+    """Add Cash funds gift to the organization.
 
     Args:
-        bank_details(BankSchema):
+        gift_item (Dict): The gift data to be added.
 
         db (Session): The database session.
 
     Returns:
-        return CustomeResponse
+        raise an exception
+        return a CustomResponse
     """
-
     # Check if organization exists
     organization = (
-        db.query(Organization)
-        .filter(Organization.id == bank_details.organization_id)
-        .first()
+        db.query(Organization).filter(Organization.id == org_id).first()
     )
     if not organization:
         raise CustomException(
             status_code=404,
             message="Organization not found",
-            data={"organization_id": bank_details.organization_id},
+            data={"organization_id": org_id},
         )
 
-    bank_detail = bank_details.model_dump()
+    cash_gift_item = gift_item.model_dump(exclude=["payment_options"])
+    cash_gift_item["organization_id"] = org_id
 
-    # bankdetail base query
-    bank_instance = db.query(BankDetail)
+    new_gift = Gift(**cash_gift_item, id=uuid4().hex)
 
-    if bank_instance.count() == 0:
-        # automatically set as default, nothing in the db table
-        bank_detail["is_default"] = True
-        try:
-            bank_data = BankDetail(**bank_detail, id=uuid4().hex)
-            db.add(bank_data)
-            db.commit()
-            db.refresh(bank_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added bank details successfully",
-                data=jsonable_encoder(bank_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add bank details",
-                data={},
-            ) from exception
-
-    # check if default exist
-    default_exist = bank_instance.filter_by(is_default=True).first()
-
-    # check if default_exist and new data is to be default
-    if default_exist and bank_details.is_default:
-        try:
-            # reset the default_exist
-            default_exist.is_default = False
-            db.commit()
-            db.refresh(default_exist)
-
-            # insert the new data
-            bank_data = BankDetail(**bank_detail, id=uuid4().hex)
-            db.add(bank_data)
-            db.commit()
-            db.refresh(bank_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added bank details successfully",
-                data=jsonable_encoder(bank_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add bank details",
-                data={},
-            ) from exception
-
-    # try to just add not as default
     try:
-        bank_data = BankDetail(**bank_detail, id=uuid4().hex)
-        db.add(bank_data)
+        db.add(new_gift)
         db.commit()
-        db.refresh(bank_data)
+        db.refresh(new_gift)
+
+        for option in gift_item.payment_options:
+            payment_option = PaymentOption(
+                **option.__dict__,
+                id=uuid4().hex,
+                gift_id=new_gift.id,
+            )
+            db.add(payment_option)
+            db.commit()
+            db.refresh(payment_option)
+            # commit and refresh again to return payment options
+            db.commit()
+            db.refresh(new_gift)
 
         return CustomResponse(
             status_code=status.HTTP_201_CREATED,
-            message="Added bank details successfully",
-            data=jsonable_encoder(bank_data, exclude=["organization"]),
+            message="Gift successfully added",
+            data=jsonable_encoder(new_gift, exclude=["organization"]),
         )
-
-    except Exception as exception:
+    except Exception as exc:
+        db.rollback()
         raise CustomException(
-            status_code=500,
-            message="Failed to add bank details",
-            data={},
-        ) from exception
-
-
-def add_wallet(wallet_details: WalletSchema, db: Session) -> CustomResponse:
-    """Add  wallet detatils to the the organization provided.
-
-    Args:
-        wallet_details(WalletSchema):
-
-        db (Session): The database session.
-
-    Returns:
-        return CustomeResponse
-    """
-
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == wallet_details.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": wallet_details.organization_id},
-        )
-
-    wallet_detail = wallet_details.model_dump()
-
-    # walletdetail base query
-    wallet_instance = db.query(WalletDetail)
-
-    if wallet_instance.count() == 0:
-        # automatically set as default, if nothing in the db table
-        wallet_detail["is_default"] = True
-        try:
-            wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
-            db.add(wallet_data)
-            db.commit()
-            db.refresh(wallet_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added wallet details successfully",
-                data=jsonable_encoder(wallet_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add wallet details",
-                data={},
-            ) from exception
-
-    # check if default exist
-    default_exist = wallet_instance.filter_by(is_default=True).first()
-
-    # check if default_exist and new data is to be default
-    if default_exist and wallet_details.is_default:
-        try:
-            # reset the default_exist
-            default_exist.is_default = False
-            db.commit()
-            db.refresh(default_exist)
-
-            # insert the new data
-            wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
-            db.add(wallet_data)
-            db.commit()
-            db.refresh(wallet_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added wallet details successfully",
-                data=jsonable_encoder(wallet_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add wallet details",
-                data={},
-            ) from exception
-
-    # try to just add not as default
-    try:
-        wallet_data = WalletDetail(**wallet_detail, id=uuid4().hex)
-        db.add(wallet_data)
-        db.commit()
-        db.refresh(wallet_data)
-
-        return CustomResponse(
-            status_code=status.HTTP_201_CREATED,
-            message="Added wallet details successfully",
-            data=jsonable_encoder(wallet_data, exclude=["organization"]),
-        )
-
-    except Exception as exception:
-        raise CustomException(
-            status_code=500,
-            message="Failed to add wallet details",
-            data={},
-        ) from exception
-
-
-def add_payment_link(link_details: LinkSchema, db: Session) -> CustomResponse:
-    """Add  link detatils to the the organization provided.
-
-    Args:
-        link_details(LinkSchema):
-
-        db (Session): The database session.
-
-    Returns:
-        return CustomeResponse
-    """
-
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == link_details.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": link_details.organization_id},
-        )
-
-    link_detail = link_details.model_dump()
-
-    # linkdetail base query
-    link_instance = db.query(LinkDetail)
-
-    if link_instance.count() == 0:
-        # automatically set as default, if nothing in the db table
-        link_detail["is_default"] = True
-        try:
-            link_data = LinkDetail(**link_detail, id=uuid4().hex)
-            db.add(link_data)
-            db.commit()
-            db.refresh(link_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added payment link details successfully",
-                data=jsonable_encoder(link_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add payment link details",
-                data={},
-            ) from exception
-
-    # check if default exist
-    default_exist = link_instance.filter_by(is_default=True).first()
-
-    # check if default_exist and new data is to be default
-    if default_exist and link_details.is_default:
-        try:
-            # reset the default_exist
-            default_exist.is_default = False
-            db.commit()
-            db.refresh(default_exist)
-
-            # insert the new data
-            link_data = LinkDetail(**link_detail, id=uuid4().hex)
-            db.add(link_data)
-            db.commit()
-            db.refresh(link_data)
-
-            return CustomResponse(
-                status_code=status.HTTP_201_CREATED,
-                message="Added payment link details successfully",
-                data=jsonable_encoder(link_data, exclude=["organization"]),
-            )
-
-        except Exception as exception:
-            raise CustomException(
-                status_code=500,
-                message="Failed to add payment link details",
-                data={},
-            ) from exception
-
-    # try to just add not as default
-    try:
-        link_data = LinkDetail(**link_detail, id=uuid4().hex)
-        db.add(link_data)
-        db.commit()
-        db.refresh(link_data)
-
-        return CustomResponse(
-            status_code=status.HTTP_201_CREATED,
-            message="Added payment link details successfully",
-            data=jsonable_encoder(link_data, exclude=["organization"]),
-        )
-
-    except Exception as exception:
-        raise CustomException(
-            status_code=500,
-            message="Failed to add payment link details",
-            data={},
-        ) from exception
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to add gift",
+        ) from exc

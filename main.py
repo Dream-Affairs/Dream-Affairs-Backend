@@ -16,6 +16,7 @@ from app.api.routers.file_router import router as file_routers
 from app.api.routers.gift_router import gift_router as gift_routers
 from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
+from app.api.routers.payment_router import payment_router as payment_routers
 from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
 from app.database.connection import get_db_unyield
@@ -61,6 +62,9 @@ v1_router.include_router(
 )
 v1_router.include_router(
     checklist_routers,
+)
+v1_router.include_router(
+    payment_routers,
 )
 
 app = FastAPI(

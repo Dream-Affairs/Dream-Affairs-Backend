@@ -2,9 +2,11 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
+
+from app.api.schemas.payment_schemas import PaymentOption
 
 
 class GiftType(str, Enum):
@@ -34,7 +36,7 @@ class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
     title: str
-    product_unit_price: float
+    product_unit_price: Optional[float] = None
     product_quantity: Optional[int] = None
     currency: str
     gift_type: GiftType
@@ -76,29 +78,15 @@ class FilterGiftSchema(BaseModel):  # type: ignore
     end_date: datetime | None = None
 
 
-class BankSchema(BaseModel):  # type: ignore
-    """Represents the schema for bank account details."""
+class AddCashGift(GiftSchema):
+    """Represents the schema for cash funds gift."""
 
-    name: str
-    account_name: str
-    account_number: str
-    is_default: bool | None = False
-    organization_id: str
+    gift_amount_type: GiftAmountType
+    is_gift_amount_hidden: Optional[bool] = None
+    product_total_amount: Optional[float] = None
+    payment_options: List[PaymentOption]
 
+    class Config:
+        """Repersents the config model for this Schema."""
 
-class WalletSchema(BaseModel):  # type: ignore
-    """Represents the schema for wallet details."""
-
-    name: str
-    wallet_tag: str
-    is_default: bool | None = False
-    organization_id: str
-
-
-class LinkSchema(BaseModel):  # type: ignore
-    """Represents the schema for payment link details."""
-
-    name: str
-    payment_link: str
-    is_default: bool | None = False
-    organization_id: str
+        from_attributes = True

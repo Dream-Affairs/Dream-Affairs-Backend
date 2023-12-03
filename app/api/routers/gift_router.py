@@ -8,19 +8,15 @@ from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import (
+    AddCashGift,
     AddProductGift,
-    BankSchema,
     EditProductGift,
     FilterGiftSchema,
-    LinkSchema,
-    WalletSchema,
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
-    add_bank_account,
-    add_payment_link,
+    add_cash_gift,
     add_product_gift_,
-    add_wallet,
     delete_a_gift,
     edit_product_gift_,
     fetch_gift,
@@ -205,76 +201,29 @@ async def get_all_gifts(
     return response
 
 
-@gift_router.post("/payment-options/bank")
-async def add_bank_details(
-    request: BankSchema,
+@gift_router.post("/cash-gifts/{organization_id}")
+async def add_cash_funds_gift(
+    organization_id: str,
+    request: AddCashGift,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Add new Bank Details.
+    """Add a cash funds gift to organization registry.
 
     Args:
-        request (BankSchema): Bank details
+        organization_id, request(AddCashGift).
         db (Session, optional): Database session. Defaults to Depends(get_db).
-
     Raises:
-        CustomException: If organization does not exist
-
+        CustomException: If something goes wrong
     Returns:
-        CustomResponse: Created bank details
+        CustomResponse: Added gift details
     """
-
     try:
-        bank_details = add_bank_account(request, db)
+        added_gift_details = add_cash_gift(
+            organization_id,
+            request,
+            db,
+        )
     except Exception as e:
         raise e
-    return bank_details
 
-
-@gift_router.post("/payment-options/wallet")
-async def add_wallet_details(
-    request: WalletSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Add new Payment Wallet Details.
-
-    Args:
-        request (WalletSchema): Wallet details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Created wallet details
-    """
-
-    try:
-        wallet_details = add_wallet(request, db)
-    except Exception as e:
-        raise e
-    return wallet_details
-
-
-@gift_router.post("/payment-options/link")
-async def add_payment_link_details(
-    request: LinkSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Add new Payment Link Details. (e.g PayPal,Payoneer,...)
-
-    Args:
-        request (LinkSchema): Wallet details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Created payment link details
-    """
-
-    try:
-        link_details = add_payment_link(request, db)
-    except Exception as e:
-        raise e
-    return link_details
+    return added_gift_details
