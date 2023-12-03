@@ -1,19 +1,20 @@
 """This module defines the router for the role endpoints."""
+from typing import List
+
 from fastapi import APIRouter, Depends
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm.session import Session
 
-from app.api.models.role_permission_models import Permission
-from app.api.responses.custom_responses import CustomResponse
+from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.role_schemas import RoleCreate
 from app.database.connection import get_db
-from app.services.custom_services import model_to_dict
-from app.services.roles_services import (
-    create_new_role,
-    get_all_roles,
-    get_role_details,
+from app.services.permission_services import (
+    PermissionManager,
+    PermissionSchema,
 )
+from app.services.roles_services import RoleService
 
-router = APIRouter(tags=["Roles & Permissions"])
+router = APIRouter(tags=["Roles and Permissions"])
 
 
 @router.get("/permissions")
@@ -26,7 +27,8 @@ async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
     Returns:
         CustomResponse: List of Permission
     """
-    permissions = model_to_dict(db.query(Permission).all())
+    permissions = PermissionManager().get_all_permissions(db=db)
+
     return CustomResponse(
         status_code=200,
         message="Permissions retrieved successfully",
@@ -34,7 +36,7 @@ async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
     )
 
 
-@router.get("/roles/{organization_id}")
+@router.get("/role/{organization_id}")
 async def get_roles(
     organization_id: str, db: Session = Depends(get_db)
 ) -> CustomResponse:
@@ -51,9 +53,16 @@ async def get_roles(
         CustomResponse: List of all roles
     """
     try:
-        roles = get_all_roles(db, organization_id)
+        roles = RoleService(
+            organization_id=organization_id,
+        ).get_all_organization_roles(db)
+
     except Exception as e:
-        raise e
+        raise CustomException(
+            status_code=400,
+            message="Failed to retrieve roles",
+        ) from e
+
     return CustomResponse(
         status_code=200,
         message="Roles retrieved successfully",
@@ -61,9 +70,9 @@ async def get_roles(
     )
 
 
-@router.get("/roles/{organization_id}/{role_id}")
+@router.get("/role/{organization_id}/{role_id}")
 async def get_role_by_id(
-    organization_id: str, role_id: str, db: Session = Depends(get_db)
+    role_id: str, db: Session = Depends(get_db)
 ) -> CustomResponse:
     """Get role by ID.
 
@@ -79,17 +88,23 @@ async def get_role_by_id(
         CustomResponse: Role details
     """
     try:
-        role_details = get_role_details(db, organization_id, role_id)
+        role = RoleService().get_role(db, role_id)
+
     except Exception as e:
-        raise e
+        print(e)
+        raise CustomException(
+            status_code=400,
+            message="Failed to retrieve role",
+        ) from e
+
     return CustomResponse(
         status_code=200,
         message="Role retrieved successfully",
-        data=role_details,
+        data=role,
     )
 
 
-@router.post("/roles")
+@router.post("/role")
 async def create_role(
     role: RoleCreate, db: Session = Depends(get_db)
 ) -> CustomResponse:
@@ -105,12 +120,66 @@ async def create_role(
     Returns:
         CustomResponse: Role details
     """
+    if role.organization_id in ("", "string"):
+        raise CustomException(
+            status_code=400,
+            message="Organization ID is required",
+        )
     try:
-        role_details = create_new_role(db, role)
+        role_instance = RoleService(
+            name=role.name,
+            description=role.description,
+            is_default=False,
+            is_super_admin=False,
+            permissions=role.permissions,
+            organization_id=role.organization_id,
+        ).create_role(db)
+
     except Exception as e:
-        raise e
+        print(e)
+
+        raise CustomException(
+            status_code=400,
+            message="Failed to create role",
+        ) from e
+
     return CustomResponse(
         status_code=200,
         message="Role created successfully",
-        data=role_details,
+        data=jsonable_encoder(role_instance),
+    )
+
+
+@router.put("/role/{role_id}")
+async def update_role_permissions(
+    role_id: str,
+    permissions: List[PermissionSchema],
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Update role permissions.
+
+    Args:
+        role_id (str): Role ID
+        permissions (PermissionManager): Permission details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If role does not exist
+
+    Returns:
+        CustomResponse: Role details
+    """
+    try:
+        role = RoleService(
+            permissions=permissions,
+        ).update_role_permissions(db, role_id)
+    except Exception as e:
+        raise CustomException(
+            status_code=400,
+            message="Failed to update role permissions",
+        ) from e
+    return CustomResponse(
+        status_code=200,
+        message="Role permissions updated successfully",
+        data=role,
     )

@@ -29,8 +29,7 @@ from app.api.schemas.account_schemas import (
 )
 from app.core.config import settings
 from app.services.email_services import send_email_api
-from app.services.permission_services import APP_PERMISSION
-from app.services.roles_services import Role
+from app.services.roles_services import RoleService
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -231,27 +230,21 @@ def account_service(
         event_date=user.event_date,
     )
 
-    default_admin = Role(
-        name="Admin",
-        description="Default Admin Role",
-        organization_id=org.id,
-        permissions=APP_PERMISSION,
-        is_default=True,
-    )
-
     if not add_to_db(db, new_user, auth, org, org_detail):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
-
-    organization_member = OrganizationMember(
-        id=uuid4().hex,
-        organization_id=org.id,
-        account_id=new_user.id,
-        organization_role_id=default_admin.create_role(db),
+    role = RoleService().get_default_role(db=db, name="Admin")
+    org_role = RoleService().add_role_to_organization(
+        db, org.id, role_id=role.id
     )
-    add_to_db(db, organization_member)
+    RoleService().assign_role(
+        organization_id=org.id,
+        db=db,
+        organization_role_id=org_role.id,
+        account_id=new_user.id,
+    )
 
     access_token = create_access_token(
         data={"account_id": new_user.id, "context": "verify-account"},
@@ -345,7 +338,9 @@ def login_service(
 
     if user and verify_password(user_credentials.password, user.password_hash):
         access_token = create_access_token(
-            data={"account_id": user.id},
+            data={
+                "account_id": user.id,
+            },
             expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
 

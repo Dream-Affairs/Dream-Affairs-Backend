@@ -22,7 +22,8 @@ from app.api.models.organization_models import (
     OrganizationRole,
     OrganizationTag,
 )
-from app.api.models.role_permission_models import Permission, RolePermission
+from app.api.models.permission_models import Permission
+from app.api.models.role_models import RolePermission
 from app.database.connection import Base
 
 DATABASE_URL = config("DATABASE_URL", default="sqlite:///test.db")

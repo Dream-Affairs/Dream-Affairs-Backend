@@ -21,6 +21,7 @@ from app.api.routers.role_router import router as role_routers
 from app.core.config import settings
 from app.database.connection import get_db_unyield
 from app.services.permission_services import APP_PERMISSION
+from app.services.roles_services import create_default_roles
 
 # ============ Sentry Initialization ============= #
 
@@ -98,7 +99,8 @@ def health() -> CustomResponse:
 app.include_router(v1_router)
 
 
+db: Session = get_db_unyield()
+APP_PERMISSION.create_permissions(db)
+create_default_roles(db)
 if __name__ == "__main__":
-    db: Session = get_db_unyield()
-    APP_PERMISSION.create_permissions(db=db)
     uvicorn.run(app="main:app", port=8000, reload=True)

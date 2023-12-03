@@ -3,6 +3,8 @@ from typing import List
 
 from pydantic import BaseModel
 
+from app.services.permission_services import PermissionSchema
+
 
 class RoleCreate(BaseModel):  # type: ignore
     """Schema for creating a new role.
@@ -16,6 +18,5 @@ class RoleCreate(BaseModel):  # type: ignore
 
     name: str
     description: str
-    organization_id: str
-    permission_class: str
-    permissions: List[str]
+    organization_id: str = ""
+    permissions: List[PermissionSchema]

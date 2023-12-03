@@ -24,10 +24,8 @@ from app.api.models.meal_models import (  # noqa: F401
     MealTag,
 )
 from app.api.models.notification_models import TrackEmail  # noqa: F401
-from app.api.models.role_permission_models import (  # noqa: F401
-    Permission,
-    RolePermission,
-)
+from app.api.models.permission_models import Permission  # noqa: F401
+from app.api.models.role_models import Role, RolePermission  # noqa: F401
 from app.database.connection import Base
 
 INVITE_STATUS = ENUM("pending", "accepted", "rejected", name="invite_status")
@@ -84,6 +82,11 @@ class Organization(Base):  # type: ignore
         String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
     )
     org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
+    plan = Column(
+        ENUM("basic", "core", "premium", name="plan"),
+        nullable=False,
+        default="basic",
+    )
     is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -289,31 +292,34 @@ class OrganizationRole(Base):  # type: ignore
       id: This is the primary key of the table.
       name: This is the name of the organization role.
       description: This is the description of the organization role.
-      organization_id: This is the foreign key of the organization tsble.
+      organization_id: This is the foreign key of the organization table.
+      role_id: This is the foreign key of the role table.
       is_default: This is the boolean value which tells whether the \
-        organization role is default or not.
-      created_at: This is the date and time when the organization\
-         role was created.
-      updated_at: This is the date and time when the organization\
-         role was updated.
+        role is default or not.
+      created_at: This is the date and time when the organization role \
+        was created.
+      updated_at: This is the date and time when the organization role \
+        was updated.
 
     Relationships:
-      organization: This is the relationship between the organization \
-        and organization_role table.
-      members: This is the relationship between the organization_role \
-        and organization_member table.
+      organization: This is the relationship between the organization and \
+        organization_role table.
+      members: This is the relationship between the organization_role and \
+        organization_member table.
     """
 
     __tablename__ = "organization_role"
     id = Column(String, primary_key=True, default=uuid4().hex)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=False)
     organization_id = Column(
         String,
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
-    is_default = Column(Boolean, default=False)
+    role_id = Column(
+        String,
+        ForeignKey("role.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
@@ -326,6 +332,7 @@ class OrganizationRole(Base):  # type: ignore
         "OrganizationMember",
         back_populates="member_role",
     )
+    role = relationship("Role", backref="organization_role", lazy="joined")
 
 
 class OrganizationTag(Base):  # type: ignore
