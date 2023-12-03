@@ -318,7 +318,7 @@ def add_cash_gift(
             data={"organization_id": org_id},
         )
 
-    cash_gift_item = gift_item.model_dump(exclude_unset=True)
+    cash_gift_item = gift_item.model_dump(exclude=["payment_options"])
     cash_gift_item["organization_id"] = org_id
 
     new_gift = Gift(**cash_gift_item, id=uuid4().hex)
@@ -330,13 +330,16 @@ def add_cash_gift(
 
         for option in gift_item.payment_options:
             payment_option = PaymentOption(
-                **option,
+                **option.__dict__,
                 id=uuid4().hex,
                 gift_id=new_gift.id,
             )
             db.add(payment_option)
             db.commit()
             db.refresh(payment_option)
+            # commit and refresh again to return payment options
+            db.commit()
+            db.refresh(new_gift)
 
         return CustomResponse(
             status_code=status.HTTP_201_CREATED,

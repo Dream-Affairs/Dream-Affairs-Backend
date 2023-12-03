@@ -49,7 +49,7 @@ class GiftSchema(BaseModel):  # type: ignore
     """Represents the base schema for a gift."""
 
     title: str
-    product_unit_price: float
+    product_unit_price: Optional[float] = None
     product_quantity: Optional[int] = None
     currency: str
     gift_type: GiftType
