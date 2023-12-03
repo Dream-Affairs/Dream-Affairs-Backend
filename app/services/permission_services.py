@@ -215,7 +215,7 @@ class PermissionManager(BaseModel):  # type: ignore
     invitation: Optional[InvitationPerm] | Dict[str, Any] = {}
     meal: Optional[MealPerm] | Dict[str, Any] = {}
 
-    def get_all_permissions(self, db: Session) -> Any:
+    def get_all_permissions(self, db: Session) -> List[PermissionSchema]:
         """Get all permissions from database.
 
         Args:
@@ -224,18 +224,28 @@ class PermissionManager(BaseModel):  # type: ignore
         Returns:
             Dict[str, Permission]: Dict of permissions.
         """
+        permissions_dict: Dict[str, Any] = {}
+        permissions_list: List[PermissionSchema] = []
         permissions = db.query(Permission).all()
-        permissions_list = []
+
         for permission in permissions:
-            permissions_list.append(
-                PermissionSchema(
-                    id=permission.id,
-                    permission_class=permission.permission_class,
-                    name=permission.name,
-                    plan=permission.plan,
-                    description=permission.description,
+            permission_schema = PermissionSchema(
+                id=permission.id,
+                permission_class=permission.permission_class,
+                name=permission.name,
+                plan=permission.plan,
+                description=permission.description,
+            ).model_dump()
+
+            if permission.permission_class in permissions_dict:
+                permissions_dict[permission.permission_class].append(
+                    permission_schema
                 )
-            )
+            else:
+                permissions_dict[permission.permission_class] = [
+                    permission_schema
+                ]
+
         return permissions_list
 
     def get_permissions(

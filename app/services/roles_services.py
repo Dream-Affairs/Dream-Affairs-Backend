@@ -35,11 +35,12 @@ class RoleService(BaseModel):  # type: ignore
         ValueError: If organization_id is not provided
     """
 
+    id: Optional[str] = None
     name: str = ""
     description: str = ""
     organization_id: str = ""
     is_super_admin: bool = False
-    permissions: Optional[List[PermissionSchema]]
+    permissions: Optional[List[PermissionSchema]] = []
     is_default: bool = False
 
     class Config:
@@ -119,7 +120,10 @@ class RoleService(BaseModel):  # type: ignore
         return role_intance
 
     def assign_permissions(
-        self, db: Session, role_id: str, permissions: List[PermissionSchema]
+        self,
+        db: Session,
+        role_id: str,
+        permissions: List[PermissionSchema] | None,
     ) -> None:
         """Assigns permissions to a role.
 
@@ -154,7 +158,7 @@ class RoleService(BaseModel):  # type: ignore
         db.commit()
 
     def update_role_permissions(
-        self, db: Session, role_id: str, permissions: List[PermissionSchema]
+        self, db: Session, role_id: str
     ) -> Dict[str, Any]:
         """Updates role permissions.
 
@@ -170,7 +174,7 @@ class RoleService(BaseModel):  # type: ignore
         db.commit()
 
         # assign new permissions
-        self.assign_permissions(db, role_id, permissions)
+        self.assign_permissions(db, role_id, self.permissions)
 
         return self.get_role(db, role_id)
 
@@ -206,7 +210,7 @@ class RoleService(BaseModel):  # type: ignore
         role_name: str,
         is_default: bool = False,
         is_super_admin: bool = False,
-    ) -> Any:
+    ) -> RoleModel:
         """Gets a role by name.
 
         Args:
@@ -217,7 +221,7 @@ class RoleService(BaseModel):  # type: ignore
             Optional[OrganizationRole]: Role if found, None otherwise.
         """
 
-        role = (
+        role: RoleModel = (
             db.query(RoleModel)
             .filter(
                 RoleModel.name == role_name,
@@ -228,9 +232,7 @@ class RoleService(BaseModel):  # type: ignore
         )
         return role
 
-    def get_all_organization_roles(
-        self, db: Session, organization_id: str
-    ) -> List[Dict[str, Any]]:
+    def get_all_organization_roles(self, db: Session) -> List["RoleService"]:
         """Gets all roles for an organization.
 
         Args:
@@ -240,25 +242,26 @@ class RoleService(BaseModel):  # type: ignore
         Returns:
             List[OrganizationRole]: List of roles for an organization.
         """
-        roles = (
+        roles_instance = (
             db.query(OrganizationRole)
-            .filter(OrganizationRole.organization_id == organization_id)
+            .filter(OrganizationRole.organization_id == self.organization_id)
             .all()
         )
-        print(roles[0].role.__dict__)
-        return [
-            {
-                "id": role.role.id,
-                "name": role.role.name,
-                "description": role.role.description,
-                "is_default": role.role.is_default,
-                "is_super_admin": role.role.is_super_admin,
-                "permissions": PermissionManager.get_role_permissions(
-                    self, db, role.role.id
-                ),
-            }
-            for role in roles
-        ]
+        roles = []
+        for role in roles_instance:
+            roles.append(
+                RoleService(
+                    id=role.role.id,
+                    name=role.role.name,
+                    description=role.role.description,
+                    is_default=role.role.is_default,
+                    is_super_admin=role.role.is_super_admin,
+                    permissions=PermissionManager.get_role_permissions(
+                        self, db, role.role.id
+                    ),
+                ).model_dump()
+            )
+        return roles
 
     def assign_role(
         self,

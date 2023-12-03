@@ -18,5 +18,5 @@ class RoleCreate(BaseModel):  # type: ignore
 
     name: str
     description: str
-    organization_id: str
+    organization_id: str = ""
     permissions: List[PermissionSchema]

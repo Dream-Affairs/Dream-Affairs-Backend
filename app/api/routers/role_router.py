@@ -53,7 +53,9 @@ async def get_roles(
         CustomResponse: List of all roles
     """
     try:
-        roles = RoleService().get_all_organization_roles(db, organization_id)
+        roles = RoleService(
+            organization_id=organization_id,
+        ).get_all_organization_roles(db)
 
     except Exception as e:
         raise CustomException(
@@ -118,6 +120,11 @@ async def create_role(
     Returns:
         CustomResponse: Role details
     """
+    if role.organization_id in ("", "string"):
+        raise CustomException(
+            status_code=400,
+            message="Organization ID is required",
+        )
     try:
         role_instance = RoleService(
             name=role.name,
@@ -135,6 +142,7 @@ async def create_role(
             status_code=400,
             message="Failed to create role",
         ) from e
+
     return CustomResponse(
         status_code=200,
         message="Role created successfully",
@@ -162,7 +170,9 @@ async def update_role_permissions(
         CustomResponse: Role details
     """
     try:
-        role = RoleService().update_role_permissions(db, role_id, permissions)
+        role = RoleService(
+            permissions=permissions,
+        ).update_role_permissions(db, role_id)
     except Exception as e:
         raise CustomException(
             status_code=400,
