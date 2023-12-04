@@ -1,6 +1,7 @@
 """This module contains services for the organization model."""
 from typing import Any
 
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.models.organization_models import Organization, OrganizationMember
@@ -46,3 +47,18 @@ def check_organization_member_is_admin(
         )
         .first()
     )
+
+
+class OrganizationSchema(BaseModel):
+    """Data model for an organization.
+
+    Attributes:
+        name (str): The name of the organization.
+        owner (str): The ID of the owner of the organization.
+        id (str): The id of
+    """
+
+    id: str
+    name: str
+    account_id: str
+    organization_id: str

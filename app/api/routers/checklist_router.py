@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.authorization import Authorize, is_authenticated
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.checklist_schemas import (
     ChecklistCreate,
@@ -31,7 +32,9 @@ router = APIRouter(
     "",
 )
 async def create_task(
-    checklist: ChecklistCreate, db: Session = Depends(get_db)
+    checklist: ChecklistCreate,
+    db: Session = Depends(get_db),
+    user: Authorize = Depends(is_authenticated),
 ) -> CustomResponse:
     """Create a task."""
     return CustomResponse(
@@ -42,7 +45,7 @@ async def create_task(
                 created_by=checklist.created_by,
                 assigned_to=checklist.assigned_to,
                 title=checklist.title,
-                organization_id=checklist.organization_id,
+                organization_id=user.member.organization_id,
                 due_date=checklist.due_date,
                 db=db,
                 description=checklist.description,
@@ -51,15 +54,15 @@ async def create_task(
     )
 
 
-@router.get("/{organization_id}/{member_id}")
+@router.get("//{member_id}")
 async def get_all_tasks(
-    organization_id: str,
     member_id: str,
     status: ChecklistStatus,
     sort_by: ChecklistSortBy,
     order: ChelistSortOrder,
     offset: int = 0,
     limit: int = 20,
+    user: Authorize = Depends(is_authenticated),
     db: Session = Depends(get_db),
 ) -> CustomResponse:
     """Get all tasks."""
@@ -68,7 +71,7 @@ async def get_all_tasks(
         message="Tasks retrieved successfully.",
         data=jsonable_encoder(
             get_all_checklists(
-                organization_id,
+                user.member.organization_id,
                 member_id,
                 status,
                 sort_by,
@@ -83,7 +86,11 @@ async def get_all_tasks(
 
 @router.get("/{checklist_id}")
 async def get_task(
-    checklist_id: str, db: Session = Depends(get_db)
+    checklist_id: str,
+    db: Session = Depends(get_db),
+    user: Authorize = Depends(  # pylint: disable=unused-argument
+        is_authenticated
+    ),
 ) -> CustomResponse:
     """Get a task."""
     return CustomResponse(

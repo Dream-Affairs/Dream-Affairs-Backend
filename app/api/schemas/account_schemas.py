@@ -6,19 +6,25 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 
-class AccountSchema(BaseModel):  # type: ignore
+class AccountBase(BaseModel):  # type: ignore
     """Data model for an account.
 
     Attributes:
         email (EmailStr): The email address of the account.
-        password (str): The password of the account.
-        confirm_password (str): The confirmation password of the account.
-        first_name (str): The first name of the account holder.
-        last_name (str): The last name of the account holder.
     """
 
     email: EmailStr
+
+
+class AccountLogin(AccountBase):  # type: ignore
+    """Data model for an account login."""
+
     password: str
+
+
+class AccountSignup(AccountLogin):  # type: ignore
+    """Data model for an account signup."""
+
     confirm_password: str
     first_name: str
     event_date: Optional[datetime]
@@ -36,7 +42,7 @@ class TokenData(BaseModel):  # type: ignore
     id: Optional[str] = None
 
 
-class ForgotPasswordData(BaseModel):  # type: ignore
+class ForgotPasswordData(AccountBase):  # type: ignore
     """Represents the data required for the forgot password functionality.
 
     Attributes:

@@ -2,19 +2,19 @@
 
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.account_schemas import (
-    AccountSchema,
+    AccountLogin,
+    AccountSignup,
     ForgotPasswordData,
     ResetPasswordData,
     VerifyAccountTokenData,
 )
 from app.database.connection import get_db
 from app.services.account_services import (
-    account_service,
+    create_account,
     forgot_password_service,
     login_service,
     reset_password_service,
@@ -28,7 +28,7 @@ router = APIRouter(prefix=BASE_URL, tags=["Auth"])
 
 @router.post("/signup")
 def signup(
-    user: AccountSchema,
+    user: AccountSignup,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
@@ -51,7 +51,7 @@ def signup(
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
-    _, err = account_service(user, background_tasks, db)
+    _, err = create_account(user, background_tasks, db)
 
     if err:
         raise err
@@ -65,7 +65,7 @@ def signup(
 
 @router.post("/login")
 def login(
-    user_credentials: OAuth2PasswordRequestForm = Depends(),
+    user_credentials: AccountLogin,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
     """Log in a user and generate an access token.
