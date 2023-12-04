@@ -58,9 +58,7 @@ class RoleService(BaseModel):  # type: ignore
             Optional[OrganizationRole]: Role if found, None otherwise.
         """
         role = (
-            db.query(RoleModel)
-            .filter(RoleModel.is_default is True, RoleModel.name == name)
-            .first()
+            db.query(RoleModel).filter_by(name=name, is_default=True).first()
         )
         return role
 
