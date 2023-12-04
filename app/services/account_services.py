@@ -61,7 +61,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         str: The result of the password verification.
     """
-
+    print(pwd_context.verify(plain_password, hashed_password))
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -79,7 +79,6 @@ def generate_token(
     """
 
     expire = datetime.utcnow() + timedelta(minutes=expire_mins)
-    print(expire)
     data["exp"] = expire
     data["iat"] = datetime.utcnow()
     data["iss"] = "dream-affairs"
