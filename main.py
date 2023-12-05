@@ -18,6 +18,7 @@ from app.api.routers.invite_router import router as invite_routers
 from app.api.routers.meal_router import meal_router as meal_routers
 from app.api.routers.payment_router import payment_router as payment_routers
 from app.api.routers.role_router import router as role_routers
+from app.api.routers.sso_router import router as sso_router
 from app.core.config import settings
 from app.database.connection import get_db_unyield
 from app.services.permission_services import APP_PERMISSION
@@ -40,6 +41,9 @@ v1_router = APIRouter(prefix="/api/v1")
 
 v1_router.include_router(
     account_routers,
+)
+v1_router.include_router(
+    sso_router,
 )
 v1_router.include_router(
     email_routers,
@@ -86,7 +90,7 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@v1_router.get("/health")
 def health() -> CustomResponse:
     """Health check endpoint."""
     # add exception handling here
@@ -102,5 +106,7 @@ app.include_router(v1_router)
 db: Session = get_db_unyield()
 APP_PERMISSION.create_permissions(db)
 create_default_roles(db)
+
+
 if __name__ == "__main__":
     uvicorn.run(app="main:app", port=8000, reload=True)
