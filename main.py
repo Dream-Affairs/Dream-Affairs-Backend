@@ -9,15 +9,15 @@ from app.api.responses.custom_responses import (
     CustomResponse,
     custom_http_exception_handler,
 )
-from app.api.routers.account_routers import router as account_routers
-from app.api.routers.checklist_router import router as checklist_routers
-from app.api.routers.email_router import email_router as email_routers
-from app.api.routers.file_router import router as file_routers
-from app.api.routers.gift_router import gift_router as gift_routers
-from app.api.routers.invite_router import router as invite_routers
-from app.api.routers.meal_router import meal_router as meal_routers
-from app.api.routers.payment_router import payment_router as payment_routers
-from app.api.routers.role_router import router as role_routers
+from app.api.routers.account_routers import router as account_router
+from app.api.routers.checklist_router import router as checklist_router
+from app.api.routers.email_router import router as email_router
+from app.api.routers.file_router import router as file_router
+from app.api.routers.gift_router import router as gift_router
+from app.api.routers.meal_router import router as meal_router
+from app.api.routers.organization_router import router as organization_router
+from app.api.routers.payment_router import router as payment_router
+from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
 from app.core.config import settings
 from app.database.connection import get_db_unyield
@@ -40,35 +40,35 @@ v1_router = APIRouter(prefix="/api/v1")
 
 
 v1_router.include_router(
-    account_routers,
+    account_router,
 )
 v1_router.include_router(
     sso_router,
 )
 v1_router.include_router(
-    email_routers,
+    email_router,
 )
 v1_router.include_router(
-    role_routers,
+    role_router,
 )
 v1_router.include_router(
-    invite_routers,
+    organization_router,
 )
 
 v1_router.include_router(
-    meal_routers,
+    meal_router,
 )
 v1_router.include_router(
-    gift_routers,
+    gift_router,
 )
 v1_router.include_router(
-    file_routers,
+    file_router,
 )
 v1_router.include_router(
-    checklist_routers,
+    checklist_router,
 )
 v1_router.include_router(
-    payment_routers,
+    payment_router,
 )
 
 app = FastAPI(

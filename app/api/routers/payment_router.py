@@ -24,10 +24,10 @@ from app.services.payment_services import (
     update_wallet,
 )
 
-payment_router = APIRouter(prefix="/payment", tags=["Payment"])
+router = APIRouter(prefix="/payment", tags=["Payment"])
 
 
-@payment_router.post("/payment-options/bank")
+@router.post("/payment-options/bank")
 async def add_bank_details(
     request: BankSchema,
     db: Session = Depends(get_db),
@@ -52,7 +52,7 @@ async def add_bank_details(
     return bank_details
 
 
-@payment_router.post("/payment-options/wallet")
+@router.post("/payment-options/wallet")
 async def add_wallet_details(
     request: WalletSchema,
     db: Session = Depends(get_db),
@@ -77,7 +77,7 @@ async def add_wallet_details(
     return wallet_details
 
 
-@payment_router.post("/payment-options/link")
+@router.post("/payment-options/link")
 async def add_payment_link_details(
     request: LinkSchema,
     db: Session = Depends(get_db),
@@ -102,7 +102,7 @@ async def add_payment_link_details(
     return link_details
 
 
-@payment_router.get("/payment-options/{organization_id}/{payment_account_id}")
+@router.get("/payment-options/{organization_id}/{payment_account_id}")
 async def get_payment_account(
     organization_id: str,
     payment_account_id: str,
@@ -133,7 +133,7 @@ async def get_payment_account(
     return payment_account
 
 
-@payment_router.get("/payment-options/{organization_id}")
+@router.get("/payment-options/{organization_id}")
 async def get_payment_accounts(
     organization_id: str,
     filter_by: FilterAcountsEnum,
@@ -166,7 +166,7 @@ async def get_payment_accounts(
     return payment_accounts
 
 
-@payment_router.patch("/payment-options/bank/{bank_account_id}")
+@router.patch("/payment-options/bank/{bank_account_id}")
 async def update_bank_details(
     bank_account_id: str,
     request: BankSchema,
@@ -194,7 +194,7 @@ async def update_bank_details(
     return updated_bank_details
 
 
-@payment_router.patch("/payment-options/wallet/{wallet_account_id}")
+@router.patch("/payment-options/wallet/{wallet_account_id}")
 async def update_wallet_details(
     wallet_account_id: str,
     request: WalletSchema,
@@ -222,7 +222,7 @@ async def update_wallet_details(
     return updated_wallet_details
 
 
-@payment_router.patch("/payment-options/link/{link_account_id}")
+@router.patch("/payment-options/link/{link_account_id}")
 async def update_link_details(
     link_account_id: str,
     request: LinkSchema,

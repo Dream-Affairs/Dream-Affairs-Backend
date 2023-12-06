@@ -115,7 +115,6 @@ def decode_token(
             audience="dream-affairs",
             options={"verify_exp": True},
         )
-        print(data)
     except ExpiredSignatureError as e:
         print(e)
         raise CustomException(
@@ -175,6 +174,64 @@ def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
     return True
 
 
+def get_account_by_email(db: Session, email: str) -> Account:
+    """Get account by email.
+
+    Args:
+        db: The database session.
+        email: The email address of the account.
+
+    Returns:
+        Account: The account object.
+    """
+    return db.query(Account).filter(Account.email == email).first()
+
+
+def authenticate_user(user: Account, db: Session):
+    """Authenticate user and generate access token.
+
+    Args:
+        user: The user object.
+        db: The database session.
+
+    Returns:
+        CustomResponse: The response containing the access
+            token and token type.
+    """
+    if user:
+        user_org = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.account_id == user.id)
+            .first()
+        )
+
+        access_token = generate_token(
+            data={
+                "account_id": user.id,
+            },
+            expire_mins=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        )
+
+        return CustomResponse(
+            status_code=status.HTTP_200_OK,
+            data={
+                "user": {
+                    "id": user.id,
+                },
+                "organization": {
+                    "organization_id": user_org.organization_id,
+                    "organization_member_id": user_org.id,
+                },
+                "access_token": access_token,
+            },
+        )
+
+    return CustomResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        message="User not found",
+    )
+
+
 def create_account(
     user: AccountSignup, background_tasks: BackgroundTasks, db: Session
 ) -> Any:
@@ -199,43 +256,44 @@ def create_account(
             message="User already exists",
         )
 
+    new_user_id = (uuid4().hex,)
     new_user = Account(
-        id=uuid4().hex,
+        id=new_user_id,
         email=user.email,
         first_name=user.first_name,
         password_hash=hash_password(user.password),
+        auth=Auth(
+            id=uuid4().hex,
+            account_id=new_user_id,
+            provider=user.provider,
+        ),
     )
 
-    auth = Auth(
-        id=uuid4().hex,
-        account_id=new_user.id,
-        provider="local",
-        setup_date=new_user.created_at,
-    )
-
+    org_id = (uuid4().hex,)
     org = Organization(
-        id=uuid4().hex,
+        id=org_id,
         name=f"{new_user.first_name} & {user.partner_name}".title(),
         owner=new_user.id,
         org_type="Wedding",
+        detail=OrganizationDetail(
+            organization_id=org_id,
+            event_location=user.location,
+            website=f"/{user.first_name}-{user.partner_name}".lower(),
+            event_date=user.event_date,
+        ),
     )
 
-    org_detail = OrganizationDetail(
-        organization_id=org.id,
-        event_location=user.location,
-        website=f"/{user.first_name}-{user.partner_name}".lower(),
-        event_date=user.event_date,
-    )
-
-    if not add_to_db(db, new_user, auth, org, org_detail):
+    if not add_to_db(db, new_user, org):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
+
     role = RoleService().get_default_role(db=db, name="Admin")
     org_role = RoleService().add_role_to_organization(
         db, org.id, role_id=role.id
     )
+
     RoleService().assign_role(
         organization_id=org.id,
         db=db,
@@ -320,42 +378,16 @@ def login_service(
         CustomException: If the user credentials are invalid.
     """
 
-    user = (
-        db.query(Account)
-        .filter(Account.email == user_credentials.email)
-        .first()
-    )
+    user = get_account_by_email(db, user_credentials.email)
+
+    if user_credentials.provider == "google":
+        return authenticate_user(user, db)
 
     if user and verify_password(user_credentials.password, user.password_hash):
-        user_org = (
-            db.query(OrganizationMember)
-            .filter(OrganizationMember.account_id == user.id)
-            .first()
-        )
+        return authenticate_user(user, db)
 
-        access_token = generate_token(
-            data={
-                "account_id": user.id,
-            },
-            expire_mins=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
-        )
-
-        return CustomResponse(
-            status_code=status.HTTP_200_OK,
-            data={
-                "user": {
-                    "id": user.id,
-                },
-                "organization": {
-                    "organization_id": user_org.organization_id,
-                    "organization_member_id": user_org.id,
-                },
-                "access_token": access_token,
-            },
-        )
-
-    raise CustomException(
-        status_code=status.HTTP_403_FORBIDDEN,
+    return CustomException(
+        status_code=status.HTTP_404_NOT_FOUND,
         message="Invalid credentials",
     )
 

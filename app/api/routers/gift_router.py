@@ -23,10 +23,10 @@ from app.services.gift_services import (
     gifts_filter,
 )
 
-gift_router = APIRouter(prefix="/registry", tags=["Registry"])
+router = APIRouter(prefix="/registry", tags=["Registry"])
 
 
-@gift_router.post("/add-product-gift")
+@router.post("/add-product-gift")
 async def add_product_gift(
     member_id: str,
     gift_item: AddProductGift,
@@ -61,7 +61,7 @@ async def add_product_gift(
     return response
 
 
-@gift_router.patch("/edit-product-gift")
+@router.patch("/edit-product-gift")
 async def edit_product_gift(
     gift_id: str,
     gift_item: EditProductGift,
@@ -95,7 +95,7 @@ async def edit_product_gift(
     return response
 
 
-@gift_router.get("/get-gift")
+@router.get("/get-gift")
 async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     """Get a gift from the Registry.
 
@@ -123,7 +123,7 @@ async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.delete("/delete-gift")
+@router.delete("/delete-gift")
 async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     """Delete a gift from the Registry.
 
@@ -151,7 +151,7 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.post("/get-gifts")
+@router.post("/get-gifts")
 async def get_all_gifts(
     request: FilterGiftSchema,
     db: Session = Depends(get_db),
@@ -201,7 +201,7 @@ async def get_all_gifts(
     return response
 
 
-@gift_router.post("/cash-gifts/{organization_id}")
+@router.post("/cash-gifts/{organization_id}")
 async def add_cash_funds_gift(
     organization_id: str,
     request: AddCashGift,

@@ -90,6 +90,8 @@ class RoleService(BaseModel):  # type: ignore
 
         if self.permissions is not None:
             self.assign_permissions(db, role.id, self.permissions)
+        else:
+            print(f"Role {role.name} has no permissions")
 
         return role
 
@@ -301,7 +303,7 @@ def create_default_roles(db: object = get_db_unyield) -> None:
         description="Admin",
         is_default=True,
         is_super_admin=True,
-        permissions=APP_PERMISSION.get_all_permissions(db),
+        permissions=APP_PERMISSION.get_all_permissions(db)[1],
     ).create_role(db)
 
     # RoleService(

@@ -27,7 +27,7 @@ async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
     Returns:
         CustomResponse: List of Permission
     """
-    permissions = PermissionManager().get_all_permissions(db=db)
+    permissions, _ = PermissionManager().get_all_permissions(db=db)
 
     return CustomResponse(
         status_code=200,

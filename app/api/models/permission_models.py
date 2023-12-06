@@ -42,6 +42,5 @@ class Permission(Base):  # type: ignore
     )
 
     role_permission = relationship(
-        "RolePermission",
-        back_populates="permission",
+        "RolePermission", back_populates="permission", cascade="all,delete"
     )

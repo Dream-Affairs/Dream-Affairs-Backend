@@ -236,7 +236,8 @@ class PermissionManager(BaseModel):  # type: ignore
                 plan=permission.plan,
                 description=permission.description,
             ).model_dump()
-
+            if permission_schema not in permissions_list:
+                permissions_list.append(permission_schema)
             if permission.permission_class in permissions_dict:
                 permissions_dict[permission.permission_class].append(
                     permission_schema
@@ -246,7 +247,7 @@ class PermissionManager(BaseModel):  # type: ignore
                     permission_schema
                 ]
 
-        return permissions_list
+        return permissions_dict, permissions_list
 
     def get_permissions(
         self, db: Session, permission_class: str
