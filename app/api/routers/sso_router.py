@@ -19,6 +19,20 @@ router = APIRouter(
 )
 
 
+@router.get("/google/signup")
+async def google_signup(google_sso: GoogleSSO = Depends(get_google_sso)):
+    """Google login endpoint.
+
+    Args:
+        google_sso (GoogleSSO): The GoogleSSO object.
+
+    Returns:
+        str: The login redirect url.
+    """
+    user = await google_sso.get_login_url()
+    return user
+
+
 @router.get("/google/login")
 async def google_login(google_sso: GoogleSSO = Depends(get_google_sso)):
     """Google login endpoint.
