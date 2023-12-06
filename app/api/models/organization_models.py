@@ -2,7 +2,15 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
@@ -82,6 +90,8 @@ class Organization(Base):  # type: ignore
         String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
     )
     org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
+    description = Column(Text)
+    logo = Column(String)
     plan = Column(
         ENUM("basic", "core", "premium", name="plan"),
         nullable=False,
@@ -94,50 +104,63 @@ class Organization(Base):  # type: ignore
     deleted_at = Column(DateTime, nullable=True)
 
     account = relationship(
-        "Account", back_populates="organizations", lazy="joined"
+        "Account",
+        back_populates="organizations",
+        lazy="joined",
+        cascade="all,delete",
     )
     gifts = relationship(
-        "Gift",
-        back_populates="organization",
+        "Gift", back_populates="organization", cascade="all,delete"
     )
     detail = relationship(
-        "OrganizationDetail", back_populates="organization", lazy="joined"
+        "OrganizationDetail",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
+        uselist=False,
     )
     organization_members = relationship(
         "OrganizationMember",
         back_populates="organization",
+        cascade="all,delete",
     )
     budget = relationship(
-        "Budget",
-        back_populates="organization",
+        "Budget", back_populates="organization", cascade="all,delete"
     )
     meal_categories = relationship(
-        "MealCategory",
-        back_populates="organization",
+        "MealCategory", back_populates="organization", cascade="all,delete"
     )
     tags = relationship(
-        "OrganizationTag",
-        back_populates="organization",
+        "OrganizationTag", back_populates="organization", cascade="all,delete"
     )
     organization_roles = relationship(
-        "OrganizationRole",
-        back_populates="organization",
+        "OrganizationRole", back_populates="organization", cascade="all,delete"
     )
     checklist = relationship(
-        "Checklist",
-        back_populates="organization",
+        "Checklist", back_populates="organization", cascade="all,delete"
     )
 
     bank_details = relationship(
-        "BankDetail", back_populates="organization", lazy="joined"
+        "BankDetail",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
     )
     link_details = relationship(
-        "LinkDetail", back_populates="organization", lazy="joined"
+        "LinkDetail",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
     )
     wallet_details = relationship(
-        "WalletDetail", back_populates="organization", lazy="joined"
+        "WalletDetail",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
     )
-    track_email = relationship("TrackEmail", back_populates="organization")
+    track_email = relationship(
+        "TrackEmail", back_populates="organization", cascade="all,delete"
+    )
 
 
 class OrganizationDetail(Base):  # type: ignore
@@ -266,12 +289,16 @@ class OrganizationMember(Base):  # type: ignore
     )
     account = relationship("Account", backref="member_account", lazy="joined")
     member_role = relationship(
-        "OrganizationRole", back_populates="members", lazy="joined"
+        "OrganizationRole",
+        back_populates="members",
+        lazy="joined",
+        cascade="all,delete",
     )
     created_checklist = relationship(
         "Checklist",
         back_populates="created_by_member",
         foreign_keys="Checklist.created_by",
+        cascade="all,delete",
     )
     assigned_checklist = relationship(
         "Checklist",
@@ -382,8 +409,7 @@ class OrganizationTag(Base):  # type: ignore
         "Organization", back_populates="tags", lazy="joined"
     )
     meal_tags = relationship(
-        "MealTag",
-        back_populates="organization_tag",
+        "MealTag", back_populates="organization_tag", cascade="all,delete"
     )
 
 

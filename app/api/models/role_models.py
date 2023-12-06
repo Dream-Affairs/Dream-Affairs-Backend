@@ -40,8 +40,7 @@ class Role(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     role_permission = relationship(
-        "RolePermission",
-        back_populates="role",
+        "RolePermission", back_populates="role", cascade="all,delete"
     )
 
     def create_role(self, db: Session) -> "Role":

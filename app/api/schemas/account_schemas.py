@@ -20,6 +20,7 @@ class AccountLogin(AccountBase):  # type: ignore
     """Data model for an account login."""
 
     password: str
+    provider: str = "local"
 
 
 class AccountSignup(AccountLogin):  # type: ignore
@@ -27,7 +28,7 @@ class AccountSignup(AccountLogin):  # type: ignore
 
     confirm_password: str
     first_name: str
-    event_date: Optional[datetime]
+    event_date: Optional[datetime] = None
     location: str
     partner_name: str
 

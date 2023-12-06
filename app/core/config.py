@@ -40,6 +40,10 @@ class Settings:
     CLOUDINARY_API_KEY = config("CLOUDINARY_API_KEY", default="")
     CLOUDINARY_API_SECRET = config("CLOUDINARY_API_SECRET", default="")
 
+    GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+    GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
+    GOOGLE_REDIRECT_URI = config("GOOGLE_REDIRECT_URI", default="")
+
     FRONT_END_HOST = config(
         "FRONT_END_HOST",
         default="https://dream-affairs-frontend-dev.vercel.app",

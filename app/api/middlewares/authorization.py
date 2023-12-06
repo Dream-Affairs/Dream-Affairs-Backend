@@ -83,19 +83,7 @@ def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
             message="Unkown organization member",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    print(
-        Authorize(
-            member=OrganizationSchema(
-                id=organization_member.id,
-                name=organization_member.organization.name,
-                account_id=organization_member.account_id,
-                organization_id=organization_member.organization_id,
-            ),
-            role=RoleService().get_role(
-                db, organization_member.member_role.role_id
-            ),
-        ).model_dump()
-    )
+
     return Authorize(
         member=OrganizationSchema(
             id=organization_member.id,

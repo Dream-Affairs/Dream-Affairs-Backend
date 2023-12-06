@@ -97,9 +97,14 @@ class Meal(Base):  # type: ignore
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
     meal_categories = relationship(
-        "MealCategory", back_populates="meals", lazy="joined"
+        "MealCategory",
+        back_populates="meals",
+        lazy="joined",
+        cascade="all,delete",
     )
-    meal_tags = relationship("MealTag", back_populates="meals", lazy="joined")
+    meal_tags = relationship(
+        "MealTag", back_populates="meals", lazy="joined", cascade="all,delete"
+    )
 
 
 class MealTag(Base):  # type: ignore
@@ -137,7 +142,12 @@ class MealTag(Base):  # type: ignore
     )
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    meals = relationship("Meal", back_populates="meal_tags", lazy="joined")
+    meals = relationship(
+        "Meal", back_populates="meal_tags", lazy="joined", cascade="all,delete"
+    )
     organization_tag = relationship(
-        "OrganizationTag", back_populates="meal_tags", lazy="joined"
+        "OrganizationTag",
+        back_populates="meal_tags",
+        lazy="joined",
+        cascade="all,delete",
     )
