@@ -39,7 +39,7 @@ class OrganizationUpdate(BaseModel):
     event_details: Organizationevent
 
 
-class InviteMember(BaseModel):  # type: ignore
+class InviteMemberSchema(BaseModel):  # type: ignore
     """Schema for inviting a new organization member.
 
     Attributes:
@@ -52,3 +52,18 @@ class InviteMember(BaseModel):  # type: ignore
     name: str
     email: EmailStr
     role_id: str
+
+
+class AuthorizeOrganizationSchema(BaseModel):
+    """Data model for an organization.
+
+    Attributes:
+        name (str): The name of the organization.
+        owner (str): The ID of the owner of the organization.
+        id (str): The id of
+    """
+
+    id: str
+    name: str
+    account_id: str
+    organization_id: str

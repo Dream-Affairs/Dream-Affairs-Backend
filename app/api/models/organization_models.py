@@ -161,6 +161,13 @@ class Organization(Base):  # type: ignore
     track_email = relationship(
         "TrackEmail", back_populates="organization", cascade="all,delete"
     )
+    organization_invite = relationship(
+        "InviteMember",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
+        uselist=False,
+    )
 
 
 class OrganizationDetail(Base):  # type: ignore
@@ -275,10 +282,9 @@ class OrganizationMember(Base):  # type: ignore
         ForeignKey("organization_role.id", ondelete="CASCADE"),
         nullable=False,
     )
-    invite_token = Column(
-        String,
+    invite_id = Column(
+        String, ForeignKey("invite_member.id", ondelete="CASCADE")
     )
-    is_accepted = Column(Boolean, default=False)
     is_suspended = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -304,6 +310,78 @@ class OrganizationMember(Base):  # type: ignore
         "Checklist",
         back_populates="assigned_to_member",
         foreign_keys="Checklist.assigned_to",
+    )
+    invite = relationship(
+        "InviteMember",
+        back_populates="member",
+        foreign_keys=[invite_id],
+        cascade="all,delete",
+    )
+
+
+class InviteMember(Base):  # type: ignore
+    """
+    InviteMember:
+
+      This class is used to create the invite_member table.
+
+    Args:
+      Base: This is the base class from which all the models inherit.
+
+    Attributes:
+      id: This is the primary key of the table.
+      organization_id: This is the foreign key of the organization table.
+      account_id: This is the foreign key of the account table.
+      invite_token: This is the token which is used to invite the \
+        organization member.
+      status: This is the status of the invite.
+      is_accepted: This is the boolean value which tells whether the \
+        member is accepted or not.
+      sent_invite_date: This is the date and time when the invite was sent.
+      accepted_invite_date: This is the date and time when the invite was \
+        accepted.
+      rejected_invite_date: This is the date and time when the invite was \
+        rejected.
+      created_at: This is the date and time when the invite was created.
+      updated_at: This is the date and time when the invite was updated.
+    """
+
+    __tablename__ = "invite_member"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    account_id = Column(
+        String, ForeignKey("account.id", ondelete="CASCADE"), nullable=False
+    )
+    invite_token = Column(String, nullable=False)
+    status = Column(INVITE_STATUS, default="pending")
+    is_accepted = Column(Boolean, default=False)
+    sent_invite_date = Column(DateTime)
+    accepted_invite_date = Column(DateTime)
+    rejected_invite_date = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    organization = relationship(
+        "Organization",
+        back_populates="organization_invite",
+        uselist=False,
+        cascade="all,delete",
+    )
+    account = relationship(
+        "Account",
+        backref="invite_account",
+        lazy="joined",
+        cascade="all,delete",
+    )
+    member = relationship(
+        "OrganizationMember",
+        back_populates="invite",
+        lazy="joined",
+        cascade="all,delete",
     )
 
 

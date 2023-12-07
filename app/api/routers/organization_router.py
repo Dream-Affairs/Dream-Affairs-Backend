@@ -5,21 +5,46 @@ from sqlalchemy.orm.session import Session
 from app.api.middlewares.authorization import Authorize, is_authenticated
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.organization_schemas import (
-    InviteMember,
+    InviteMemberSchema,
     OrganizationUpdate,
 )
 from app.database.connection import get_db
 from app.services.organization_services import (
     accept_invite,
-    accepted_invites,
     delete_organization,
-    invite_new_member,
+    get_member,
+    invite_member,
     suspend_member,
-    suspended_invites,
     update_organization_details,
 )
 
 router = APIRouter(prefix="/organization", tags=["Organization"])
+
+
+@router.get("/")
+async def get_organizations(
+    db: Session = Depends(get_db),  # pylint: disable=unused-argument
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_authenticated
+    ),
+) -> CustomResponse:
+    """Get an organization.
+
+    Args:
+        account_id (str): Account ID
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: List of organizations
+    """
+    return CustomResponse(
+        status_code=200,
+        message="This route is not implemented yet",
+        data="",
+    )
 
 
 @router.put("/")
@@ -87,13 +112,13 @@ async def delete_organizations(
     )
 
 
-@router.post("/invites")
-async def invite_member(
-    invite: InviteMember,
+@router.post("/invite")
+async def invite_new_member(
+    invite: InviteMemberSchema,
     db: Session = Depends(get_db),
     auth: Authorize = Depends(is_authenticated),
 ) -> CustomResponse:
-    """Create a new role.
+    """Invite a new member.
 
     Args:
         role (InviteMember): Member details
@@ -106,9 +131,7 @@ async def invite_member(
         CustomResponse: Role details
     """
     try:
-        member_details = invite_new_member(
-            db, invite, auth.member.organization_id
-        )
+        member_details = invite_member(db, invite, auth.member.organization_id)
     except Exception as e:
         raise e
     return CustomResponse(
@@ -118,14 +141,38 @@ async def invite_member(
     )
 
 
+@router.get("/members")
+async def get_organization_members(
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_authenticated),
+) -> CustomResponse:
+    """Get all invites.
+
+    Args:
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: List of invites
+    """
+    try:
+        invites = await get_member(db, auth.member.organization_id)
+    except Exception as e:
+        raise e
+    return CustomResponse(
+        status_code=200,
+        message="Invites retrieved successfully",
+        data=invites,
+    )
+
+
 # An endpoint to accept an invite
-@router.get("/invites/accept/{invite_token}")
+@router.get("/invite/accept/{invite_token}")
 async def accept_invitation(
     invite_token: str,
     db: Session = Depends(get_db),
-    auth: Authorize = Depends(  # pylint: disable=unused-argument
-        is_authenticated
-    ),
 ) -> CustomResponse:
     """Accept an invite.
 
@@ -150,72 +197,13 @@ async def accept_invitation(
     )
 
 
-# An endpoint to get all accepted invites
-@router.get("/invites/accepted")
-async def get_all_accepted_invites(
-    auth: Authorize = Depends(is_authenticated), db: Session = Depends(get_db)
-) -> CustomResponse:
-    """Get all accepted invites.
-
-    Args:
-        organization_id (str): Organization ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: List of member details
-    """
-    try:
-        accepted_members_details = accepted_invites(
-            db, auth.member.organization_id
-        )
-    except Exception as e:
-        raise e
-    return CustomResponse(
-        status_code=200,
-        message="Accepted invites fetched successfully",
-        data=accepted_members_details,
-    )
-
-
-@router.get("/invites/suspended")
-async def get_all_suspended_invites(
-    auth: Authorize = Depends(is_authenticated), db: Session = Depends(get_db)
-) -> CustomResponse:
-    """Get all suspended invites.
-
-    Args:
-        organization_id (str): Organization ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: List of member details
-    """
-    try:
-        suspended_members_details = suspended_invites(
-            db, auth.member.organization_id
-        )
-    except Exception as e:
-        raise e
-    return CustomResponse(
-        status_code=200,
-        message="Suspended invites fetched successfully",
-        data=suspended_members_details,
-    )
-
-
-@router.put("/invites/suspend/{member_id}")
-async def suspend_membership(
+@router.patch("/{member_id}")
+async def suspend_unsuspend_membership(
     member_id: str,
     auth: Authorize = Depends(is_authenticated),
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Suspend a member.
+    """Suspend and unsuspend a member.
 
     Args:
         member_id (str): Member ID

@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app.api.models.account_models import Account
 from app.api.models.organization_models import OrganizationMember
 from app.api.responses.custom_responses import CustomException
+from app.api.schemas.organization_schemas import AuthorizeOrganizationSchema
 from app.database.connection import get_db
 from app.services.account_services import decode_token
-from app.services.organization_services import OrganizationSchema
 from app.services.roles_services import RoleService
 
 
@@ -26,7 +26,7 @@ class Authorize(BaseModel):
         permissions (List[str]): List of permissions
     """
 
-    member: OrganizationSchema
+    member: AuthorizeOrganizationSchema
     role: RoleService
 
 
@@ -85,7 +85,7 @@ def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
         )
 
     return Authorize(
-        member=OrganizationSchema(
+        member=AuthorizeOrganizationSchema(
             id=organization_member.id,
             name=organization_member.organization.name,
             account_id=organization_member.account_id,

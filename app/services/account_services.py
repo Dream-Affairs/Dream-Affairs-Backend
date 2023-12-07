@@ -48,6 +48,7 @@ def hash_password(password: str) -> Any:
     Returns:
         str: The hashed password.
     """
+
     return pwd_context.hash(password)
 
 
@@ -61,7 +62,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         str: The result of the password verification.
     """
-    print(pwd_context.verify(plain_password, hashed_password))
     return pwd_context.verify(plain_password, hashed_password)
 
 
@@ -386,7 +386,7 @@ def login_service(
     if user and verify_password(user_credentials.password, user.password_hash):
         return authenticate_user(user, db)
 
-    return CustomException(
+    raise CustomException(
         status_code=status.HTTP_404_NOT_FOUND,
         message="Invalid credentials",
     )

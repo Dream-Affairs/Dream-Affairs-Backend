@@ -3,36 +3,23 @@ from datetime import datetime
 from typing import Any, Dict, List
 from uuid import uuid4
 
-from pydantic import BaseModel
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
-from sqlalchemy.sql.expression import not_
 
 from app.api.models.account_models import Account
 from app.api.models.organization_models import (
+    InviteMember,
     Organization,
     OrganizationMember,
     OrganizationRole,
 )
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.organization_schemas import (
-    InviteMember,
+    InviteMemberSchema,
     OrganizationUpdate,
 )
-
-
-class OrganizationSchema(BaseModel):
-    """Data model for an organization.
-
-    Attributes:
-        name (str): The name of the organization.
-        owner (str): The ID of the owner of the organization.
-        id (str): The id of
-    """
-
-    id: str
-    name: str
-    account_id: str
-    organization_id: str
+from app.core.config import settings
+from app.services.account_services import hash_password
 
 
 def update_organization_details(
@@ -143,7 +130,7 @@ def delete_organization(db: Session, organization_id: str) -> Dict[str, Any]:
 
 def check_organization_exists(
     db: Session, name: str | None = None, organization_id: str | None = None
-) -> Any:
+) -> Organization:
     """Check if an organization name exists."""
     if organization_id:
         return (
@@ -183,8 +170,8 @@ def check_organization_member_is_admin(
     )
 
 
-def invite_new_member(
-    db: Session, member: InviteMember, organization_id: str
+def invite_member(
+    db: Session, member: InviteMemberSchema, organization_id: str
 ) -> Dict[str, Any]:
     """Invite a new member to an organization.
 
@@ -200,10 +187,8 @@ def invite_new_member(
         dict: Member details
     """
     # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == organization_id)
-        .first()
+    organization = check_organization_exists(
+        db, organization_id=organization_id
     )
     if not organization:
         raise CustomException(
@@ -216,7 +201,7 @@ def invite_new_member(
     role = (
         db.query(OrganizationRole)
         .filter(OrganizationRole.organization_id == organization_id)
-        .filter(OrganizationRole.id == member.role_id)
+        .filter(OrganizationRole.role_id == member.role_id)
         .first()
     )
     if not role:
@@ -233,6 +218,7 @@ def invite_new_member(
         .filter(OrganizationMember.account.has(email=member.email))
         .first()
     )
+
     if member_exists:
         raise CustomException(
             status_code=400,
@@ -246,60 +232,58 @@ def invite_new_member(
     )
     if not member_account:
         # Create account
-        try:
-            # split name to get first and last name
-            name = member.name.split(" ")
-            first_name = name[0]
-            last_name = name[1] if len(name) > 1 else None
+        # try:
+        # split name to get first and last name
+        name = member.name.split(" ")
+        first_name = name[0]
+        last_name = name[1] if len(name) > 1 else None
 
-            member_account = Account(
-                id=uuid4().hex,
+        try:
+            acc_id = uuid4().hex
+            account = Account(
+                id=acc_id,
+                email=member.email,
                 first_name=first_name,
                 last_name=last_name,
-                email=member.email,
-                password_hash=" ",  # nosec
+                password_hash=hash_password(settings.AUTH_SECRET_KEY),
+            )
+            db.add(account)
+
+            member_account = OrganizationMember(
+                id=uuid4().hex,
+                account_id=acc_id,
+                organization_role_id=role.id,
+                organization_id=organization_id,
             )
             db.add(member_account)
+
+            invite = InviteMember(
+                id=uuid4().hex,
+                account_id=acc_id,
+                organization_id=organization_id,
+                invite_token=uuid4().hex,
+            )
+            db.add(invite)
+
             db.commit()
-            db.refresh(member_account)
-        except Exception as exc:
-            print(exc)
+        except SQLAlchemyError as exc:
+            db.rollback()
             raise CustomException(
                 status_code=500,
                 message="Failed to create account",
                 data={"email": member.email},
             ) from exc
-
-    # Generate invite token
-    invite_token = uuid4().hex
-
-    # Invite new member
-    try:
-        new_member = OrganizationMember(
-            id=uuid4().hex,
-            account_id=member_account.id,
-            organization_id=organization_id,
-            organization_role_id=member.role_id,
-            invite_token=invite_token,
-        )
-        db.add(new_member)
-        db.commit()
-        db.refresh(new_member)
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to invite new member",
-            data={"organization_id": member.organization_id},
-        ) from exc
+        finally:
+            db.refresh(account)
+            db.refresh(member_account)
+            db.refresh(invite)
 
     return {
-        "id": new_member.id,
+        "id": member_account.id,
         "name": member.name,
         "email": member.email,
-        "role": role.name,
+        "role": role.role.name,
         "organization": organization.name,
-        "invite_token": new_member.invite_token,
-        "is_accepted": new_member.is_accepted,
     }
 
 
@@ -318,10 +302,11 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
     """
     # Check if invite token is valid
     member = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.invite_token == invite_token)
+        db.query(InviteMember)
+        .filter(InviteMember.invite_token == invite_token)
         .first()
     )
+
     if not member:
         raise CustomException(
             status_code=400,
@@ -337,11 +322,24 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
             data={"invite_token": invite_token},
         )
 
+    role = (
+        db.query(OrganizationRole)
+        .join(
+            OrganizationMember,
+            OrganizationMember.organization_role_id == OrganizationRole.id,
+        )
+        .filter(OrganizationMember.account_id == member.account_id)
+        .filter(OrganizationMember.organization_id == member.organization_id)
+        .first()
+    )
+
     # Accept invite
     try:
         member.is_accepted = True
+        member.status = "accepted"
+        member.accepted_invite_date = datetime.utcnow()
+        member.updated_at = datetime.utcnow()
         db.commit()
-        db.refresh(member)
     except Exception as exc:
         raise CustomException(
             status_code=500,
@@ -353,34 +351,31 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
         "id": member.id,
         "name": f"{member.account.first_name} {member.account.last_name}",
         "email": member.account.email,
-        "role": member.member_role.name,
+        "role": role.role.name,
         "organization": member.organization.name,
         "invite_token": member.invite_token,
         "is_accepted": member.is_accepted,
-        "is_suspended": member.is_suspended,
     }
 
 
-def accepted_invites(
-    db: Session, organization_id: str
+async def get_member(
+    db: Session,
+    organization_id: str,
 ) -> List[Dict[str, Any]]:
-    """Accept an invite.
+    """Get all invites.
 
     Args:
-        db (Session): Database session
-        orgqnization_id (str): Invite token
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+        organization_id (str): Organization ID
 
     Raises:
-        CustomException: If token is invalid
+        CustomException: If organization does not exist
 
     Returns:
-        dict: Member details
+        List[Dict[str, Any]]: List of invites
     """
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == organization_id)
-        .first()
+    organization = check_organization_exists(
+        db, organization_id=organization_id
     )
     if not organization:
         raise CustomException(
@@ -389,97 +384,46 @@ def accepted_invites(
             data={"organization_id": organization_id},
         )
 
-    try:
-        member = (
-            db.query(OrganizationMember)
-            .filter(OrganizationMember.organization_id == organization_id)
-            .filter(OrganizationMember.is_accepted)
-            .filter(not_(OrganizationMember.is_suspended))
-            .all()
-        )
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to fetch accepted invites",
-            data={"organization_id": organization_id},
-        ) from exc
-
-    member_list = []
-    for i in member:
-        member_list.append(
-            {
-                "id": i.id,
-                "name": f"{i.account.first_name} {i.account.last_name}",
-                "email": i.account.email,
-                "role": i.member_role.name,
-                "organization": i.organization.name,
-                "invite_token": i.invite_token,
-                "is_accepted": i.is_accepted,
-                "is_suspended": i.is_suspended,
-            }
-        )
-
-    return member_list
-
-
-def suspended_invites(
-    db: Session, organization_id: str
-) -> List[Dict[str, Any]]:
-    """Accept an invite.
-
-    Args:
-        db (Session): Database session
-        orgqnization_id (str): Invite token
-
-    Raises:
-        CustomException: If token is invalid
-
-    Returns:
-        dict: Member details
-    """
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == organization_id)
-        .first()
+    query = db.query(InviteMember, OrganizationMember).filter(
+        InviteMember.organization_id == organization_id
     )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": organization_id},
-        )
+    query = query.join(
+        OrganizationMember,
+        OrganizationMember.account_id == InviteMember.account_id,
+    )
+    query = query.filter(
+        OrganizationMember.account_id == InviteMember.account_id
+    )
+    query.all()
 
-    try:
-        member = (
-            db.query(OrganizationMember)
-            .filter(OrganizationMember.organization_id == organization_id)
-            .filter(OrganizationMember.is_suspended)
-            .all()
-        )
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to fetch suspended invites",
-            data={"organization_id": organization_id},
-        ) from exc
+    members = []
+    unverified_members = []
+    suspended_members = []
 
-    member_list = []
-    for i in member:
-        member_list.append(
-            {
-                "id": i.id,
-                "name": f"{i.account.first_name} {i.account.last_name}",
-                "email": i.account.email,
-                "role": i.member_role.name,
-                "organization": i.organization.name,
-                "invite_token": i.invite_token,
-                "is_accepted": i.is_accepted,
-                "is_suspended": i.is_suspended,
-            }
-        )
+    for member in query:
+        member_dict = {
+            "id": member[1].id,
+            "name": f"{member[1].account.first_name} \
+{member[1].account.last_name or ''}",
+            "email": member[1].account.email,
+            "role": member[1].member_role.role.name,
+            "is_accepted": member[0].is_accepted,
+            "is_suspended": member[1].is_suspended,
+        }
 
-    return member_list
+        if member[0].is_accepted and not member[1].is_suspended:
+            members.append(member_dict)
+        elif not member[0].is_accepted and not member[1].is_suspended:
+            unverified_members.append(member_dict)
+        if member[1].is_suspended:
+            suspended_members.append(member_dict)
+
+    data = {
+        "members": members,
+        "unverified_members": unverified_members,
+        "suspended_members": suspended_members,
+    }
+    return data
 
 
 def suspend_member(
@@ -524,6 +468,13 @@ def suspend_member(
         .filter(OrganizationMember.id == member_id)
         .first()
     )
+
+    invite_instance = (
+        db.query(InviteMember)
+        .filter(InviteMember.organization_id == organization_id)
+        .filter(InviteMember.account_id == member.account_id)
+        .first()
+    )
     if not member:
         raise CustomException(
             status_code=404,
@@ -531,16 +482,8 @@ def suspend_member(
             data={"member_id": member_id},
         )
 
-    # Check if member is already suspended
-    if member.is_suspended:
-        raise CustomException(
-            status_code=400,
-            message="Member is already suspended",
-            data={"member_id": member_id},
-        )
-
     # Check if member is accepted
-    if not member.is_accepted:
+    if not invite_instance.is_accepted:
         raise CustomException(
             status_code=400,
             message="Member has not accepted invite",
@@ -549,7 +492,7 @@ def suspend_member(
 
     # Suspend member
     try:
-        member.is_suspended = True
+        member.is_suspended = not member.is_suspended
         db.commit()
         db.refresh(member)
     except Exception as exc:
@@ -563,9 +506,6 @@ def suspend_member(
         "id": member.id,
         "name": f"{member.account.first_name} {member.account.last_name}",
         "email": member.account.email,
-        "role": member.member_role.name,
-        "organization": member.organization.name,
-        "invite_token": member.invite_token,
-        "is_accepted": member.is_accepted,
+        "role": member.member_role.role.name,
         "is_suspended": member.is_suspended,
     }
