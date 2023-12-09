@@ -22,6 +22,154 @@ from app.core.config import settings
 from app.services.account_services import hash_password
 
 
+def get_all_organizations(
+    account_id: str, db: Session
+) -> List[Dict[str, Any]]:
+    """Get all organizations that an account belongs to.
+
+    Args:
+        account_id (str): Account ID
+        db (Session): Database session
+
+    Returns:
+        List[Dict[str, Any]]: List of organizations
+    """
+    query = (
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.account_id == account_id)
+        .all()
+    )
+
+    organizations = []
+    for organization in query:
+        event_date = organization.organization.detail.event_date
+        event_start_time = organization.organization.detail.event_start_time
+        event_end_time = organization.organization.detail.event_end_time
+        organizations.append(
+            {
+                "id": organization.organization.id,
+                "name": organization.organization.name,
+                "description": organization.organization.description,
+                "logo": organization.organization.logo,
+                "event_details": {
+                    "website": organization.organization.detail.website,
+                    "event_date": event_date,
+                    "event_start_time": event_start_time,
+                    "event_end_time": event_end_time,
+                },
+            }
+        )
+
+    return organizations
+
+
+def get_organization(db: Session, organization_id: str) -> Dict[str, Any]:
+    """Get an organization.
+
+    Args:
+        db (Session): Database session
+        organization_id (str): Organization ID
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        dict: Organization details
+    """
+    organization = (
+        db.query(Organization)
+        .filter(Organization.id == organization_id)
+        .first()
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    return {
+        "id": organization.id,
+        "name": organization.name,
+        "description": organization.description,
+        "logo": organization.logo,
+        "event_details": {
+            "website": organization.detail.website,
+            "event_date": organization.detail.event_date,
+            "event_start_time": organization.detail.event_start_time,
+            "event_end_time": organization.detail.event_end_time,
+        },
+    }
+
+
+async def get_members(
+    db: Session,
+    organization_id: str,
+) -> List[Dict[str, Any]]:
+    """Get all organizatoion members and invites.
+
+    Args:
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+        organization_id (str): Organization ID
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        List[Dict[str, Any]]: List of invites
+    """
+    organization = check_organization_exists(
+        db, organization_id=organization_id
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    query = db.query(InviteMember, OrganizationMember).filter(
+        InviteMember.organization_id == organization_id
+    )
+    query = query.join(
+        OrganizationMember,
+        OrganizationMember.account_id == InviteMember.account_id,
+    )
+    query = query.filter(
+        OrganizationMember.account_id == InviteMember.account_id
+    )
+    query.all()
+
+    members = []
+    unverified_members = []
+    suspended_members = []
+
+    for member in query:
+        member_dict = {
+            "id": member[1].id,
+            "name": f"{member[1].account.first_name} \
+{member[1].account.last_name or ''}",
+            "email": member[1].account.email,
+            "role": member[1].member_role.role.name,
+            "is_accepted": member[0].is_accepted,
+            "is_suspended": member[1].is_suspended,
+        }
+
+        if member[0].is_accepted and not member[1].is_suspended:
+            members.append(member_dict)
+        elif not member[0].is_accepted and not member[1].is_suspended:
+            unverified_members.append(member_dict)
+        if member[1].is_suspended:
+            suspended_members.append(member_dict)
+
+    data = {
+        "members": members,
+        "unverified_members": unverified_members,
+        "suspended_members": suspended_members,
+    }
+    return data
+
+
 def update_organization_details(
     db: Session, organization_id: str, data: OrganizationUpdate
 ) -> Dict[str, Any]:
@@ -88,86 +236,6 @@ def update_organization_details(
             "event_end_time": organization.detail.event_end_time,
         },
     }
-
-
-def delete_organization(db: Session, organization_id: str) -> Dict[str, Any]:
-    """Delete an organization.
-
-    Args:
-        db (Session): Database session
-        organization_id (str): Organization ID
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        dict: Organization details
-    """
-    organization: Organization = check_organization_exists(
-        db, organization_id=organization_id
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": organization_id},
-        )
-
-    try:
-        db.delete(organization)
-
-        db.commit()
-
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to delete organization",
-            data={"organization_id": organization.id},
-        ) from exc
-
-    return "success"
-
-
-def check_organization_exists(
-    db: Session, name: str | None = None, organization_id: str | None = None
-) -> Organization:
-    """Check if an organization name exists."""
-    if organization_id:
-        return (
-            db.query(Organization)
-            .filter(Organization.id == organization_id)
-            .first()
-        )
-    return db.query(Organization).filter(Organization.name == name).first()
-
-
-def check_organization_member_exists(
-    organization_id: str, account_id: str, db: Session
-) -> Any:
-    """Check if an organization member exists."""
-    return (
-        db.query(OrganizationMember)
-        .filter(
-            OrganizationMember.organization_id == organization_id,
-            OrganizationMember.account_id == account_id,
-        )
-        .first()
-    )
-
-
-def check_organization_member_is_admin(
-    organization_id: str, account_id: str, db: Session
-) -> Any:
-    """Check if an organization member is an admin."""
-    return (
-        db.query(OrganizationMember, Organization)
-        .filter(
-            OrganizationMember.organization_id == organization_id,
-            OrganizationMember.account_id == account_id,
-            Organization.owner == account_id,
-        )
-        .first()
-    )
 
 
 def invite_member(
@@ -358,80 +426,12 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
     }
 
 
-async def get_member(
-    db: Session,
-    organization_id: str,
-) -> List[Dict[str, Any]]:
-    """Get all invites.
-
-    Args:
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-        organization_id (str): Organization ID
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        List[Dict[str, Any]]: List of invites
-    """
-    organization = check_organization_exists(
-        db, organization_id=organization_id
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": organization_id},
-        )
-
-    query = db.query(InviteMember, OrganizationMember).filter(
-        InviteMember.organization_id == organization_id
-    )
-    query = query.join(
-        OrganizationMember,
-        OrganizationMember.account_id == InviteMember.account_id,
-    )
-    query = query.filter(
-        OrganizationMember.account_id == InviteMember.account_id
-    )
-    query.all()
-
-    members = []
-    unverified_members = []
-    suspended_members = []
-
-    for member in query:
-        member_dict = {
-            "id": member[1].id,
-            "name": f"{member[1].account.first_name} \
-{member[1].account.last_name or ''}",
-            "email": member[1].account.email,
-            "role": member[1].member_role.role.name,
-            "is_accepted": member[0].is_accepted,
-            "is_suspended": member[1].is_suspended,
-        }
-
-        if member[0].is_accepted and not member[1].is_suspended:
-            members.append(member_dict)
-        elif not member[0].is_accepted and not member[1].is_suspended:
-            unverified_members.append(member_dict)
-        if member[1].is_suspended:
-            suspended_members.append(member_dict)
-
-    data = {
-        "members": members,
-        "unverified_members": unverified_members,
-        "suspended_members": suspended_members,
-    }
-    return data
-
-
 def suspend_member(
     db: Session,
     organization_id: str,
     member_id: str,
 ) -> Dict[str, Any]:
-    """Suspend a member.
+    """Suspend and unsuspends a member.
 
     Args:
         db (Session): Database session
@@ -509,3 +509,83 @@ def suspend_member(
         "role": member.member_role.role.name,
         "is_suspended": member.is_suspended,
     }
+
+
+def delete_organization(db: Session, organization_id: str) -> Dict[str, Any]:
+    """Delete an organization.
+
+    Args:
+        db (Session): Database session
+        organization_id (str): Organization ID
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        dict: Organization details
+    """
+    organization: Organization = check_organization_exists(
+        db, organization_id=organization_id
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    try:
+        db.delete(organization)
+
+        db.commit()
+
+    except Exception as exc:
+        raise CustomException(
+            status_code=500,
+            message="Failed to delete organization",
+            data={"organization_id": organization.id},
+        ) from exc
+
+    return "success"
+
+
+def check_organization_exists(
+    db: Session, name: str | None = None, organization_id: str | None = None
+) -> Organization:
+    """Check if an organization name exists."""
+    if organization_id:
+        return (
+            db.query(Organization)
+            .filter(Organization.id == organization_id)
+            .first()
+        )
+    return db.query(Organization).filter(Organization.name == name).first()
+
+
+def check_organization_member_exists(
+    organization_id: str, account_id: str, db: Session
+) -> Any:
+    """Check if an organization member exists."""
+    return (
+        db.query(OrganizationMember)
+        .filter(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.account_id == account_id,
+        )
+        .first()
+    )
+
+
+def check_organization_member_is_admin(
+    organization_id: str, account_id: str, db: Session
+) -> Any:
+    """Check if an organization member is an admin."""
+    return (
+        db.query(OrganizationMember, Organization)
+        .filter(
+            OrganizationMember.organization_id == organization_id,
+            OrganizationMember.account_id == account_id,
+            Organization.owner == account_id,
+        )
+        .first()
+    )

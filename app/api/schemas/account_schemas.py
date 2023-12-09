@@ -28,7 +28,7 @@ class AccountSignup(AccountLogin):  # type: ignore
 
     confirm_password: str
     first_name: str
-    event_date: Optional[datetime] = None
+    event_date: Optional[datetime] | None = None
     location: str
     partner_name: str
 
@@ -75,3 +75,24 @@ class ResetPasswordData(BaseModel):  # type: ignore
     token: str
     password: str
     confirm_password: str
+
+
+class AccountAuthorized(BaseModel):  # type: ignore
+    """Data model for an authorized account.
+
+    Attributes:
+        id (str): The ID of the account.
+        first_name (str): The first name of the account.
+        last_name (str): The last name of the account.
+        email (EmailStr): The email address of the account.
+        phone_number (str): The phone number of the account.
+        is_verified (bool): Whether the account is verified.
+        is_2fa_enabled (bool): Whether 2FA is enabled for the account.
+        is_deleted (bool): Whether the account is deleted.
+    """
+
+    id: str
+    first_name: str
+    last_name: str = ""
+    email: EmailStr
+    is_verified: bool

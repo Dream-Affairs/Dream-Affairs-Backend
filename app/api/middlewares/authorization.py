@@ -1,21 +1,23 @@
 """This module defines the authorization middleware."""
 
-from fastapi import Depends, Header
+from fastapi import Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.jwt_bearer import (
+    HTTPAuthorizationCredentials,
+    bearer_scheme,
+)
 from app.api.models.account_models import Account
 from app.api.models.organization_models import OrganizationMember
 from app.api.responses.custom_responses import CustomException
+from app.api.schemas.account_schemas import AccountAuthorized
 from app.api.schemas.organization_schemas import AuthorizeOrganizationSchema
 from app.database.connection import get_db
-from app.services.account_services import decode_token
+from app.services.account_services import decode_data, decode_token
 from app.services.roles_services import RoleService
 
 
-# create an abject that returns the object
-# of the current account, the organization_member and
-# the role and permissions
 class Authorize(BaseModel):
     """Authorized Account.
 
@@ -26,11 +28,15 @@ class Authorize(BaseModel):
         permissions (List[str]): List of permissions
     """
 
-    member: AuthorizeOrganizationSchema
-    role: RoleService
+    account: AccountAuthorized | None = None
+    member: AuthorizeOrganizationSchema | None = None
+    role: RoleService | None = None
 
 
-def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
+def is_authenticated(
+    token: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> Authorize:
     """Check if the user is authenticated.
 
     Args:
@@ -43,7 +49,8 @@ def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
     Raises:
         HTTPException: If the token is invalid.
     """
-    if token is None or not token.startswith("Bearer "):
+    authorize = Authorize()
+    if token.credentials is None:
         raise CustomException(
             status_code=401,
             message="Invalid authentication credentials",
@@ -51,15 +58,8 @@ def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
         )
 
     # Remove "Bearer " from token
-    token = token.split("Bearer ")[1]
 
     data = decode_token(token, is_authenticate=True)
-    if data is None:
-        raise CustomException(
-            status_code=401,
-            message="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
     account_id = data["account_id"]
     # check if the account exists
@@ -67,31 +67,61 @@ def is_authenticated(token: str = Header(...), db: Session = Depends(get_db)):
     if account is None:
         raise CustomException(
             status_code=401,
-            message="Unkown account",
+            message="Unkown user",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     # check if the organization member exists
-    organization_member = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.account_id == account_id)
-        .first()
+    authorize.account = AccountAuthorized(
+        id=account.id,
+        first_name=account.first_name,
+        last_name=account.last_name or "",
+        email=account.email,
+        is_verified=account.is_verified,
     )
-    if organization_member is None:
+    return authorize
+
+
+def is_org_authorized(
+    req: Request,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_authenticated),
+) -> Authorize:
+    """Get the current organization member.
+
+    Args:
+        authorization (str): Authorization header
+        db (Session): Database session. (Dependency)
+        auth (Authorize): Authorized user. (Dependency)
+
+    Returns:
+        Authorize: Authorized user
+    """
+    emxsidqw = req.cookies["emxsidqw"]
+    if emxsidqw is None:
         raise CustomException(
             status_code=401,
-            message="Unkown organization member",
-            headers={"WWW-Authenticate": "Bearer"},
+            message="Unauthorized",
         )
-
-    return Authorize(
-        member=AuthorizeOrganizationSchema(
-            id=organization_member.id,
-            name=organization_member.organization.name,
-            account_id=organization_member.account_id,
-            organization_id=organization_member.organization_id,
-        ),
-        role=RoleService().get_role(
-            db, organization_member.member_role.role_id
-        ),
+    emxsidqw = decode_data(emxsidqw)
+    member_instance = (
+        db.query(OrganizationMember)
+        .filter(
+            OrganizationMember.account_id == auth.account.id,
+            OrganizationMember.organization_id == emxsidqw,
+        )
+        .first()
     )
+    if member_instance is None:
+        raise CustomException(
+            status_code=401,
+            message="Unauthorized",
+        )
+    auth.member = AuthorizeOrganizationSchema(
+        id=member_instance.id,
+        name=member_instance.organization.name,
+        account_id=member_instance.account_id,
+        organization_id=member_instance.organization_id,
+        role_id=member_instance.organization_role_id,
+    )
+    return auth

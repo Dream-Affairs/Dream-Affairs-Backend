@@ -11,6 +11,7 @@ from app.api.responses.custom_responses import (
 )
 from app.api.routers.account_routers import router as account_router
 from app.api.routers.checklist_router import router as checklist_router
+from app.api.routers.dashboard_router import router as dashboard_router
 from app.api.routers.email_router import router as email_router
 from app.api.routers.file_router import router as file_router
 from app.api.routers.gift_router import router as gift_router
@@ -54,7 +55,9 @@ v1_router.include_router(
 v1_router.include_router(
     organization_router,
 )
-
+v1_router.include_router(
+    dashboard_router,
+)
 v1_router.include_router(
     meal_router,
 )

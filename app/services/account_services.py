@@ -1,17 +1,18 @@
 """This module provides functions for handling user account related
 operations."""
 
+import base64
 from datetime import datetime, timedelta
 from typing import Any, Dict, Union
 from uuid import uuid4
 
 from fastapi import BackgroundTasks, status
-from fastapi.security import OAuth2PasswordBearer
 from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.jwt_bearer import HTTPAuthorizationCredentials
 from app.api.models.account_models import Account, Auth
 from app.api.models.organization_models import (
     Organization,
@@ -35,156 +36,8 @@ SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def hash_password(password: str) -> Any:
-    """Hashes a password.
-
-    Args:
-        password (str): The password to be hashed.
-
-    Returns:
-        str: The hashed password.
-    """
-
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against a hashed password.
-
-    Args:
-        plain_password (str): The plain password to verify.
-        hashed_password (str): The hashed password to compare against.
-
-    Returns:
-        str: The result of the password verification.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def generate_token(
-    data: Dict[str, Any],
-    expire_mins: int,
-) -> Any:
-    """Create an access token.
-
-    Args:
-        data (dict): The data to encode into the access token.
-
-    Returns:
-        str: The generated access token.
-    """
-
-    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
-    data["exp"] = expire
-    data["iat"] = datetime.utcnow()
-    data["iss"] = "dream-affairs"
-    data["aud"] = "dream-affairs"
-
-    return "Bearer " + jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def decode_token(
-    token: str, is_authenticate: bool = False
-) -> Dict[str, Any] | tuple:
-    """Decode a JWT token and retrieve the account ID.
-
-    Args:
-        token: The JWT token to decode.
-        credentials_exception: The exception to raise if the account
-            ID is not found.
-
-    Returns:
-        str: The decoded account ID.
-
-    Raises:
-        credentials_exception: If the account ID is not found in the decoded
-            token.
-        JWTError: If an error occurs during JWT decoding.
-    """
-
-    try:
-        data = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
-            issuer="dream-affairs",
-            audience="dream-affairs",
-            options={"verify_exp": True},
-        )
-    except ExpiredSignatureError as e:
-        print(e)
-        raise CustomException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            message="token expired",
-        ) from e
-
-    except JWTError as e:
-        print(e)
-        raise CustomException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            message="Invalid token",
-        ) from e
-
-    if is_authenticate:
-        return data
-    return data.get("account_id"), data.get("context")
-
-
-def verify_access_token(token: str) -> TokenData:
-    """Verify an access token.
-
-    Args:
-        token (str): The access token to verify.
-        credentials_exception: The exception to raise if the token is invalid.
-
-    Returns:
-        TokenData: The token data extracted from the access token.
-
-    Raises:
-        credentials_exception: If the access token is invalid.
-    """
-    account_id, _ = decode_token(token)
-    return TokenData(id=account_id)
-
-
-def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
-    """Adds the given objects to the database.
-
-    Args:
-        db: The database session.
-        *args: The objects to be added to the database.
-
-    Returns:
-        bool: True if all objects were successfully added, False otherwise.
-    """
-
-    for arg in args:
-        try:
-            db.add(arg)
-            db.commit()
-            db.refresh(arg)
-        except IntegrityError as e:
-            print(e)
-            db.rollback()
-            return False
-    return True
-
-
-def get_account_by_email(db: Session, email: str) -> Account:
-    """Get account by email.
-
-    Args:
-        db: The database session.
-        email: The email address of the account.
-
-    Returns:
-        Account: The account object.
-    """
-    return db.query(Account).filter(Account.email == email).first()
 
 
 def authenticate_user(user: Account, db: Session):
@@ -510,3 +363,176 @@ def fake_authenticate(member_id: str, db: Session) -> Any:
 
     org_id = authenticate_member.organization_id
     return org_id
+
+
+def hash_password(password: str) -> Any:
+    """Hashes a password.
+
+    Args:
+        password (str): The password to be hashed.
+
+    Returns:
+        str: The hashed password.
+    """
+
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against a hashed password.
+
+    Args:
+        plain_password (str): The plain password to verify.
+        hashed_password (str): The hashed password to compare against.
+
+    Returns:
+        str: The result of the password verification.
+    """
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def generate_token(
+    data: Dict[str, Any],
+    expire_mins: int,
+) -> Any:
+    """Create an access token.
+
+    Args:
+        data (dict): The data to encode into the access token.
+
+    Returns:
+        str: The generated access token.
+    """
+
+    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
+    data["exp"] = expire
+    data["iat"] = datetime.utcnow()
+    data["iss"] = "dream-affairs"
+    data["aud"] = "dream-affairs"
+    print(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
+    return encode_data(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
+
+
+def decode_token(
+    token: HTTPAuthorizationCredentials, is_authenticate: bool = False
+) -> Dict[str, Any] | tuple:
+    """Decode a JWT token and retrieve the account ID.
+
+    Args:
+        token: The JWT token to decode.
+        credentials_exception: The exception to raise if the account
+            ID is not found.
+
+    Returns:
+        str: The decoded account ID.
+
+    Raises:
+        credentials_exception: If the account ID is not found in the decoded
+            token.
+        JWTError: If an error occurs during JWT decoding.
+    """
+
+    token = decode_data(token.credentials.split("Bearer ")[0])
+    try:
+        data = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            issuer="dream-affairs",
+            audience="dream-affairs",
+            options={"verify_exp": True},
+        )
+    except ExpiredSignatureError as e:
+        print(e)
+        raise CustomException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="token expired",
+        ) from e
+
+    except JWTError as e:
+        print(e)
+        raise CustomException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Invalid token",
+        ) from e
+
+    if is_authenticate:
+        return data
+    return data.get("account_id"), data.get("context")
+
+
+def verify_access_token(token: str) -> TokenData:
+    """Verify an access token.
+
+    Args:
+        token (str): The access token to verify.
+        credentials_exception: The exception to raise if the token is invalid.
+
+    Returns:
+        TokenData: The token data extracted from the access token.
+
+    Raises:
+        credentials_exception: If the access token is invalid.
+    """
+    account_id, _ = decode_token(token)
+    return TokenData(id=account_id)
+
+
+def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
+    """Adds the given objects to the database.
+
+    Args:
+        db: The database session.
+        *args: The objects to be added to the database.
+
+    Returns:
+        bool: True if all objects were successfully added, False otherwise.
+    """
+
+    for arg in args:
+        try:
+            db.add(arg)
+            db.commit()
+            db.refresh(arg)
+        except IntegrityError as e:
+            print(e)
+            db.rollback()
+            return False
+    return True
+
+
+def get_account_by_email(db: Session, email: str) -> Account:
+    """Get account by email.
+
+    Args:
+        db: The database session.
+        email: The email address of the account.
+
+    Returns:
+        Account: The account object.
+    """
+    return db.query(Account).filter(Account.email == email).first()
+
+
+def encode_data(data: Any) -> str:
+    """Encode a dictionary of data into a base64 string.
+
+    Args:
+        data (dict): The data to encode.
+
+    Returns:
+        str: The encoded data.
+    """
+    return base64.b64encode(str(data).encode("ascii")).decode("ascii")
+
+
+def decode_data(data: Any) -> Any:
+    """Decode a base64 string into a dictionary of data.
+
+    Args:
+        data (str): The data to decode.
+
+    Returns:
+        Any: The decoded data.
+    """
+    return base64.b64decode(data).decode("ascii")

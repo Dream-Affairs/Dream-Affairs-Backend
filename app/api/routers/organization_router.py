@@ -2,7 +2,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm.session import Session
 
-from app.api.middlewares.authorization import Authorize, is_authenticated
+from app.api.middlewares.authorization import (
+    Authorize,
+    is_authenticated,
+    is_org_authorized,
+)
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.organization_schemas import (
     InviteMemberSchema,
@@ -12,7 +16,9 @@ from app.database.connection import get_db
 from app.services.organization_services import (
     accept_invite,
     delete_organization,
-    get_member,
+    get_all_organizations,
+    get_members,
+    get_organization,
     invite_member,
     suspend_member,
     update_organization_details,
@@ -21,7 +27,7 @@ from app.services.organization_services import (
 router = APIRouter(prefix="/organization", tags=["Organization"])
 
 
-@router.get("/")
+@router.get("/all")
 async def get_organizations(
     db: Session = Depends(get_db),  # pylint: disable=unused-argument
     auth: Authorize = Depends(  # pylint: disable=unused-argument
@@ -42,12 +48,38 @@ async def get_organizations(
     """
     return CustomResponse(
         status_code=200,
-        message="This route is not implemented yet",
-        data="",
+        message="Organization retrieved successfully",
+        data=get_all_organizations(account_id=auth.account.id, db=db),
     )
 
 
-@router.put("/")
+@router.get("")
+async def get_current_organization(
+    db: Session = Depends(get_db),  # pylint: disable=unused-argument
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+):
+    """Get an organization.
+
+    Args:
+        account_id (str): Account ID
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: List of organizations
+    """
+    return CustomResponse(
+        status_code=200,
+        message="Organization retrieved successfully",
+        data=get_organization(auth.member.organization_id, db),
+    )
+
+
+@router.put("")
 async def update_organization(
     req: OrganizationUpdate,
     db: Session = Depends(get_db),
@@ -146,7 +178,7 @@ async def get_organization_members(
     db: Session = Depends(get_db),
     auth: Authorize = Depends(is_authenticated),
 ) -> CustomResponse:
-    """Get all invites.
+    """Get all organization members.
 
     Args:
         db (Session, optional): Database session. Defaults to Depends(get_db).
@@ -158,7 +190,7 @@ async def get_organization_members(
         CustomResponse: List of invites
     """
     try:
-        invites = await get_member(db, auth.member.organization_id)
+        invites = await get_members(db, auth.member.organization_id)
     except Exception as e:
         raise e
     return CustomResponse(
