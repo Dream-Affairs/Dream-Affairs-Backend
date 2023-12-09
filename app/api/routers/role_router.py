@@ -5,6 +5,11 @@ from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm.session import Session
 
+from app.api.middlewares.authorization import (
+    Authorize,
+    is_authenticated,
+    is_org_authorized,
+)
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.role_schemas import RoleCreate
 from app.database.connection import get_db
@@ -18,7 +23,12 @@ router = APIRouter(tags=["Roles and Permissions"])
 
 
 @router.get("/permissions")
-async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
+async def get_permissions(
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_authenticated
+    ),
+) -> CustomResponse:
     """Get all permissions.
 
     Args:
@@ -38,7 +48,7 @@ async def get_permissions(db: Session = Depends(get_db)) -> CustomResponse:
 
 @router.get("/role/{organization_id}")
 async def get_roles(
-    organization_id: str, db: Session = Depends(get_db)
+    db: Session = Depends(get_db), auth: Authorize = Depends(is_org_authorized)
 ) -> CustomResponse:
     """Get all roles.
 
@@ -54,7 +64,7 @@ async def get_roles(
     """
     try:
         roles = RoleService(
-            organization_id=organization_id,
+            organization_id=auth.member.organization_id,
         ).get_all_organization_roles(db)
 
     except Exception as e:
@@ -70,9 +80,13 @@ async def get_roles(
     )
 
 
-@router.get("/role/{organization_id}/{role_id}")
+@router.get("/role/{role_id}")
 async def get_role_by_id(
-    role_id: str, db: Session = Depends(get_db)
+    role_id: str,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
 ) -> CustomResponse:
     """Get role by ID.
 
@@ -106,7 +120,11 @@ async def get_role_by_id(
 
 @router.post("/role")
 async def create_role(
-    role: RoleCreate, db: Session = Depends(get_db)
+    role: RoleCreate,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
 ) -> CustomResponse:
     """Create a new role.
 
@@ -155,6 +173,9 @@ async def update_role_permissions(
     role_id: str,
     permissions: List[PermissionSchema],
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
 ) -> CustomResponse:
     """Update role permissions.
 

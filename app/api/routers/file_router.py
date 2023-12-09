@@ -4,6 +4,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.authorization import Authorize, is_org_authorized
 from app.database.connection import get_db
 from app.services.file_services import upload_file_to_cloudinary
 
@@ -12,9 +13,9 @@ router = APIRouter(prefix="/file", tags=["Files"])
 
 @router.post("/{organization_id}")
 async def upload_file(
-    organization_id: str,  # to be swapped with middleware
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_org_authorized),
 ) -> Any:
     """Upload a gift image to cloud.
 
@@ -28,5 +29,5 @@ async def upload_file(
         url (str): The url of the uploaded file.
     """
     return upload_file_to_cloudinary(
-        file=file, organization_id=organization_id, db=db
+        file=file, organization_id=auth.member.organization_id, db=db
     )

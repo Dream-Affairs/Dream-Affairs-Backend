@@ -67,11 +67,16 @@ def create_checklist(
 
 def update_checklist(
     checklist_id: str,
+    organization_id: str,
     db: Session,
     **kwargs: Dict[str, Any],
 ) -> ChecklistResponse:
     """Update a checklist."""
-    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    checklist_instance = (
+        db.query(Checklist)
+        .filter_by(id=checklist_id, organization_id=organization_id)
+        .first()
+    )
     if checklist_instance:
         checklist_instance.updated_at = datetime.utcnow()
         for key, value in kwargs.items():
@@ -96,10 +101,15 @@ def update_checklist(
 
 def delete_checklist(
     checklist_id: str,
+    organization_id: str,
     db: Session,
 ) -> str:
     """Delete a checklist."""
-    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    checklist_instance = (
+        db.query(Checklist)
+        .filter_by(id=checklist_id, organization_id=organization_id)
+        .first()
+    )
     if checklist_instance:
         db.delete(checklist_instance)
         db.commit()
@@ -112,10 +122,15 @@ def delete_checklist(
 
 def get_checklist(
     checklist_id: str,
+    organization_id: str,
     db: Session,
 ) -> ChecklistResponse:
     """Get a checklist."""
-    checklist_instance = db.query(Checklist).filter_by(id=checklist_id).first()
+    checklist_instance = (
+        db.query(Checklist)
+        .filter_by(id=checklist_id, organization_id=organization_id)
+        .first()
+    )
     if checklist_instance:
         return ChecklistResponse(
             id=checklist_instance.id,
