@@ -1,12 +1,13 @@
 """This module contains function that ensure a Meal is created properly."""
 
-from typing import Any
+from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import status
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import desc
 
 from app.api.models.meal_models import Meal, MealCategory, MealTag
 from app.api.models.organization_models import Organization, OrganizationTag
@@ -186,6 +187,82 @@ def create_meal_service(
         )
 
         return None, exception
+
+
+def get_meal_service(
+    offset: int,
+    limit: int,
+    order: str,
+    db: Session,
+    organization_id: Optional[str] = None,
+    meal_category_id: Optional[str] = None,
+    ishidden: Optional[bool] = False,
+) -> Any:
+    """Get all meals in the database."""
+    if meal_category_id is not None:
+        query = db.query(Meal).filter(
+            Meal.meal_category_id == meal_category_id,
+            Meal.is_hidden == ishidden,
+        )
+
+    if organization_id is not None:
+        query = db.query(Meal).filter(
+            Meal.organization_id == organization_id, Meal.is_hidden == ishidden
+        )
+
+    if organization_id is None and meal_category_id is None:
+        print("Hello there: 1")
+        query = db.query(Meal).filter(Meal.is_hidden == ishidden)
+
+    # if ishidden is True:
+    #     query = query.filter(Meal.is_hidden == ishidden)
+
+    # Order the query
+    if order == "desc":
+        query = query.order_by(desc(Meal.created_at))
+    else:
+        query = query.order_by(Meal.created_at)
+    # Calculate total count before applying limit and offset
+    total = query.count()
+
+    # Initialize next_url and previous_url
+    next_url = None
+    previous_url = None
+
+    # Apply limit and offset
+    if total > 1:
+        query = query.offset(offset).limit(limit)
+        next_offset = offset + limit
+        if next_offset < total:
+            next_url = f"/{organization_id}/meal-management/meal?\
+meal_category_id={meal_category_id}&ishidden={ishidden}&limit=\
+{limit}&offset={next_offset}"
+
+        if offset - limit >= 0:
+            previous_url = f"/{organization_id}/meal-management/meal?\
+meal_category_id={meal_category_id}&ishidden={ishidden}&limit=\
+{limit}&offset={offset - limit}"
+
+    meals = query.all()
+
+    return {
+        "total": total,
+        "next_page_url": next_url,
+        "previous_page_url": previous_url,
+        "Meals": [
+            {
+                "id": item.id,
+                "meal_categgory_id": item.meal_category_id,
+                "name": item.name,
+                "description": item.description,
+                "image_url": item.image_url,
+                "quantity": item.quantity,
+                "is_hidden": item.is_hidden,
+                "created_by": item.created_at,
+            }
+            for item in meals
+        ],
+    }
 
 
 def delete_meal_service(meal_id: str, db: Session) -> bool:

@@ -1,14 +1,18 @@
 """This module defines the FastAPI API endpoints for meal management."""
 
 
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
-from app.api.schemas.meal_schema import MealCategorySchema, MealSchema
+from app.api.schemas.meal_schema import (
+    MealCategorySchema,
+    MealSchema,
+    MealSortOrder,
+)
 from app.database.connection import get_db
 from app.services.meal_services import (
     create_mc_service,
@@ -17,6 +21,7 @@ from app.services.meal_services import (
     delete_meal_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
+from app.services.meal_services import get_meal_service
 
 BASE_URL = "/{org_id}/meal-management"
 
@@ -142,6 +147,35 @@ def create_meal(
         raise e
 
     return response
+
+
+@router.get("/meal")
+def get_all_meals(
+    order: MealSortOrder,
+    limit: int = 20,
+    offset: int = 0,
+    meal_category_id: Optional[str] = None,
+    organization_id: Optional[str] = None,
+    ishidden: Optional[bool] = False,
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """This is the meal endpoint to get al meal."""
+
+    return CustomResponse(
+        status_code=200,
+        message="Meals retrieved successfully.",
+        data=jsonable_encoder(
+            get_meal_service(
+                offset,
+                limit,
+                order,
+                db,
+                organization_id,
+                meal_category_id,
+                ishidden,
+            )
+        ),
+    )
 
 
 @router.delete("/meal/{meal_id}")

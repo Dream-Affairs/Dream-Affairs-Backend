@@ -66,3 +66,10 @@ class MealTagSchema(BaseModel):  # type: ignore
     id: str
     organization_tag_id: str
     meal_id: str
+
+
+class MealSortOrder(str, Enum):
+    """Enum for checklist sort order."""
+
+    ASC = "asc"
+    DESC = "desc"
