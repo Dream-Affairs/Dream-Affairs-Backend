@@ -73,14 +73,3 @@ class MealSortOrder(str, Enum):
 
     ASC = "asc"
     DESC = "desc"
-
-
-class AllMealSchema(BaseModel):  # type: ignore
-    """Represents the base schema for Get Meals."""
-
-    order: MealSortOrder
-    meal_category_id: Optional[str] = ""
-    organization_id: Optional[str] = ""
-    ishidden: Optional[bool] = False
-    limit: int = 20
-    offset: int = 0

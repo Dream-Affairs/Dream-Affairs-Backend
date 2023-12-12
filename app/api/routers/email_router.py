@@ -12,10 +12,10 @@ from app.services.email_services import (
     unsubscribe_email_service,
 )
 
-email_router = APIRouter(prefix="/email", tags=["Email"])
+router = APIRouter(prefix="/email", tags=["Email"])
 
 
-@email_router.post(
+@router.post(
     "/send-email",
 )
 def send_email(
@@ -48,7 +48,7 @@ def send_email(
     )
 
 
-@email_router.post("/subscribe")
+@router.post("/subscribe")
 def subscribe(
     request: EmailSubscriptionSchema, db: Session = Depends(get_db)
 ) -> CustomResponse:
@@ -60,7 +60,7 @@ def subscribe(
     return subscribe_email_service(request.email, db)
 
 
-@email_router.post("/unsubscribe")
+@router.post("/unsubscribe")
 def unsubscribe(
     request: EmailSubscriptionSchema, db: Session = Depends(get_db)
 ) -> CustomResponse:

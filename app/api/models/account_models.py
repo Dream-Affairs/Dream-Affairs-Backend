@@ -59,7 +59,13 @@ class Account(Base):  # type: ignore
     updated_at = Column(DateTime, default=datetime.utcnow)
     deleted_at = Column(DateTime)
 
-    auth = relationship("Auth", back_populates="account", lazy="joined")
+    auth = relationship(
+        "Auth",
+        back_populates="account",
+        lazy="joined",
+        uselist=False,
+        cascade="all,delete",
+    )
     organizations = relationship(
         "Organization", back_populates="account", lazy="joined"
     )
@@ -89,4 +95,6 @@ class Auth(Base):  # type: ignore
 
     setup_date = Column(DateTime, default=datetime.utcnow)
 
-    account = relationship("Account", back_populates="auth", lazy="joined")
+    account = relationship(
+        "Account", back_populates="auth", lazy="joined", cascade="all,delete"
+    )

@@ -8,36 +8,25 @@ from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import (
+    AddCashGift,
     AddProductGift,
-    BankSchema,
     EditProductGift,
-    FilterAcountsEnum,
     FilterGiftSchema,
-    LinkSchema,
-    PaymentType,
-    WalletSchema,
 )
 from app.database.connection import get_db
 from app.services.gift_services import (
-    add_bank_account,
-    add_payment_link,
+    add_cash_gift,
     add_product_gift_,
-    add_wallet,
     delete_a_gift,
     edit_product_gift_,
     fetch_gift,
-    get_account,
-    get_accounts,
     gifts_filter,
-    update_bank,
-    update_link,
-    update_wallet,
 )
 
-gift_router = APIRouter(prefix="/registry", tags=["Registry"])
+router = APIRouter(prefix="/registry", tags=["Registry"])
 
 
-@gift_router.post("/add-product-gift")
+@router.post("/add-product-gift")
 async def add_product_gift(
     member_id: str,
     gift_item: AddProductGift,
@@ -72,7 +61,7 @@ async def add_product_gift(
     return response
 
 
-@gift_router.patch("/edit-product-gift")
+@router.patch("/edit-product-gift")
 async def edit_product_gift(
     gift_id: str,
     gift_item: EditProductGift,
@@ -106,7 +95,7 @@ async def edit_product_gift(
     return response
 
 
-@gift_router.get("/get-gift")
+@router.get("/get-gift")
 async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     """Get a gift from the Registry.
 
@@ -134,7 +123,7 @@ async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.delete("/delete-gift")
+@router.delete("/delete-gift")
 async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     """Delete a gift from the Registry.
 
@@ -162,7 +151,7 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@gift_router.post("/get-gifts")
+@router.post("/get-gifts")
 async def get_all_gifts(
     request: FilterGiftSchema,
     db: Session = Depends(get_db),
@@ -212,224 +201,29 @@ async def get_all_gifts(
     return response
 
 
-@gift_router.post("/payment-options/bank")
-async def add_bank_details(
-    request: BankSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Add new Bank Details.
-
-    Args:
-        request (BankSchema): Bank details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Created bank details
-    """
-
-    try:
-        bank_details = add_bank_account(request, db)
-    except Exception as e:
-        raise e
-    return bank_details
-
-
-@gift_router.post("/payment-options/wallet")
-async def add_wallet_details(
-    request: WalletSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Add new Payment Wallet Details.
-
-    Args:
-        request (WalletSchema): Wallet details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Created wallet details
-    """
-
-    try:
-        wallet_details = add_wallet(request, db)
-    except Exception as e:
-        raise e
-    return wallet_details
-
-
-@gift_router.post("/payment-options/link")
-async def add_payment_link_details(
-    request: LinkSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Add new Payment Link Details. (e.g PayPal,Payoneer,...)
-
-    Args:
-        request (LinkSchema): Wallet details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Created payment link details
-    """
-
-    try:
-        link_details = add_payment_link(request, db)
-    except Exception as e:
-        raise e
-    return link_details
-
-
-@gift_router.get("/payment-options/{organization_id}/{payment_account_id}")
-async def get_payment_account(
+@router.post("/cash-gifts/{organization_id}")
+async def add_cash_funds_gift(
     organization_id: str,
-    payment_account_id: str,
-    payment_type: PaymentType,
+    request: AddCashGift,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Get a single payment account details.
+    """Add a cash funds gift to organization registry.
+
     Args:
-        organization_id, payment_account_id, payment_type(bank,wallet,link).
+        organization_id, request(AddCashGift).
         db (Session, optional): Database session. Defaults to Depends(get_db).
-
     Raises:
-        CustomException: If organization or payment account does not exist
-
+        CustomException: If something goes wrong
     Returns:
-        CustomResponse: Retrieved payment details
+        CustomResponse: Added gift details
     """
     try:
-        payment_account = get_account(
+        added_gift_details = add_cash_gift(
             organization_id,
-            payment_account_id,
-            payment_type,
-            db,
-        )
-    except Exception as e:
-        raise e
-
-    return payment_account
-
-
-@gift_router.get("/payment-options/{organization_id}")
-async def get_payment_accounts(
-    organization_id: str,
-    filter_by: FilterAcountsEnum,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Get  payment accounts details.
-
-    Args:
-        organization_id, filter_by(all,default).
-
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-
-        CustomException: If organization  does not exist
-
-    Returns:
-
-        CustomResponse: Retrieved payment details
-    """
-    try:
-        payment_accounts = get_accounts(
-            organization_id,
-            filter_by,
-            db,
-        )
-    except Exception as e:
-        raise e
-
-    return payment_accounts
-
-
-@gift_router.patch("/payment-options/bank/{bank_account_id}")
-async def update_bank_details(
-    bank_account_id: str,
-    request: BankSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Update bank account details.
-
-    Args:
-        bank_account_id, request(BankSchema).
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-    Raises:
-        CustomException: If something goes wrong
-    Returns:
-        CustomResponse: Updated payment details
-    """
-    try:
-        updated_bank_details = update_bank(
-            bank_account_id,
             request,
             db,
         )
     except Exception as e:
         raise e
 
-    return updated_bank_details
-
-
-@gift_router.patch("/payment-options/wallet/{wallet_account_id}")
-async def update_wallet_details(
-    wallet_account_id: str,
-    request: WalletSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Update wallet account details.
-
-    Args:
-        wallet_account_id, request(WalletSchema).
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-    Raises:
-        CustomException: If something goes wrong
-    Returns:
-        CustomResponse: Updated payment details
-    """
-    try:
-        updated_wallet_details = update_wallet(
-            wallet_account_id,
-            request,
-            db,
-        )
-    except Exception as e:
-        raise e
-
-    return updated_wallet_details
-
-
-@gift_router.patch("/payment-options/link/{link_account_id}")
-async def update_link_details(
-    link_account_id: str,
-    request: LinkSchema,
-    db: Session = Depends(get_db),
-) -> CustomResponse:
-    """Update link account details.
-
-    Args:
-        link_account_id, request(LinkSchema).
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-    Raises:
-        CustomException: If something goes wrong
-    Returns:
-        CustomResponse: Updated payment details
-    """
-    try:
-        updated_link_details = update_link(
-            link_account_id,
-            request,
-            db,
-        )
-    except Exception as e:
-        raise e
-
-    return updated_link_details
+    return added_gift_details

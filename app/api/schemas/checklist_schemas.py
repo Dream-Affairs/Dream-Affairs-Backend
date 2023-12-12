@@ -42,7 +42,6 @@ class ChecklistCreate(ChecklistBase):
 
     assigned_to: Optional[str] | None = None
     created_by: str
-    organization_id: str
     status: ChecklistStatus
 
     due_date: Optional[datetime] | None = None

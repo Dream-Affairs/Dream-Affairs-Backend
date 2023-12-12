@@ -1,18 +1,18 @@
 """This module provides functions for handling user account related
 operations."""
 
+import base64
 from datetime import datetime, timedelta
 from typing import Any, Dict, Union
 from uuid import uuid4
 
-from fastapi import BackgroundTasks, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from fastapi import BackgroundTasks, status
+from jose import ExpiredSignatureError, JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import Column
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.jwt_bearer import HTTPAuthorizationCredentials
 from app.api.models.account_models import Account, Auth
 from app.api.models.organization_models import (
     Organization,
@@ -21,7 +21,8 @@ from app.api.models.organization_models import (
 )
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
-    AccountSchema,
+    AccountLogin,
+    AccountSignup,
     ForgotPasswordData,
     ResetPasswordData,
     TokenData,
@@ -29,163 +30,68 @@ from app.api.schemas.account_schemas import (
 )
 from app.core.config import settings
 from app.services.email_services import send_email_api
-from app.services.permission_services import APP_PERMISSION
-from app.services.roles_services import Role
+from app.services.roles_services import RoleService
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def hash_password(password: str) -> Any:
-    """Hashes a password.
+def authenticate_user(user: Account, db: Session):
+    """Authenticate user and generate access token.
 
     Args:
-        password (str): The password to be hashed.
+        user: The user object.
+        db: The database session.
 
     Returns:
-        str: The hashed password.
+        CustomResponse: The response containing the access
+            token and token type.
     """
-    return pwd_context.hash(password)
+    if user:
+        user_org = (
+            db.query(OrganizationMember)
+            .filter(OrganizationMember.account_id == user.id)
+            .first()
+        )
 
+        access_token = generate_token(
+            data={
+                "account_id": user.id,
+            },
+            expire_mins=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
+        )
 
-def verify_password(plain_password: str, hashed_password: Column[str]) -> Any:
-    """Verify a plain password against a hashed password.
+        return CustomResponse(
+            status_code=status.HTTP_200_OK,
+            data={
+                "user": {
+                    "id": user.id,
+                },
+                "organization": {
+                    "organization_id": user_org.organization_id,
+                    "organization_member_id": user_org.id,
+                },
+                "access_token": access_token,
+            },
+        )
 
-    Args:
-        plain_password (str): The plain password to verify.
-        hashed_password (str): The hashed password to compare against.
-
-    Returns:
-        str: The result of the password verification.
-    """
-
-    return pwd_context.verify(plain_password, hashed_password)
-
-
-def create_access_token(data: Dict[str, Any], expire_mins: int) -> Any:
-    """Create an access token.
-
-    Args:
-        data (dict): The data to encode into the access token.
-
-    Returns:
-        str: The generated access token.
-    """
-
-    to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
-    to_encode["exp"] = expire
-
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-
-def decode_jwt_token(
-    token: str, credentials_exception: HTTPException
-) -> tuple[str, str]:
-    """Decode a JWT token and retrieve the account ID.
-
-    Args:
-        token: The JWT token to decode.
-        credentials_exception: The exception to raise if the account
-            ID is not found.
-
-    Returns:
-        str: The decoded account ID.
-
-    Raises:
-        credentials_exception: If the account ID is not found in the decoded
-            token.
-        JWTError: If an error occurs during JWT decoding.
-    """
-
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        account_id = payload.get("account_id")
-        context = payload.get("context")
-
-        if account_id is None:
-            raise credentials_exception
-        return (account_id, context)
-    except JWTError as exc:
-        raise credentials_exception from exc
-
-
-def verify_access_token(
-    token: str, credentials_exception: HTTPException
-) -> TokenData:
-    """Verify an access token.
-
-    Args:
-        token (str): The access token to verify.
-        credentials_exception: The exception to raise if the token is invalid.
-
-    Returns:
-        TokenData: The token data extracted from the access token.
-
-    Raises:
-        credentials_exception: If the access token is invalid.
-    """
-    account_id, _ = decode_jwt_token(token, credentials_exception)
-    return TokenData(id=account_id)
-
-
-def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
-    """Get the current user based on the provided access token.
-
-    Args:
-        token (str, optional): The access token.
-
-    Returns:
-        TokenData: The token data representing the current user.
-
-    Raises:
-        HTTPException: If the credentials cannot be validated.
-    """
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+    return CustomResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        message="User not found",
     )
 
-    return verify_access_token(token, credentials_exception)
 
-
-def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
-    """Adds the given objects to the database.
-
-    Args:
-        db: The database session.
-        *args: The objects to be added to the database.
-
-    Returns:
-        bool: True if all objects were successfully added, False otherwise.
-    """
-
-    for arg in args:
-        try:
-            db.add(arg)
-            db.commit()
-            db.refresh(arg)
-        except IntegrityError as e:
-            print(e)
-            db.rollback()
-            return False
-    return True
-
-
-def account_service(
-    user: AccountSchema, background_tasks: BackgroundTasks, db: Session
+def create_account(
+    user: AccountSignup, background_tasks: BackgroundTasks, db: Session
 ) -> Any:
     """Create a new user account and associated authentication record.
 
     Args:
-        user (AccountSchema): The user account data.
+        user (AccountSignup): The user account data.
         db (Session): The database session.
 
     Returns:
@@ -203,57 +109,52 @@ def account_service(
             message="User already exists",
         )
 
+    new_user_id = (uuid4().hex,)
     new_user = Account(
-        id=uuid4().hex,
+        id=new_user_id,
         email=user.email,
         first_name=user.first_name,
         password_hash=hash_password(user.password),
+        auth=Auth(
+            id=uuid4().hex,
+            account_id=new_user_id,
+            provider=user.provider,
+        ),
     )
 
-    auth = Auth(
-        id=uuid4().hex,
-        account_id=new_user.id,
-        provider="local",
-        setup_date=new_user.created_at,
-    )
-
+    org_id = (uuid4().hex,)
     org = Organization(
-        id=uuid4().hex,
+        id=org_id,
         name=f"{new_user.first_name} & {user.partner_name}".title(),
         owner=new_user.id,
         org_type="Wedding",
+        detail=OrganizationDetail(
+            organization_id=org_id,
+            event_location=user.location,
+            website=f"/{user.first_name}-{user.partner_name}".lower(),
+            event_date=user.event_date,
+        ),
     )
 
-    org_detail = OrganizationDetail(
-        organization_id=org.id,
-        event_location=user.location,
-        website=f"/{user.first_name}-{user.partner_name}".lower(),
-        event_date=user.event_date,
-    )
-
-    default_admin = Role(
-        name="Admin",
-        description="Default Admin Role",
-        organization_id=org.id,
-        permissions=APP_PERMISSION,
-        is_default=True,
-    )
-
-    if not add_to_db(db, new_user, auth, org, org_detail):
+    if not add_to_db(db, new_user, org):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
 
-    organization_member = OrganizationMember(
-        id=uuid4().hex,
-        organization_id=org.id,
-        account_id=new_user.id,
-        organization_role_id=default_admin.create_role(db),
+    role = RoleService().get_default_role(db=db, name="Admin")
+    org_role = RoleService().add_role_to_organization(
+        db, org.id, role_id=role.id
     )
-    add_to_db(db, organization_member)
 
-    access_token = create_access_token(
+    RoleService().assign_role(
+        organization_id=org.id,
+        db=db,
+        organization_role_id=org_role.id,
+        account_id=new_user.id,
+    )
+
+    access_token = generate_token(
         data={"account_id": new_user.id, "context": "verify-account"},
         expire_mins=10,
     )
@@ -290,20 +191,13 @@ def verify_account_service(
         CustomException: If wrong token context, the token is invalid
         or expired, or the account is not found.
     """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired link",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
 
-    account_id, context = decode_jwt_token(
-        token_data.token, credentials_exception
-    )
+    account_id, context = decode_token(token_data.token)
 
     if context != "verify-account":
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="Invalid or expired link",
+            message="Invalid token",
         )
 
     account = db.query(Account).filter(Account.id == account_id).first()
@@ -321,7 +215,7 @@ def verify_account_service(
 
 
 def login_service(
-    db: Session, user_credentials: OAuth2PasswordRequestForm = Depends()
+    db: Session, user_credentials: AccountLogin
 ) -> CustomResponse:
     """Authenticates a user and generates an access token.
 
@@ -337,41 +231,16 @@ def login_service(
         CustomException: If the user credentials are invalid.
     """
 
-    user = (
-        db.query(Account)
-        .filter(Account.email == user_credentials.username)
-        .first()
-    )
+    user = get_account_by_email(db, user_credentials.email)
+
+    if user_credentials.provider == "google":
+        return authenticate_user(user, db)
 
     if user and verify_password(user_credentials.password, user.password_hash):
-        access_token = create_access_token(
-            data={"account_id": user.id},
-            expire_mins=int(settings.ACCESS_TOKEN_EXPIRE_MINUTES),
-        )
-
-        user_org = (
-            db.query(OrganizationMember)
-            .filter(OrganizationMember.account_id == user.id)
-            .first()
-        )
-
-        return CustomResponse(
-            status_code=status.HTTP_200_OK,
-            data={
-                "user": {
-                    "id": user.id,
-                },
-                "organization": {
-                    "organization_id": user_org.organization_id,
-                    "organization_member_id": user_org.id,
-                },
-                "access_token": access_token,
-                "token_type": "bearer",
-            },
-        )
+        return authenticate_user(user, db)
 
     raise CustomException(
-        status_code=status.HTTP_403_FORBIDDEN,
+        status_code=status.HTTP_404_NOT_FOUND,
         message="Invalid credentials",
     )
 
@@ -398,7 +267,7 @@ def forgot_password_service(
         db.query(Account).filter(Account.email == user_data.email).first()
     )
     if account:
-        access_token = create_access_token(
+        access_token = generate_token(
             data={"account_id": account.id, "context": "reset-password"},
             expire_mins=10,
         )
@@ -451,15 +320,7 @@ def reset_password_service(
             message="Passwords do not match",
         )
 
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired link",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    account_id, context = decode_jwt_token(
-        token_data.token, credentials_exception
-    )
+    account_id, context = decode_token(token_data.token)
 
     if context != "reset-password":
         raise CustomException(
@@ -502,3 +363,176 @@ def fake_authenticate(member_id: str, db: Session) -> Any:
 
     org_id = authenticate_member.organization_id
     return org_id
+
+
+def hash_password(password: str) -> Any:
+    """Hashes a password.
+
+    Args:
+        password (str): The password to be hashed.
+
+    Returns:
+        str: The hashed password.
+    """
+
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against a hashed password.
+
+    Args:
+        plain_password (str): The plain password to verify.
+        hashed_password (str): The hashed password to compare against.
+
+    Returns:
+        str: The result of the password verification.
+    """
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+def generate_token(
+    data: Dict[str, Any],
+    expire_mins: int,
+) -> Any:
+    """Create an access token.
+
+    Args:
+        data (dict): The data to encode into the access token.
+
+    Returns:
+        str: The generated access token.
+    """
+
+    expire = datetime.utcnow() + timedelta(minutes=expire_mins)
+    data["exp"] = expire
+    data["iat"] = datetime.utcnow()
+    data["iss"] = "dream-affairs"
+    data["aud"] = "dream-affairs"
+    print(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
+    return encode_data(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
+
+
+def decode_token(
+    token: HTTPAuthorizationCredentials, is_authenticate: bool = False
+) -> Dict[str, Any] | tuple:
+    """Decode a JWT token and retrieve the account ID.
+
+    Args:
+        token: The JWT token to decode.
+        credentials_exception: The exception to raise if the account
+            ID is not found.
+
+    Returns:
+        str: The decoded account ID.
+
+    Raises:
+        credentials_exception: If the account ID is not found in the decoded
+            token.
+        JWTError: If an error occurs during JWT decoding.
+    """
+
+    token = decode_data(token.credentials.split("Bearer ")[0])
+    try:
+        data = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            issuer="dream-affairs",
+            audience="dream-affairs",
+            options={"verify_exp": True},
+        )
+    except ExpiredSignatureError as e:
+        print(e)
+        raise CustomException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="token expired",
+        ) from e
+
+    except JWTError as e:
+        print(e)
+        raise CustomException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            message="Invalid token",
+        ) from e
+
+    if is_authenticate:
+        return data
+    return data.get("account_id"), data.get("context")
+
+
+def verify_access_token(token: str) -> TokenData:
+    """Verify an access token.
+
+    Args:
+        token (str): The access token to verify.
+        credentials_exception: The exception to raise if the token is invalid.
+
+    Returns:
+        TokenData: The token data extracted from the access token.
+
+    Raises:
+        credentials_exception: If the access token is invalid.
+    """
+    account_id, _ = decode_token(token)
+    return TokenData(id=account_id)
+
+
+def add_to_db(db: Session, *args: Union[Any, Any]) -> bool:
+    """Adds the given objects to the database.
+
+    Args:
+        db: The database session.
+        *args: The objects to be added to the database.
+
+    Returns:
+        bool: True if all objects were successfully added, False otherwise.
+    """
+
+    for arg in args:
+        try:
+            db.add(arg)
+            db.commit()
+            db.refresh(arg)
+        except IntegrityError as e:
+            print(e)
+            db.rollback()
+            return False
+    return True
+
+
+def get_account_by_email(db: Session, email: str) -> Account:
+    """Get account by email.
+
+    Args:
+        db: The database session.
+        email: The email address of the account.
+
+    Returns:
+        Account: The account object.
+    """
+    return db.query(Account).filter(Account.email == email).first()
+
+
+def encode_data(data: Any) -> str:
+    """Encode a dictionary of data into a base64 string.
+
+    Args:
+        data (dict): The data to encode.
+
+    Returns:
+        str: The encoded data.
+    """
+    return base64.b64encode(str(data).encode("ascii")).decode("ascii")
+
+
+def decode_data(data: Any) -> Any:
+    """Decode a base64 string into a dictionary of data.
+
+    Args:
+        data (str): The data to decode.
+
+    Returns:
+        Any: The decoded data.
+    """
+    return base64.b64decode(data).decode("ascii")

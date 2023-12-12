@@ -54,7 +54,10 @@ class Budget(Base):  # type: ignore
         "Organization", back_populates="budget", lazy="joined"
     )
     expenditures = relationship(
-        "Expenditure", back_populates="budget", lazy="joined"
+        "Expenditure",
+        back_populates="budget",
+        lazy="joined",
+        cascade="all,delete",
     )
 
 

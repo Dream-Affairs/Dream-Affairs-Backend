@@ -25,10 +25,10 @@ from app.services.meal_services import get_meal_service
 
 BASE_URL = "/{org_id}/meal-management"
 
-meal_router = APIRouter(prefix=BASE_URL, tags=["Meal Management"])
+router = APIRouter(prefix=BASE_URL, tags=["Meal Management"])
 
 
-@meal_router.post("/meal-category")
+@router.post("/meal-category")
 def create_meal_category(
     org_id: str,
     meal_category: MealCategorySchema,
@@ -65,7 +65,7 @@ def create_meal_category(
     )
 
 
-@meal_router.get("/meal-category")
+@router.get("/meal-category")
 def get_all_meal_category(
     org_id: str, db: Session = Depends(get_db)
 ) -> CustomResponse:
@@ -105,7 +105,7 @@ def get_all_meal_category(
     )
 
 
-@meal_router.post("/meal")
+@router.post("/meal")
 def create_meal(
     meal_category_id: str,
     create_meal_schema: MealSchema,
@@ -149,7 +149,7 @@ def create_meal(
     return response
 
 
-@meal_router.get("/meal")
+@router.get("/meal")
 def get_all_meals(
     order: MealSortOrder,
     limit: int = 20,
@@ -178,7 +178,7 @@ def get_all_meals(
     )
 
 
-@meal_router.delete("/meal/{meal_id}")
+@router.delete("/meal/{meal_id}")
 def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
     """Delete a meal entry for a specified meal category.
 
@@ -206,7 +206,7 @@ def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
     )
 
 
-@meal_router.post("/meal-tag")
+@router.post("/meal-tag")
 def add_meal_tag(
     org_id: str,
     meal_id: str,

@@ -105,7 +105,10 @@ class Gift(Base):  # type: ignore
         "Organization", back_populates="gifts", lazy="joined"
     )
     payment_options = relationship(
-        "PaymentOption", back_populates="gift", lazy="joined"
+        "PaymentOption",
+        back_populates="gift",
+        lazy="joined",
+        cascade="all,delete",
     )
 
 
