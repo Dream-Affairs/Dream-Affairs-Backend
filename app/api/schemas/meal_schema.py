@@ -66,3 +66,21 @@ class MealTagSchema(BaseModel):  # type: ignore
     id: str
     organization_tag_id: str
     meal_id: str
+
+
+class MealSortOrder(str, Enum):
+    """Enum for checklist sort order."""
+
+    ASC = "asc"
+    DESC = "desc"
+
+
+class AllMealSchema(BaseModel):  # type: ignore
+    """Represents the base schema for Get Meals."""
+
+    order: MealSortOrder
+    meal_category_id: Optional[str] = ""
+    organization_id: Optional[str] = ""
+    ishidden: Optional[bool] = False
+    limit: int = 20
+    offset: int = 0

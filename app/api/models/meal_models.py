@@ -92,6 +92,11 @@ class Meal(Base):  # type: ignore
     meal_category_id = Column(
         String, ForeignKey("meal_category.id"), nullable=False
     )
+    organization_id = Column(
+        String,
+        ForeignKey("organization.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     is_hidden = Column(Boolean, default=False)
     quantity = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
