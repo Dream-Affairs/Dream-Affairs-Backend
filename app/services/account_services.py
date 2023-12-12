@@ -409,7 +409,7 @@ def generate_token(
     data["iat"] = datetime.utcnow()
     data["iss"] = "dream-affairs"
     data["aud"] = "dream-affairs"
-    print(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
+
     return encode_data(jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM))
 
 
@@ -432,7 +432,7 @@ def decode_token(
         JWTError: If an error occurs during JWT decoding.
     """
 
-    token = decode_data(token.credentials.split("Bearer ")[0])
+    token = decode_data(token).split("Bearer ")[0]
     try:
         data = jwt.decode(
             token,
