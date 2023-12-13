@@ -11,7 +11,7 @@ from app.services.file_services import upload_file_to_cloudinary
 router = APIRouter(prefix="/file", tags=["Files"])
 
 
-@router.post("/{organization_id}")
+@router.post("")
 async def upload_file(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
