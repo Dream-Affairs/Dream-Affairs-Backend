@@ -73,3 +73,11 @@ class MealSortOrder(str, Enum):
 
     ASC = "asc"
     DESC = "desc"
+
+
+class MealSortBy(str, Enum):
+    """Enum for checklist sort by."""
+
+    ALL = "all"
+    ORGANIZATION = "organization"
+    MEAL_CATEGORY = "meal category"
