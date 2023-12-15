@@ -1,0 +1,106 @@
+<mjml>
+    <mj-head>
+    <mj-title> Event changes </mj-title>
+    </mj-head>
+    <mj-body background-color="#FFF8FA">
+        <mj-wrapper border="1px solid #A8394C" padding-bottom="0">
+           <mj-section padding="29px 84px 0">
+           <mj-column width="100%">
+            <mj-image src="./assets/hero.png" alt="" width="519px" height="218px" padding="0"/>
+           </mj-column>  
+       </mj-section>
+        <!-- Main Content -->
+        <mj-section padding="0px 84px"> 
+            <mj-column width="100%">
+                 <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
+CHINONYE & JOHN
+        </mj-text>
+        <mj-text  color="#48195A" padding="56.5px 0 0">
+        <div style="font-size: 14px; font-weight=400; text-align: center" >
+        <p> Hello [First Name],</p>
+        <p> We hope this message finds you well. As we approach our wedding day, we wanted to keep you informed about some important updates regarding our event. While we had everything carefully planned, sometimes unexpected circumstances arise.</p>
+        </div>     
+        </mj-text>
+            </mj-column>
+        </mj-section>
+     <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
+      <mj-column width="100%">          
+         <mj-text color="#111" padding="0">
+         <div style="font-size: 14px; font-weight=400; text-align: center"> 
+         <p style="font-weight: 700"> Change details:</p>
+         <ul style="">
+           <li style="padding-bottom: 20px; line-height=24px"><strong>Date Change:</strong> Due to unforeseen circumstances, we have had to reschedule our wedding. The new date is 7th November, 2024.</li>
+        <li style="line-height=24px; padding-bottom: 20px"><strong>Location Change:</strong> Our wedding venue has changed to Sheraton Hotel, located at Lagos Island. </li>
+        <li><strong>Time Change:</strong> The wedding ceremony will now begin at 10:00am, and the reception will follow at New Anglican Church, Ikoyi.</li>
+            </ul>
+            <p>We understand that these changes may require adjustments to your plans, and we sincerely apologize for any inconvenience this may cause. Please know that we did not make these decisions lightly, and we are committed to making our wedding day as special as possible.</p>
+            <p> If you have any questions or need further information, please don't hesitate to reach out to us. You can contact us at [080675222356].</p>
+            <p>Thank you for being a part of our journey. We look forward to celebrating with you on our special day!</p>
+            <p>Warmest regards, <br>
+            Chinonye & John</p>
+         </div>     
+         </mj-text>    
+               </mj-column>
+       </mj-section>
+        <mj-section padding="0 84px">
+            <mj-column width="100%">
+                 <mj-button background-color="#F5E7FF" color="#282828" border="1px solid #9F7DB5" padding="16px 48px" border-radius="8px" font-size="16px" font-weight="500">
+                View our website
+            </mj-button>
+            <mj-divider padding="44px 0 56px" border-color="#A0A0A0"  border-width="1px" />
+            </mj-column>
+        </mj-section>
+        <mj-section padding="0 84px" >
+            <mj-column width="100%">
+            <mj-text padding="0">
+                <div style="text-align: center"> 
+                <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
+                
+                </div>
+            </mj-text>           
+            </mj-column>
+        </mj-section>
+         <mj-section padding="0 54px ">
+        <mj-group>
+          <mj-column>
+            <mj-text
+              align="center"
+              font-weight="600"
+              font-size="14px"
+              line-height="19.6px"
+            >
+              Download the app
+            </mj-text>
+          </mj-column>
+        </mj-group>
+      </mj-section>
+         <mj-section padding="0 54px " padding-top="8px" padding-bottom="67.5px">
+        <mj-column width="140px" vertical-align="middle">
+          <mj-image
+            height="40.5px"
+            padding="0"
+            width="121.5px"
+            src="https://res.cloudinary.com/dsgem2qgc/image/upload/v1701103555/product_images/images/dkwkgxcx3lyn4hvuwq6d.png"
+            alt="app-store"
+        /></mj-column>
+        <mj-column width="121.5px">
+          <mj-image
+            height="40.5px"
+            padding="0"
+            width="121.5px"
+            src="https://res.cloudinary.com/dsgem2qgc/image/upload/v1701103564/product_images/images/feyicltuoqhukjan3fur.png"
+            alt="play-store"
+          />
+        </mj-column>
+      </mj-section>
+        <mj-section background-color="#F5E7FF" padding="0">
+            <mj-column width="100%">
+                <mj-image src="./assets/dreamlogo.png" alt=""  width="49px" padding-top="10px" />
+                <mj-text align="center" font-size="10px" padding="10px 0 15px" font-weight="500">
+                    This message was sent from dreamaffairs.com on behalf of Chinonye and John. <br>Send replies to chinonyeumeh.14@gmail.com. <br>Learn More | Privacy Policy | Terms and Conditions
+                </mj-text>
+            </mj-column>
+        </mj-section>
+        </mj-wrapper>
+    </mj-body>
+</mjml>
