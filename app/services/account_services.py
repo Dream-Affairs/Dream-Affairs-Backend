@@ -431,8 +431,7 @@ def decode_token(
             token.
         JWTError: If an error occurs during JWT decoding.
     """
-
-    token = decode_data(token).split("Bearer ")[0]
+    token = decode_data(token.credentials).split("Bearer ")[0]
     try:
         data = jwt.decode(
             token,
