@@ -1,0 +1,99 @@
+<mjml>
+    <mj-head>
+    <mj-title> General thank you mail</mj-title>
+    </mj-head>
+    <mj-body background-color="#FFF8FA">
+        <mj-wrapper border="1px solid #A8394C" padding-bottom="0">
+           <mj-section padding="29px 84px 0">
+           <mj-column width="100%">
+            <mj-image src="./assets/thanks.png" alt="" width="519px" height="218px" padding="0"/>
+           </mj-column>  
+       </mj-section>
+        <!-- Main Content -->
+        <mj-section padding="0px 84px"> 
+            <mj-column width="100%">
+                 <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
+CHINONYE & JOHN
+        </mj-text>
+        <mj-text  color="#48195A" padding="56.5px 0 0">
+        <div style="font-size: 14px; font-weight=400; text-align: center" >
+        <p> Hello [First Name],</p>
+        </div>     
+        </mj-text>
+            </mj-column>
+        </mj-section>
+     <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
+      <mj-column width="100%">          
+         <mj-text color="#111" padding="0">
+         <div style="font-size: 14px; font-weight=400; text-align: center"> 
+         <p style="padding-bottom: 20px; line-height=24px">We hope this message finds you well. We wanted to take a moment to express our deepest gratitude for being a part of our wedding day. Your presence and warm wishes made the celebration even more memorable.</p>
+          <p style="padding-bottom: 20px; line-height=24px">We are filled with joy as we reflect on the love and support we received from family and friends like you. Your presence meant the world to us, and your well wishes touched our hearts.</p>
+           <p style="padding-bottom: 20px; line-height=24px">Our wedding day was a dream come true, and we are grateful for your role in making it so special. Your love and support mean everything to us.</p>
+           <p style="padding-bottom: 20px; line-height=24px">Thank you once again for sharing in our joy and making our day unforgettable</p>
+            <p style="padding-bottom: 41px; line-height=24px">Warmest regards, <br>
+            Chinonye & John</p>
+         </div>     
+         </mj-text>    
+               </mj-column>
+       </mj-section>
+        <mj-section padding="0 84px">
+            <mj-column width="100%">
+                 <mj-button background-color="#F5E7FF" color="#282828" border="1px solid #9F7DB5" padding="16px 48px" border-radius="8px" font-size="16px" font-weight="500">
+                View our website
+            </mj-button>
+            <mj-divider padding="27px 0 56px" border-color="#A0A0A0"  border-width="1px" />
+            </mj-column>
+        </mj-section>
+        <mj-section padding="0 84px" >
+            <mj-column width="100%">
+            <mj-text padding="0">
+                <div style="text-align: center"> 
+                <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
+                </div>
+            </mj-text>           
+            </mj-column>
+        </mj-section>
+        <mj-section padding="0 54px ">
+        <mj-group>
+          <mj-column>
+            <mj-text
+              align="center"
+              font-weight="600"
+              font-size="14px"
+              line-height="19.6px"
+            >
+              Download the app
+            </mj-text>
+          </mj-column>
+        </mj-group>
+      </mj-section>
+         <mj-section padding="0 54px " padding-top="8px" padding-bottom="67.5px">
+        <mj-column width="140px" vertical-align="middle">
+          <mj-image
+            height="40.5px"
+            padding="0"
+            width="121.5px"
+            src="https://res.cloudinary.com/dsgem2qgc/image/upload/v1701103555/product_images/images/dkwkgxcx3lyn4hvuwq6d.png"
+            alt="app-store"
+        /></mj-column>
+        <mj-column width="121.5px">
+          <mj-image
+            height="40.5px"
+            padding="0"
+            width="121.5px"
+            src="https://res.cloudinary.com/dsgem2qgc/image/upload/v1701103564/product_images/images/feyicltuoqhukjan3fur.png"
+            alt="play-store"
+          />
+        </mj-column>
+      </mj-section>
+        <mj-section background-color="#F5E7FF" padding="0">
+            <mj-column width="100%">
+                <mj-image src="./assets/dreamlogo.png" alt=""  width="49px" padding-top="10px" />
+                <mj-text align="center" font-size="10px" padding="10px 0 15px" font-weight="500">
+                    This message was sent from dreamaffairs.com on behalf of Chinonye and John. <br>Send replies to chinonyeumeh.14@gmail.com. <br>Learn More | Privacy Policy | Terms and Conditions
+                </mj-text>
+            </mj-column>
+        </mj-section>
+        </mj-wrapper>
+    </mj-body>
+</mjml>
