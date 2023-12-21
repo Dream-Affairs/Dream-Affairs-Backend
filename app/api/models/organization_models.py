@@ -40,7 +40,8 @@ from app.api.models.meal_models import (  # noqa: F401
 )
 from app.api.models.notification_models import TrackEmail  # noqa: F401
 from app.api.models.permission_models import Permission  # noqa: F401
-from app.api.models.plan_models import OrganizationPlan, Plan  # noqa: F401
+
+# from app.api.models.plan_models import OrganizationPlan, Plan  # noqa: F401
 from app.api.models.role_models import Role, RolePermission  # noqa: F401
 from app.database.connection import Base
 
