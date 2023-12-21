@@ -13,7 +13,7 @@ from app.api.models.role_models import Role as RoleModel
 from app.api.models.role_models import RolePermission
 from app.database.connection import get_db_unyield
 from app.services.permission_services import (
-    APP_PERMISSION,
+    ORG_ADMIN_PERMISSION,
     PermissionManager,
     PermissionSchema,
 )
@@ -58,7 +58,12 @@ class RoleService(BaseModel):  # type: ignore
             Optional[OrganizationRole]: Role if found, None otherwise.
         """
         role = (
-            db.query(RoleModel).filter_by(name=name, is_default=True).first()
+            db.query(RoleModel)
+            .filter_by(
+                name=name,
+                is_default=True,
+            )
+            .first()
         )
         return role
 
@@ -210,6 +215,7 @@ class RoleService(BaseModel):  # type: ignore
         role_name: str,
         is_default: bool = False,
         is_super_admin: bool = False,
+        organization_id: Optional[str] = None,
     ) -> RoleModel:
         """Gets a role by name.
 
@@ -221,15 +227,19 @@ class RoleService(BaseModel):  # type: ignore
             Optional[OrganizationRole]: Role if found, None otherwise.
         """
 
-        role: RoleModel = (
-            db.query(RoleModel)
-            .filter(
-                RoleModel.name == role_name,
-                RoleModel.is_default == is_default,
-                RoleModel.is_super_admin == is_super_admin,
-            )
-            .first()
+        query = db.query(RoleModel).filter(
+            RoleModel.name == role_name,
+            RoleModel.is_default == is_default,
+            RoleModel.is_super_admin == is_super_admin,
         )
+
+        if organization_id:
+            query = query.join(
+                OrganizationRole, OrganizationRole.role_id == RoleModel.id
+            ).filter(OrganizationRole.organization_id == organization_id)
+
+        role = query.first()
+
         return role
 
     def get_all_organization_roles(self, db: Session) -> List["RoleService"]:
@@ -303,7 +313,7 @@ def create_default_roles(db: object = get_db_unyield) -> None:
         description="Admin",
         is_default=True,
         is_super_admin=True,
-        permissions=APP_PERMISSION.get_all_permissions(db)[1],
+        permissions=ORG_ADMIN_PERMISSION.get_all_permissions(db)[1],
     ).create_role(db)
 
     # RoleService(

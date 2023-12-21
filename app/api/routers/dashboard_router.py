@@ -29,12 +29,16 @@ async def get_organization_user_dashboard(
     Returns:
         CustomResponse: Dashboard data
     """
-    res.set_cookie("emxsidqw", encode_data(organization_id))
+    res.set_cookie(
+        "emxsidqw",
+        encode_data(organization_id),
+        httponly=True,
+    )
+
     get_org_user_dash(organization_id, db)
     return {
         "message": "Dashboard data retrieved successfully",
         "data": {
-            "organization_id": organization_id,
             "account_id": auth.account.id,
             "account_email": auth.account.email,
             "account_first_name": auth.account.first_name,

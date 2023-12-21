@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.api.schemas.payment_schemas import PaymentOption
+from app.api.schemas.gift_payment_schemas import PaymentOption
 
 
 class GiftType(str, Enum):

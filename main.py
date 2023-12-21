@@ -14,15 +14,15 @@ from app.api.routers.checklist_router import router as checklist_router
 from app.api.routers.dashboard_router import router as dashboard_router
 from app.api.routers.email_router import router as email_router
 from app.api.routers.file_router import router as file_router
+from app.api.routers.gift_payment_router import router as payment_router
 from app.api.routers.gift_router import router as gift_router
 from app.api.routers.meal_router import router as meal_router
 from app.api.routers.organization_router import router as organization_router
-from app.api.routers.payment_router import router as payment_router
 from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
 from app.core.config import settings
 from app.database.connection import get_db_unyield
-from app.services.permission_services import APP_PERMISSION
+from app.services.permission_services import ORG_ADMIN_PERMISSION
 from app.services.roles_services import create_default_roles
 
 # ============ Sentry Initialization ============= #
@@ -107,7 +107,7 @@ app.include_router(v1_router)
 
 
 db: Session = get_db_unyield()
-APP_PERMISSION.create_permissions(db)
+ORG_ADMIN_PERMISSION.create_permissions(db)
 create_default_roles(db)
 
 

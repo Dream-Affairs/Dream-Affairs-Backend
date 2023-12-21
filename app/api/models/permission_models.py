@@ -2,7 +2,6 @@
 from uuid import uuid4
 
 from sqlalchemy import Column, String
-from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 from app.database.connection import Base
@@ -35,11 +34,6 @@ class Permission(Base):  # type: ignore
     name = Column(String, nullable=False)
     permission_class = Column(String, nullable=False)
     description = Column(String, nullable=False)
-    plan = Column(
-        ENUM("basic", "core", "premium", name="plan"),
-        nullable=False,
-        default="basic",
-    )
 
     role_permission = relationship(
         "RolePermission", back_populates="permission", cascade="all,delete"
