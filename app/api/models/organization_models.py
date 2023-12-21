@@ -26,12 +26,13 @@ from app.api.models.gift_models import (  # noqa: F401
     PaymentOption,
     WalletDetail,
 )
-from app.api.models.guest_models import (  # noqa: F401
-    Guest,
-    Guest_Plus_One,
-    Guest_Table,
-    GuestTags,
-)
+
+# from app.api.models.guest_models import (  # noqa: F401
+#     Guest,
+#     Guest_Plus_One,
+#     Guest_Table,
+#     GuestTags,
+# )
 from app.api.models.meal_models import (  # noqa: F401
     Meal,
     MealCategory,
