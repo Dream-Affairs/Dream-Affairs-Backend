@@ -129,6 +129,7 @@ async def create_role(
     """Create a new role.
 
     Args:
+        organization_id (str): Organization ID as a cookie
         role (RoleCreate): Role details
         db (Session, optional): Database session. Defaults to Depends(get_db).
 

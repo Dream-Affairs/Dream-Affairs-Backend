@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import CustomResponse
-from app.api.schemas.payment_schemas import (
+from app.api.schemas.gift_payment_schemas import (
     BankSchema,
     FilterAcountsEnum,
     LinkSchema,
@@ -13,7 +13,7 @@ from app.api.schemas.payment_schemas import (
     WalletSchema,
 )
 from app.database.connection import get_db
-from app.services.payment_services import (
+from app.services.gift_payment_services import (
     add_bank_account,
     add_payment_link,
     add_wallet,
@@ -24,10 +24,10 @@ from app.services.payment_services import (
     update_wallet,
 )
 
-router = APIRouter(prefix="/payment", tags=["Payment"])
+router = APIRouter(prefix="/gift", tags=["Resgistry"])
 
 
-@router.post("/payment-options/bank")
+@router.post("/payment/option/bank")
 async def add_bank_details(
     request: BankSchema,
     db: Session = Depends(get_db),
@@ -52,7 +52,7 @@ async def add_bank_details(
     return bank_details
 
 
-@router.post("/payment-options/wallet")
+@router.post("/payment/option/wallet")
 async def add_wallet_details(
     request: WalletSchema,
     db: Session = Depends(get_db),
@@ -77,7 +77,7 @@ async def add_wallet_details(
     return wallet_details
 
 
-@router.post("/payment-options/link")
+@router.post("/payment/option/link")
 async def add_payment_link_details(
     request: LinkSchema,
     db: Session = Depends(get_db),
@@ -102,7 +102,7 @@ async def add_payment_link_details(
     return link_details
 
 
-@router.get("/payment-options/{organization_id}/{payment_account_id}")
+@router.get("/payment/option/{organization_id}/{payment_account_id}")
 async def get_payment_account(
     organization_id: str,
     payment_account_id: str,
@@ -133,7 +133,7 @@ async def get_payment_account(
     return payment_account
 
 
-@router.get("/payment-options/{organization_id}")
+@router.get("/payment/option/{organization_id}")
 async def get_payment_accounts(
     organization_id: str,
     filter_by: FilterAcountsEnum,
@@ -166,7 +166,7 @@ async def get_payment_accounts(
     return payment_accounts
 
 
-@router.patch("/payment-options/bank/{bank_account_id}")
+@router.patch("/payment/option/bank/{bank_account_id}")
 async def update_bank_details(
     bank_account_id: str,
     request: BankSchema,
@@ -194,7 +194,7 @@ async def update_bank_details(
     return updated_bank_details
 
 
-@router.patch("/payment-options/wallet/{wallet_account_id}")
+@router.patch("/payment/option/wallet/{wallet_account_id}")
 async def update_wallet_details(
     wallet_account_id: str,
     request: WalletSchema,
@@ -222,7 +222,7 @@ async def update_wallet_details(
     return updated_wallet_details
 
 
-@router.patch("/payment-options/link/{link_account_id}")
+@router.patch("/payment/option/link/{link_account_id}")
 async def update_link_details(
     link_account_id: str,
     request: LinkSchema,

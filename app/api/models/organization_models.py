@@ -26,6 +26,12 @@ from app.api.models.gift_models import (  # noqa: F401
     PaymentOption,
     WalletDetail,
 )
+from app.api.models.guest_models import (  # noqa: F401
+    Guest,
+    Guest_Plus_One,
+    Guest_Table,
+    GuestTags,
+)
 from app.api.models.meal_models import (  # noqa: F401
     Meal,
     MealCategory,
@@ -33,6 +39,7 @@ from app.api.models.meal_models import (  # noqa: F401
 )
 from app.api.models.notification_models import TrackEmail  # noqa: F401
 from app.api.models.permission_models import Permission  # noqa: F401
+from app.api.models.plan_models import OrganizationPlan, Plan  # noqa: F401
 from app.api.models.role_models import Role, RolePermission  # noqa: F401
 from app.database.connection import Base
 
@@ -93,7 +100,7 @@ class Organization(Base):  # type: ignore
     description = Column(Text)
     logo = Column(String)
     plan = Column(
-        ENUM("basic", "core", "premium", name="plan"),
+        ENUM("basic", "core", "premium", name="organization_plan"),
         nullable=False,
         default="basic",
     )
@@ -167,6 +174,17 @@ class Organization(Base):  # type: ignore
         lazy="joined",
         cascade="all,delete",
         uselist=False,
+    )
+    plan = relationship(
+        "OrganizationPlan",
+        back_populates="organization",
+        lazy="joined",
+        cascade="all,delete",
+    )
+    tables = relationship(
+        "OrganizationTable",
+        back_populates="organization",
+        cascade="all,delete",
     )
 
 
@@ -488,6 +506,9 @@ class OrganizationTag(Base):  # type: ignore
     )
     meal_tags = relationship(
         "MealTag", back_populates="organization_tag", cascade="all,delete"
+    )
+    guest_tags = relationship(
+        "GuestTags", back_populates="organization_tag", cascade="all,delete"
     )
 
 

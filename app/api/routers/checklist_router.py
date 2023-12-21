@@ -24,7 +24,7 @@ from app.services.checklist_services import (
 
 router = APIRouter(
     prefix="/checklist",
-    tags=["checklist"],
+    tags=["Checklist"],
 )
 
 
