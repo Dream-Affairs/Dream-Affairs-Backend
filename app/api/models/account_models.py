@@ -69,9 +69,9 @@ class Account(Base):  # type: ignore
     organizations = relationship(
         "Organization", back_populates="account", lazy="joined"
     )
-    plans = relationship(
-        "OrganizationPlan", back_populates="account", lazy="joined"
-    )
+    # plans = relationship(
+    #     "OrganizationPlan", back_populates="account", lazy="joined"
+    # )
 
 
 class Auth(Base):  # type: ignore
