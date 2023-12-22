@@ -177,17 +177,17 @@ class Organization(Base):  # type: ignore
         cascade="all,delete",
         uselist=False,
     )
-    plan = relationship(
-        "OrganizationPlan",
-        back_populates="organization",
-        lazy="joined",
-        cascade="all,delete",
-    )
-    tables = relationship(
-        "OrganizationTable",
-        back_populates="organization",
-        cascade="all,delete",
-    )
+    # plan = relationship(
+    #     "OrganizationPlan",
+    #     back_populates="organization",
+    #     lazy="joined",
+    #     cascade="all,delete",
+    # )
+    # tables = relationship(
+    #     "OrganizationTable",
+    #     back_populates="organization",
+    #     cascade="all,delete",
+    # )
 
 
 class OrganizationDetail(Base):  # type: ignore
@@ -509,9 +509,9 @@ class OrganizationTag(Base):  # type: ignore
     meal_tags = relationship(
         "MealTag", back_populates="organization_tag", cascade="all,delete"
     )
-    guest_tags = relationship(
-        "GuestTags", back_populates="organization_tag", cascade="all,delete"
-    )
+    # guest_tags = relationship(
+    #     "GuestTags", back_populates="organization_tag", cascade="all,delete"
+    # )
 
 
 class Checklist(Base):  # type: ignore
