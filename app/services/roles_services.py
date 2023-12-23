@@ -103,7 +103,7 @@ class RoleService(BaseModel):  # type: ignore
 
     def add_role_to_organization(
         self, db: Session, organization_id: str, role_id: str
-    ) -> Any:
+    ) -> "OrganizationRole":
         """Adds a role to an organization.
 
         Args:
