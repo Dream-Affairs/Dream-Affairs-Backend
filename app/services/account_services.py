@@ -3,7 +3,7 @@ operations."""
 
 import base64
 from datetime import datetime, timedelta
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple, Union
 from uuid import uuid4
 
 from fastapi import BackgroundTasks, status
@@ -373,7 +373,7 @@ def generate_token(
 
 def decode_token(
     token: HTTPAuthorizationCredentials, is_authenticate: bool = False
-) -> Dict[str, Any] | tuple:
+) -> Dict[str, Any] | Tuple[str, str]:
     """Decode a JWT token and retrieve the account ID.
 
     Args:
