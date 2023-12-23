@@ -1,9 +1,9 @@
 """Main module for the API."""
+
 import sentry_sdk
 import uvicorn
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 
 from app.api.responses.custom_responses import (
     CustomResponse,
@@ -75,12 +75,14 @@ v1_router.include_router(
     payment_router,
 )
 
+
 app = FastAPI(
     title="Dream Affairs API",
     description=TEXT,
     version="0.1.0",
     docs_url="/",
 )
+
 
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
@@ -107,10 +109,14 @@ def health() -> CustomResponse:
 app.include_router(v1_router)
 
 
-if settings.ENVIRONMENT == "production":
-    db: Session = get_db_unyield()
-    ORG_ADMIN_PERMISSION.create_permissions(db)
-    create_default_roles(db)
+@app.on_event("startup")
+async def startup_event():
+    """Create default roles on startup."""
+
+    if settings.ENVIRONMENT == "production":
+        db = get_db_unyield()
+        ORG_ADMIN_PERMISSION.create_permissions(db)
+        create_default_roles(db)
 
 
 if __name__ == "__main__":

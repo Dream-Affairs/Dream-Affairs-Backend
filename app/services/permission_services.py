@@ -89,6 +89,7 @@ class TaskPerm(BaseModel):  # type: ignore
     read_task: Optional[PermissionSchema] = None
     update_task: Optional[PermissionSchema] = None
     delete_task: Optional[PermissionSchema] = None
+    assign_task: Optional[PermissionSchema] = None
 
 
 class RolePerm(BaseModel):  # type: ignore
@@ -127,6 +128,7 @@ class InvitationPerm(BaseModel):  # type: ignore
     read_invitation: Optional[PermissionSchema] = None
     update_invitation: Optional[PermissionSchema] = None
     delete_invitation: Optional[PermissionSchema] = None
+    send_invitations: Optional[PermissionSchema] = None
 
 
 class MealPerm(BaseModel):  # type: ignore
@@ -195,12 +197,12 @@ class PermissionManager(BaseModel):  # type: ignore
             permission_name:List[str]): Check if a role has a permission.
     """
 
-    event: Optional[EventPerm] | Dict[str, Any] = {}
-    guest: Optional[GuestPerm] | Dict[str, Any] = {}
-    task: Optional[TaskPerm] | Dict[str, Any] = {}
-    role: Optional[RolePerm] | Dict[str, Any] = {}
-    invitation: Optional[InvitationPerm] | Dict[str, Any] = {}
-    meal: Optional[MealPerm] | Dict[str, Any] = {}
+    event: Optional[EventPerm] = None
+    guest: Optional[GuestPerm] = None
+    task: Optional[TaskPerm] = None
+    role: Optional[RolePerm] = None
+    invitation: Optional[InvitationPerm] = None
+    meal: Optional[MealPerm] = None
 
     def get_all_permissions(self, db: Session) -> List[PermissionSchema]:
         """Get all permissions from database.
@@ -479,6 +481,12 @@ ORG_ADMIN_PERMISSION = PermissionManager(
         ),
     ),
     task=TaskPerm(
+        assign_task=PermissionSchema(
+            id=uuid4().hex,
+            permission_class="task",
+            name="assign::task",
+            description="Assign a task.",
+        ),
         create_task=PermissionSchema(
             id=uuid4().hex,
             permission_class="task",
@@ -554,6 +562,12 @@ ORG_ADMIN_PERMISSION = PermissionManager(
             permission_class="invitation",
             name="delete::invitation",
             description="Delete an invitation.",
+        ),
+        send_invitations=PermissionSchema(
+            id=uuid4().hex,
+            permission_class="invitation",
+            name="send::invitation",
+            description="Send an invitation.",
         ),
     ),
     meal=MealPerm(
