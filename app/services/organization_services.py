@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import asc
 
 from app.api.models.account_models import Account
 from app.api.models.organization_models import (
@@ -107,6 +108,7 @@ def get_all_organizations(
     query = (
         db.query(OrganizationMember)
         .filter(OrganizationMember.account_id == account_id)
+        .order_by(asc(OrganizationMember.created_at))
         .all()
     )
 

@@ -24,6 +24,7 @@ from app.core.config import settings
 from app.database.connection import get_db_unyield
 from app.services.permission_services import ORG_ADMIN_PERMISSION
 from app.services.roles_services import create_default_roles
+from description import TEXT
 
 # ============ Sentry Initialization ============= #
 
@@ -76,7 +77,7 @@ v1_router.include_router(
 
 app = FastAPI(
     title="Dream Affairs API",
-    description="Making your dreams come true one api call at a time",
+    description=TEXT,
     version="0.1.0",
     docs_url="/",
 )
