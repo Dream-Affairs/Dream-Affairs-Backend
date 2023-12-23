@@ -14,11 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.api.middlewares.jwt_bearer import HTTPAuthorizationCredentials
 from app.api.models.account_models import Account, Auth
-from app.api.models.organization_models import (
-    Organization,
-    OrganizationDetail,
-    OrganizationMember,
-)
+from app.api.models.organization_models import OrganizationMember
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.account_schemas import (
     AccountLogin,
@@ -30,7 +26,6 @@ from app.api.schemas.account_schemas import (
 )
 from app.core.config import settings
 from app.services.email_services import send_email_api
-from app.services.roles_services import RoleService
 
 SECRET_KEY = settings.AUTH_SECRET_KEY
 ALGORITHM = settings.HASH_ALGORITHM
@@ -40,7 +35,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def authenticate_user(user: Account, db: Session):
+def authenticate_user(user: Account):
     """Authenticate user and generate access token.
 
     Args:
@@ -52,12 +47,6 @@ def authenticate_user(user: Account, db: Session):
             token and token type.
     """
     if user:
-        user_org = (
-            db.query(OrganizationMember)
-            .filter(OrganizationMember.account_id == user.id)
-            .first()
-        )
-
         access_token = generate_token(
             data={
                 "account_id": user.id,
@@ -69,11 +58,7 @@ def authenticate_user(user: Account, db: Session):
             status_code=status.HTTP_200_OK,
             data={
                 "user": {
-                    "id": user.id,
-                },
-                "organization": {
-                    "organization_id": user_org.organization_id,
-                    "organization_member_id": user_org.id,
+                    "is_verified": user.is_verified,
                 },
                 "access_token": access_token,
             },
@@ -122,37 +107,11 @@ def create_account(
         ),
     )
 
-    org_id = (uuid4().hex,)
-    org = Organization(
-        id=org_id,
-        name=f"{new_user.first_name} & {user.partner_name}".title(),
-        owner=new_user.id,
-        org_type="Wedding",
-        detail=OrganizationDetail(
-            organization_id=org_id,
-            event_location=user.location,
-            website=f"/{user.first_name}-{user.partner_name}".lower(),
-            event_date=user.event_date,
-        ),
-    )
-
-    if not add_to_db(db, new_user, org):
+    if not add_to_db(db, new_user):
         return None, CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="failed to create account",
         )
-
-    role = RoleService().get_default_role(db=db, name="Admin")
-    org_role = RoleService().add_role_to_organization(
-        db, org.id, role_id=role.id
-    )
-
-    RoleService().assign_role(
-        organization_id=org.id,
-        db=db,
-        organization_role_id=org_role.id,
-        account_id=new_user.id,
-    )
 
     access_token = generate_token(
         data={"account_id": new_user.id, "context": "verify-account"},
@@ -165,7 +124,6 @@ def create_account(
         subject="Welcome to Dream Affairs",
         recipient_email=user.email,
         template="_email_verification.html",
-        organization_id=org.id,
         db=db,
         kwargs={"name": user.first_name, "verification_link": url},
     )
@@ -234,10 +192,10 @@ def login_service(
     user = get_account_by_email(db, user_credentials.email)
 
     if user_credentials.provider == "google":
-        return authenticate_user(user, db)
+        return authenticate_user(user)
 
     if user and verify_password(user_credentials.password, user.password_hash):
-        return authenticate_user(user, db)
+        return authenticate_user(user)
 
     raise CustomException(
         status_code=status.HTTP_404_NOT_FOUND,

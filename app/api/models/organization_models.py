@@ -101,11 +101,7 @@ class Organization(Base):  # type: ignore
     org_type = Column(ENUM("Wedding", name="event_type"), nullable=False)
     description = Column(Text)
     logo = Column(String)
-    plan = Column(
-        ENUM("basic", "core", "premium", name="organization_plan"),
-        nullable=False,
-        default="basic",
-    )
+
     is_deleted = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -114,7 +110,7 @@ class Organization(Base):  # type: ignore
 
     account = relationship(
         "Account",
-        back_populates="organizations",
+        backref="organization_account",
         lazy="joined",
         cascade="all,delete",
     )

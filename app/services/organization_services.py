@@ -10,16 +10,86 @@ from app.api.models.account_models import Account
 from app.api.models.organization_models import (
     InviteMember,
     Organization,
+    OrganizationDetail,
     OrganizationMember,
     OrganizationRole,
 )
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.organization_schemas import (
     InviteMemberSchema,
+    OrganizationCreate,
     OrganizationUpdate,
 )
 from app.core.config import settings
 from app.services.account_services import hash_password
+from app.services.roles_services import RoleService
+
+
+async def create_organization(
+    db: Session, account_id: str, organization: OrganizationCreate
+) -> Dict[str, Any]:
+    """Create an organization.
+
+    Args:
+        db (Session): Database session
+        account_id (str): Account ID
+        organization (OrganizationCreate): Organization details
+
+    Raises:
+        CustomException: If organization already exists
+
+    Returns:
+        dict: Organization details
+    """
+    organization_name = organization.name.title()
+
+    if (
+        db.query(Organization)
+        .filter(Organization.name == organization_name)
+        .first()
+    ):
+        raise CustomException(
+            status_code=400,
+            message="Organization already exists",
+            data={"name": organization_name},
+        )
+    org_id = uuid4().hex
+    org = Organization(
+        id=org_id,
+        name=organization_name,
+        owner=account_id,
+        org_type=organization.event_type.title(),
+        detail=OrganizationDetail(
+            organization_id=org_id,
+            website=organization.event_details.website,
+            event_date=organization.event_details.event_date,
+            event_start_time=organization.event_details.event_start_time,
+            event_end_time=organization.event_details.event_end_time,
+        ),
+    )
+    db.add(org)
+    role = RoleService().get_default_role(db=db, name="Admin")
+    org_role = RoleService().add_role_to_organization(
+        db, org.id, role_id=role.id
+    )
+
+    RoleService().assign_role(
+        organization_id=org.id,
+        db=db,
+        organization_role_id=org_role.id,
+        account_id=account_id,
+    )
+    return {
+        "organization_id": org.id,
+        "name": org.name,
+        "description": org.description if not None else "",
+        "event_details": {
+            "website": org.detail.website,
+            "event_date": str(org.detail.event_date),
+            "event_start_time": str(org.detail.event_start_time),
+            "event_end_time": str(org.detail.event_end_time),
+        },
+    }
 
 
 def get_all_organizations(

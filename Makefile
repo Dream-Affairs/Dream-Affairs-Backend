@@ -31,6 +31,9 @@ commit:
 	git add .
 	git commit
 
+mod_commit:
+	git add -u
+	git commit
 fmt:
 	python3 -m black .
 

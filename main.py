@@ -106,9 +106,10 @@ def health() -> CustomResponse:
 app.include_router(v1_router)
 
 
-db: Session = get_db_unyield()
-ORG_ADMIN_PERMISSION.create_permissions(db)
-create_default_roles(db)
+if settings.ENVIRONMENT == "production":
+    db: Session = get_db_unyield()
+    ORG_ADMIN_PERMISSION.create_permissions(db)
+    create_default_roles(db)
 
 
 if __name__ == "__main__":

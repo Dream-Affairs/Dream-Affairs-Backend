@@ -66,9 +66,9 @@ class Account(Base):  # type: ignore
         uselist=False,
         cascade="all,delete",
     )
-    organizations = relationship(
-        "Organization", back_populates="account", lazy="joined"
-    )
+    # organizations = relationship(
+    #     "Organization", back_populates="account", lazy="joined"
+    # )
     # plans = relationship(
     #     "OrganizationPlan", back_populates="account", lazy="joined"
     # )
