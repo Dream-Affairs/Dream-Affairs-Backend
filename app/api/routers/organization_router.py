@@ -108,7 +108,10 @@ async def get_user_organization(
     return CustomResponse(
         status_code=200,
         message="Organization retrieved successfully",
-        data=get_organization(auth.member.organization_id, db),
+        data=get_organization(
+            db,
+            auth.member.organization_id,
+        ),
     )
 
 
