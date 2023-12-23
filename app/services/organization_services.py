@@ -125,9 +125,9 @@ def get_all_organizations(
                 "logo": organization.organization.logo,
                 "event_details": {
                     "website": organization.organization.detail.website,
-                    "event_date": event_date,
-                    "event_start_time": event_start_time,
-                    "event_end_time": event_end_time,
+                    "event_date": str(event_date),
+                    "event_start_time": str(event_start_time),
+                    "event_end_time": str(event_end_time),
                 },
             }
         )
@@ -167,9 +167,9 @@ def get_organization(db: Session, organization_id: str) -> Dict[str, Any]:
         "logo": organization.logo,
         "event_details": {
             "website": organization.detail.website,
-            "event_date": organization.detail.event_date,
-            "event_start_time": organization.detail.event_start_time,
-            "event_end_time": organization.detail.event_end_time,
+            "event_date": str(organization.detail.event_date),
+            "event_start_time": str(organization.detail.event_start_time),
+            "event_end_time": str(organization.detail.event_end_time),
         },
     }
 
@@ -303,9 +303,9 @@ def update_organization_details(
         "logo": organization.logo,
         "event_details": {
             "website": organization.detail.website,
-            "event_date": organization.detail.event_date,
-            "event_start_time": organization.detail.event_start_time,
-            "event_end_time": organization.detail.event_end_time,
+            "event_date": str(organization.detail.event_date),
+            "event_start_time": str(organization.detail.event_start_time),
+            "event_end_time": str(organization.detail.event_end_time),
         },
     }
 
