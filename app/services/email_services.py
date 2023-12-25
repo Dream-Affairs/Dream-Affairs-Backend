@@ -3,7 +3,9 @@ import os
 from datetime import datetime
 from typing import Any, Dict, Tuple, Union
 
+import pystache
 from jinja2 import Environment, FileSystemLoader
+from mjml import mjml_to_html
 from requests import get, post, put  # type: ignore
 from sqlalchemy.orm import Session
 
@@ -176,15 +178,23 @@ Email = EmailService(settings.EMAIL_API_KEY)
 
 
 def generate_html(
-    template: Any,
+    template: str,
     **kwargs: Dict[str, Any],
-) -> Any:
+) -> str:
     """This function is used to generate html from the template.
 
     Args:
         template: This is the template of the email.
         **kwargs: This is the dictionary of the arguments.
     """
+
+    if template.endswith(".mjml"):
+        with open(
+            os.path.join(TEMP_FOLDER, template), "r", encoding="utf-8"
+        ) as mjml_file:
+            mjml_template = mjml_file.read()
+        return mjml_to_html(pystache.render(mjml_template, kwargs)).html
+
     templates = Environment(
         loader=FileSystemLoader(TEMP_FOLDER), autoescape=True
     )

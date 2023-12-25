@@ -3,10 +3,10 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
-class Organizationevent(BaseModel):
+class OrganizationEvent(BaseModel):
     """Schema for event details.
 
     Attributes:
@@ -16,10 +16,42 @@ class Organizationevent(BaseModel):
         event_end_time (datetime): End time of the event
     """
 
+    event_location: str
     website: Optional[str] = None
     event_date: Optional[datetime] = None
     event_start_time: Optional[datetime] = None
     event_end_time: Optional[datetime] = None
+
+    @field_validator("website", check_fields=True)
+    # pylint: disable=no-self-argument
+    def validate_website(cls, website: str):
+        """Add forward to website.
+
+        Args:
+            website (str): Website
+        """
+        if website and not website.startswith("/"):
+            website = f"/{website}"
+
+        return website
+
+
+class OrganizationCreate(BaseModel):
+    """Schema for creating an organization.
+
+    Attributes:
+        name (str): Name of the organization
+        description (str): Description of the organization
+        website (str): Website of the organization
+        logo (str): Logo of the organization
+        event_details (OrganizationEvent): Event details
+    """
+
+    name: str
+    description: Optional[str] = None
+    event_type: Optional[str] = "Wedding"
+    logo: Optional[str] = None
+    event_details: Optional[OrganizationEvent] = None
 
 
 class OrganizationUpdate(BaseModel):
@@ -30,13 +62,13 @@ class OrganizationUpdate(BaseModel):
         description (str): Description of the organization
         website (str): Website of the organization
         logo (str): Logo of the organization
-        event_details (Organizationevent): Event details
+        event_details (OrganizationEvent): Event details
     """
 
     name: Optional[str] = None
     description: Optional[str] = None
     logo: Optional[str] = None
-    event_details: Organizationevent
+    event_details: OrganizationEvent
 
 
 class InviteMemberSchema(BaseModel):  # type: ignore

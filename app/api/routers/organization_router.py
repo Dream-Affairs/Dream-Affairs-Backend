@@ -10,11 +10,13 @@ from app.api.middlewares.authorization import (
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.organization_schemas import (
     InviteMemberSchema,
+    OrganizationCreate,
     OrganizationUpdate,
 )
 from app.database.connection import get_db
 from app.services.organization_services import (
     accept_invite,
+    create_organization,
     delete_organization,
     get_all_organizations,
     get_members,
@@ -27,8 +29,39 @@ from app.services.organization_services import (
 router = APIRouter(prefix="/organization", tags=["Organization"])
 
 
+@router.post("")
+async def create_user_organization(
+    req: OrganizationCreate,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_authenticated),
+) -> CustomResponse:
+    """Create an organization.
+
+    Args:
+        req (OrganizationCreate): Organization details
+        db (Session, optional): Database session. Defaults to Depends(get_db).
+
+    Raises:
+        CustomException: If organization does not exist
+
+    Returns:
+        CustomResponse: Organization details
+    """
+    try:
+        organization_details = await create_organization(
+            db, auth.account.id, req
+        )
+    except Exception as e:
+        raise e
+    return CustomResponse(
+        status_code=201,
+        message="Organization created successfully",
+        data=organization_details,
+    )
+
+
 @router.get("/all")
-async def get_organizations(
+async def get_user_organizations(
     db: Session = Depends(get_db),  # pylint: disable=unused-argument
     auth: Authorize = Depends(  # pylint: disable=unused-argument
         is_authenticated
@@ -54,7 +87,7 @@ async def get_organizations(
 
 
 @router.get("")
-async def get_current_organization(
+async def get_user_organization(
     db: Session = Depends(get_db),  # pylint: disable=unused-argument
     auth: Authorize = Depends(  # pylint: disable=unused-argument
         is_org_authorized
@@ -75,12 +108,15 @@ async def get_current_organization(
     return CustomResponse(
         status_code=200,
         message="Organization retrieved successfully",
-        data=get_organization(auth.member.organization_id, db),
+        data=get_organization(
+            db,
+            auth.member.organization_id,
+        ),
     )
 
 
 @router.put("")
-async def update_organization(
+async def update_user_organization(
     req: OrganizationUpdate,
     db: Session = Depends(get_db),
     auth: Authorize = Depends(is_authenticated),
@@ -110,7 +146,7 @@ async def update_organization(
 
 
 @router.delete("")
-async def delete_organizations(
+async def delete_user_organization(
     email: str,
     auth: Authorize = Depends(is_authenticated),
     db: Session = Depends(get_db),

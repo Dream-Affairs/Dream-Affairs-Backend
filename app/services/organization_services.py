@@ -5,21 +5,100 @@ from uuid import uuid4
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import asc
 
 from app.api.models.account_models import Account
 from app.api.models.organization_models import (
     InviteMember,
     Organization,
+    OrganizationDetail,
     OrganizationMember,
     OrganizationRole,
 )
 from app.api.responses.custom_responses import CustomException
 from app.api.schemas.organization_schemas import (
     InviteMemberSchema,
+    OrganizationCreate,
     OrganizationUpdate,
 )
 from app.core.config import settings
 from app.services.account_services import hash_password
+from app.services.roles_services import RoleService
+
+
+async def create_organization(
+    db: Session, account_id: str, organization: OrganizationCreate
+) -> Dict[str, Any]:
+    """Create an organization.
+
+    Args:
+        db (Session): Database session
+        account_id (str): Account ID
+        organization (OrganizationCreate): Organization details
+
+    Raises:
+        CustomException: If organization already exists
+
+    Returns:
+        dict: Organization details
+    """
+    organization_name = organization.name.title()
+
+    if (
+        db.query(Organization)
+        .filter(Organization.name == organization_name)
+        .first()
+    ):
+        raise CustomException(
+            status_code=400,
+            message="Organization already exists",
+            data={"name": organization_name},
+        )
+    org_id = uuid4().hex
+    org = Organization(
+        id=org_id,
+        name=organization_name,
+        owner=account_id,
+        org_type=organization.event_type.title(),
+        detail=OrganizationDetail(
+            organization_id=org_id,
+            website=organization.event_details.website,
+            event_date=organization.event_details.event_date,
+            event_start_time=organization.event_details.event_start_time,
+            event_end_time=organization.event_details.event_end_time,
+        ),
+    )
+    db.add(org)
+    role_admin = RoleService().get_default_role(db=db, name="Admin")
+    role_event_planner = RoleService().get_default_role(
+        db=db, name="Event Planner"
+    )
+    role_guest = RoleService().get_default_role(db=db, name="Guest Manager")
+    org_role = RoleService().add_role_to_organization(
+        db, org.id, role_id=role_admin.id
+    )
+    RoleService().add_role_to_organization(
+        db, org.id, role_id=role_event_planner.id
+    )
+    RoleService().add_role_to_organization(db, org.id, role_id=role_guest.id)
+
+    RoleService().assign_role(
+        organization_id=org.id,
+        db=db,
+        organization_role_id=org_role.id,
+        account_id=account_id,
+    )
+    return {
+        "organization_id": org.id,
+        "name": org.name,
+        "description": org.description if not None else "",
+        "event_details": {
+            "website": org.detail.website,
+            "event_date": str(org.detail.event_date),
+            "event_start_time": str(org.detail.event_start_time),
+            "event_end_time": str(org.detail.event_end_time),
+        },
+    }
 
 
 def get_all_organizations(
@@ -37,6 +116,7 @@ def get_all_organizations(
     query = (
         db.query(OrganizationMember)
         .filter(OrganizationMember.account_id == account_id)
+        .order_by(asc(OrganizationMember.created_at))
         .all()
     )
 
@@ -53,9 +133,9 @@ def get_all_organizations(
                 "logo": organization.organization.logo,
                 "event_details": {
                     "website": organization.organization.detail.website,
-                    "event_date": event_date,
-                    "event_start_time": event_start_time,
-                    "event_end_time": event_end_time,
+                    "event_date": str(event_date),
+                    "event_start_time": str(event_start_time),
+                    "event_end_time": str(event_end_time),
                 },
             }
         )
@@ -95,9 +175,9 @@ def get_organization(db: Session, organization_id: str) -> Dict[str, Any]:
         "logo": organization.logo,
         "event_details": {
             "website": organization.detail.website,
-            "event_date": organization.detail.event_date,
-            "event_start_time": organization.detail.event_start_time,
-            "event_end_time": organization.detail.event_end_time,
+            "event_date": str(organization.detail.event_date),
+            "event_start_time": str(organization.detail.event_start_time),
+            "event_end_time": str(organization.detail.event_end_time),
         },
     }
 
@@ -231,9 +311,9 @@ def update_organization_details(
         "logo": organization.logo,
         "event_details": {
             "website": organization.detail.website,
-            "event_date": organization.detail.event_date,
-            "event_start_time": organization.detail.event_start_time,
-            "event_end_time": organization.detail.event_end_time,
+            "event_date": str(organization.detail.event_date),
+            "event_start_time": str(organization.detail.event_start_time),
+            "event_end_time": str(organization.detail.event_end_time),
         },
     }
 

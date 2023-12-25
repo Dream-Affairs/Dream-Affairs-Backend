@@ -14,6 +14,7 @@ from app.api.models.role_models import RolePermission
 from app.database.connection import get_db_unyield
 from app.services.permission_services import (
     ORG_ADMIN_PERMISSION,
+    Permission,
     PermissionManager,
     PermissionSchema,
 )
@@ -150,14 +151,24 @@ class RoleService(BaseModel):  # type: ignore
             ).delete()
             db.commit()
         perm_list = []
-        perm_list = [
-            {
-                "id": uuid4().hex,
-                "role_id": role_id,
-                "permission_id": perm.id,
-            }
-            for perm in permissions
-        ]
+
+        for perm in permissions:
+            if perm.id is None:
+                perm_exists = (
+                    db.query(Permission)
+                    .filter(Permission.name == perm.name)
+                    .first()
+                )
+                if perm_exists is None:
+                    print(f"Permission name {perm.name} does not exist")
+                    continue
+                perm_list.append(
+                    {
+                        "id": uuid4().hex,
+                        "role_id": role_id,
+                        "permission_id": perm_exists.id,
+                    }
+                )
 
         db.bulk_insert_mappings(RolePermission, perm_list)
         db.commit()
@@ -316,9 +327,181 @@ def create_default_roles(db: object = get_db_unyield) -> None:
         permissions=ORG_ADMIN_PERMISSION.get_all_permissions(db)[1],
     ).create_role(db)
 
-    # RoleService(
-    #     name="Event Planner",
-    #     description="Event Planner",
-    #     is_default=True,
-    #     is_super_admin=False,
-    #     permissions=PermissionManager.
+    RoleService(
+        name="Guest Manager",
+        description="Guest Manager",
+        is_default=True,
+        is_super_admin=False,
+        permissions=[
+            # checklist permissions
+            PermissionSchema(
+                permission_class="task",
+                name="read::task",
+                description="Read a task.",
+            ),
+            PermissionSchema(
+                permission_class="task",
+                name="update::task",
+                description="Update a task.",
+            ),
+            PermissionSchema(
+                permission_class="task",
+                name="assign::task",
+                description="Assign a task.",
+            ),
+            # guest permissions
+            PermissionSchema(
+                permission_class="guest",
+                name="create::guest",
+                description="Create a guest.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="read::guest",
+                description="Read a guest.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="update::guest",
+                description="Update guests.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="create::guest::import",
+                description="Import Guest List.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="create::guest::export",
+                description="Export Guest List.",
+            ),
+        ],
+    ).create_role(db)
+
+    RoleService(
+        name="Event Planner",
+        description="Event Planner",
+        is_default=True,
+        is_super_admin=False,
+        permissions=[
+            PermissionSchema(
+                permission_class="event",
+                name="read::event",
+                description="Read an event.",
+            ),
+            PermissionSchema(
+                permission_class="event",
+                name="update::event",
+                description="Edit Event Name and Details",
+            ),
+            PermissionSchema(
+                permission_class="event",
+                name="update::event::website::status",
+                description="Publish or Unpublish Event Website",
+            ),
+            PermissionSchema(
+                permission_class="event",
+                name="update::event::website::layout",
+                description="Customize Website Design and Layout",
+            ),
+            # guest permissions
+            PermissionSchema(
+                permission_class="guest",
+                name="read::guest",
+                description="Read a guest.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="update::guest",
+                description="Update guests.",
+            ),
+            PermissionSchema(
+                permission_class="guest",
+                name="create::guest::export",
+                description="Export Guest List.",
+            ),
+            # checklist permissions
+            PermissionSchema(
+                permission_class="task",
+                name="read::task",
+                description="Read a task.",
+            ),
+            PermissionSchema(
+                permission_class="task",
+                name="update::task",
+                description="Update a task.",
+            ),
+            PermissionSchema(
+                permission_class="task",
+                name="assign::task",
+                description="Assign a task.",
+            ),
+            #  Invitation permissions
+            PermissionSchema(
+                permission_class="invitation",
+                name="send::invitation",
+                description="Send an invitation.",
+            ),
+            # meal permissions
+            PermissionSchema(
+                permission_class="meal",
+                name="create::meal",
+                description="Create a meal.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="read::meal",
+                description="Read a meal.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="update::meal",
+                description="Update a meal.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="delete::meal",
+                description="Delete a meal.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="create::meal::tag",
+                description="Create a meal tag.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="read::meal::tag",
+                description="Read a meal tag.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="update::meal::tag",
+                description="Update a meal tag.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="delete::meal::tag",
+                description="Delete a meal tag.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="create::meal::category",
+                description="Create a meal category.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="read::meal::category",
+                description="Read a meal category.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="update::meal::category",
+                description="Update a meal category.",
+            ),
+            PermissionSchema(
+                permission_class="meal",
+                name="delete::meal::category",
+                description="Delete a meal category.",
+            ),
+        ],
+    ).create_role(db)

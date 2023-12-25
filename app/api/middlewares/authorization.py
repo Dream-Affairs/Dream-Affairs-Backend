@@ -97,12 +97,19 @@ def is_org_authorized(
     Returns:
         Authorize: Authorized user
     """
-    emxsidqw = req.cookies["emxsidqw"]
-    if emxsidqw is None:
+    try:
+        emxsidqw = req.cookies["emxsidqw"]
+        if emxsidqw is None:
+            raise CustomException(
+                status_code=401,
+                message="Unauthorized",
+            )
+    except KeyError as e:
         raise CustomException(
             status_code=401,
-            message="Unauthorized",
-        )
+            message="Please select an event",
+        ) from e
+
     emxsidqw = decode_data(emxsidqw)
     member_instance = (
         db.query(OrganizationMember)
