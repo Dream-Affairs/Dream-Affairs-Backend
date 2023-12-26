@@ -7,10 +7,10 @@
            <mj-section padding="29px 84px 0">
            <mj-column width="100%">
             <mj-image src="./assets/thanks.png" alt="" width="519px" height="218px" padding="0"/>
-           </mj-column>  
+           </mj-column>
        </mj-section>
         <!-- Main Content -->
-        <mj-section padding="0px 84px"> 
+        <mj-section padding="0px 84px">
             <mj-column width="100%">
                  <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
 CHINONYE & JOHN
@@ -18,22 +18,22 @@ CHINONYE & JOHN
         <mj-text  color="#48195A" padding="56.5px 0 0">
         <div style="font-size: 14px; font-weight=400; text-align: center" >
         <p> Hello [First Name],</p>
-        </div>     
+        </div>
         </mj-text>
             </mj-column>
         </mj-section>
      <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
-      <mj-column width="100%">          
+      <mj-column width="100%">
          <mj-text color="#111" padding="0">
-         <div style="font-size: 14px; font-weight=400; text-align: center"> 
+         <div style="font-size: 14px; font-weight=400; text-align: center">
          <p style="padding-bottom: 20px; line-height=24px">We hope this message finds you well. We wanted to take a moment to express our deepest gratitude for being a part of our wedding day. Your presence and warm wishes made the celebration even more memorable.</p>
           <p style="padding-bottom: 20px; line-height=24px">We are filled with joy as we reflect on the love and support we received from family and friends like you. Your presence meant the world to us, and your well wishes touched our hearts.</p>
            <p style="padding-bottom: 20px; line-height=24px">Our wedding day was a dream come true, and we are grateful for your role in making it so special. Your love and support mean everything to us.</p>
            <p style="padding-bottom: 20px; line-height=24px">Thank you once again for sharing in our joy and making our day unforgettable</p>
             <p style="padding-bottom: 41px; line-height=24px">Warmest regards, <br>
             Chinonye & John</p>
-         </div>     
-         </mj-text>    
+         </div>
+         </mj-text>
                </mj-column>
        </mj-section>
         <mj-section padding="0 84px">
@@ -47,10 +47,10 @@ CHINONYE & JOHN
         <mj-section padding="0 84px" >
             <mj-column width="100%">
             <mj-text padding="0">
-                <div style="text-align: center"> 
+                <div style="text-align: center">
                 <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
                 </div>
-            </mj-text>           
+            </mj-text>
             </mj-column>
         </mj-section>
         <mj-section padding="0 54px ">

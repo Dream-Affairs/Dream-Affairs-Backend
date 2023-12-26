@@ -11,10 +11,10 @@
            <mj-section padding="29px 84px 0">
            <mj-column width="100%">
             <mj-image src="./assets/bridalhero.png" alt="" width="519px" height="218px" padding="0"/>
-           </mj-column>  
+           </mj-column>
        </mj-section>
         <!-- Main Content -->
-        <mj-section padding="0px 84px"> 
+        <mj-section padding="0px 84px">
             <mj-column width="100%">
                  <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
 CHINONYE & JOHN
@@ -23,14 +23,14 @@ CHINONYE & JOHN
         <div style="font-size: 14px; font-weight=400; text-align: center" >
         <p> Dear [Bridal Party Member's Name],</p>
         <p> We couldn't imagine our special day without you by our side. We wanted to share some details with you to ensure everything runs smoothly:</p>
-        </div>     
+        </div>
         </mj-text>
             </mj-column>
         </mj-section>
      <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
-      <mj-column width="100%">          
+      <mj-column width="100%">
          <mj-text color="#111" padding="0">
-         <div style="font-size: 14px; font-weight=400; text-align: center"> 
+         <div style="font-size: 14px; font-weight=400; text-align: center">
          <ul style="">
            <li style="padding-bottom: 20px; line-height=24px">Rehearsal Dinner: Our rehearsal dinner is set for [Rehearsal Dinner Date] at [Rehearsal Dinner Venue]. We can't wait to celebrate with you and practice for the big day.</li>
         <li style="line-height=24px; padding-bottom: 20px">Bridal Party Attire: We'll be in touch with you soon regarding the fitting and pickup of your attire. Please ensure it's ready in time for the wedding.</li>
@@ -40,8 +40,8 @@ CHINONYE & JOHN
             <p>Thank you for being a part of our journey. We're excited to share this day with you!</p>
             <p>With love, <br>
             Chinonye & John</p>
-         </div>     
-         </mj-text>    
+         </div>
+         </mj-text>
                </mj-column>
        </mj-section>
         <mj-section padding="0 84px">
@@ -55,10 +55,10 @@ CHINONYE & JOHN
         <mj-section padding="0 84px" >
             <mj-column width="100%">
             <mj-text padding="0">
-                <div style="text-align: center"> 
+                <div style="text-align: center">
                 <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
                 </div>
-            </mj-text>           
+            </mj-text>
             </mj-column>
         </mj-section>
       <mj-section padding="0 54px ">
@@ -94,7 +94,7 @@ CHINONYE & JOHN
           />
         </mj-column>
       </mj-section>
-   
+
         <mj-section background-color="#F5E7FF" padding="0">
             <mj-column width="100%">
                 <mj-image src="./assets/dreamlogo.png" alt=""  width="49px" padding-top="10px" />
