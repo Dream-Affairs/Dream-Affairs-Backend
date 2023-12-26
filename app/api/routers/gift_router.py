@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.authorization import Authorize, is_org_authorized
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.gift_schemas import (
     AddCashGift,
@@ -23,68 +24,57 @@ from app.services.gift_services import (
     gifts_filter,
 )
 
-router = APIRouter(prefix="/registry", tags=["Registry"])
+router = APIRouter(prefix="/gift", tags=["Registry"])
 
 
-@router.post("/add-product-gift")
+@router.post("/product")
 async def add_product_gift(
-    member_id: str,
     gift_item: AddProductGift,
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_org_authorized),
 ) -> Any:
     """Add a New product gift to Registry.
 
     Request:
 
-        Method: POST
-
-        member_id: account_id for authentication
-
+        Method: POST;
         gift_item(AddProductGift): Request Body containing the details of the
             product gift to be added.
-
-        db(Session): the database session
-
     Response: Returns CustomResponse with 201 status code and
         `data` which is a dictionary containing gift details.
-
     Exception:
-
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
 
-    response, exception = add_product_gift_(gift_item, member_id, db)
+    response, exception = add_product_gift_(
+        gift_item, auth.member.organization_id, db
+    )
     if exception:
         raise exception
 
     return response
 
 
-@router.patch("/edit-product-gift")
+@router.patch("/product")
 async def edit_product_gift(
     gift_id: str,
     gift_item: EditProductGift,
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
 ) -> Any:
     """Edit a product gift in Registry.
 
     Request:
-
-        Method: PATCH
-
-        gift_id: the ID of the gift to be edited
-
+        Method: PATCH;
+        gift_id: the ID of the gift to be edited;
         gift_item(EditProductGift): Request Body containing the details of the
             product gift to be edited.
-
-        db(Session): the database session
-
     Response: Returns CustomResponse with 201 status code and
-        `data` which is a dictionary containing gift details.
-
+        `data` which is a dictionary containing gift details.;
     Exception:
-
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
@@ -95,23 +85,22 @@ async def edit_product_gift(
     return response
 
 
-@router.get("/get-gift")
-async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
+@router.get("")
+async def get_gift(
+    gift_id: str,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+) -> Any:
     """Get a gift from the Registry.
 
     Request:
-
-        Method: GET
-
+        Method: GET;
         gift_id: the ID of the gift to get
-
-        db(Session): the database session
-
     Response: Returns CustomResponse with 200 status code and
         gift `data` which is a dictionary containing gift details.
-
     Exception:
-
         CustomException: If the user is not authenticated or
             a field is missing or internal server error.
     """
@@ -119,27 +108,25 @@ async def get_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     response, exception = fetch_gift(gift_id, db)
     if exception:
         raise exception
-
     return response
 
 
-@router.delete("/delete-gift")
-async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
+@router.delete("/{gift_id}")
+async def delete_gift(
+    gift_id: str,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+) -> Any:
     """Delete a gift from the Registry.
 
     Request:
-
-        Method: GET
-
+        Method: GET;
         gift_id: the ID of the gift to delete
-
-        db(Session): the database session
-
     Response: Returns CustomResponse with 200 status code with a message
         if the resource was removed successfully.
-
     Exception:
-
         CustomException: If the user is not authenticated or
             gift doesn't exist or internal server error.
     """
@@ -151,47 +138,35 @@ async def delete_gift(gift_id: str, db: Session = Depends(get_db)) -> Any:
     return response
 
 
-@router.post("/get-gifts")
+@router.post("")
 async def get_all_gifts(
     request: FilterGiftSchema,
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
 ) -> Any:
     """Get gifts from the Registry.
 
     Request:
-
-        Method: POST
-
+        Method: POST;
         request (Schema):
-
-            org_id : `str` the id of the organization
-
+            org_id : `str` the id of the organization;
             filter_parameter: `str` specific parameter (e.g all, purchased,
             available, reserved ...) to use for filtering gifts; default
-            is `all`.
-
+            is `all`.;
             filter_by_date: `bool` if true, filtering by date is enabled,
-            default is `false`.
-
+            default is `false`.;
             start_date: UTC datetime string, it must be less than end date.
-
                 If only end_date is specified, the gifts will be filtered
-                by dates <= end_date.
-
-            end_date: UTC datetime string, it must be greater than start date.
-
-        db(Session): the database session
-
+                by dates <= end_date.;
+            end_date: UTC datetime string, it must be greater than start date.;
     Response:
-
         Returns CustomResponse with 200 status code, message,
         and data: a List[Dict[str,Any]] containing all the gifts under
-        the filter parameter.
-
-
+        the filter parameter.;
     Exception:
-
-        CustomException: If no gifts found or server error.
+        CustomException: If no gifts found or server error.;
     """
 
     response, exception = gifts_filter(request, db)
@@ -201,17 +176,16 @@ async def get_all_gifts(
     return response
 
 
-@router.post("/cash-gifts/{organization_id}")
+@router.post("/cash")
 async def add_cash_funds_gift(
-    organization_id: str,
     request: AddCashGift,
     db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_org_authorized),
 ) -> CustomResponse:
     """Add a cash funds gift to organization registry.
 
     Args:
-        organization_id, request(AddCashGift).
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+        request(AddCashGift).
     Raises:
         CustomException: If something goes wrong
     Returns:
@@ -219,7 +193,7 @@ async def add_cash_funds_gift(
     """
     try:
         added_gift_details = add_cash_gift(
-            organization_id,
+            auth.member.organization_id,
             request,
             db,
         )
