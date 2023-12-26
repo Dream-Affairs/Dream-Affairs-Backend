@@ -23,7 +23,7 @@ from app.services.meal_services import (
     delete_meal_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
-from app.services.meal_services import get_meal_service
+from app.services.meal_services import get_meal_service, hide_meal_service
 
 BASE_URL = "/meal-management"
 
@@ -188,7 +188,13 @@ def get_all_meals(
 
 
 @router.delete("/meal/{meal_id}")
-def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
+def delete_meal(
+    meal_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
     """Delete a meal entry for a specified meal category.
 
     This endpoint deletes a meal
@@ -212,6 +218,41 @@ def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
     return CustomResponse(
         status_code=201,
         message="Meal Has Been Successfully Deleted",
+    )
+
+
+@router.put("/meal/{meal_id}")
+def hide_meal(
+    meal_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Hide's a meal for a specified meal category.
+
+    This endpoint hides a meal
+
+    Args:
+        meal_id (str): The ID of the meal to be Hidden.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing a response that the meal
+        has been hidden. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        # auth.member.organization_id
+        hide_meal_service(meal_id, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Has Been Successfully Hidden",
     )
 
 
