@@ -380,3 +380,21 @@ def create_org_tag(
     tag: OrganizationTag = jsonable_encoder(org_tag_data)
 
     return tag
+
+
+def delete_meal_tag_service(meal_tag_id: str, db: Session) -> bool:
+    """Delete a meal from the meal database."""
+
+    # check if the meal exists
+    existing_tag = db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
+
+    if existing_tag:
+        db.delete(existing_tag)
+        db.commit()
+    else:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The meal_tag_id provided doesn't exist",
+        )
+
+    return True
