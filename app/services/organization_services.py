@@ -73,7 +73,7 @@ async def create_organization(
     )
     db.add(org)
     role_admin = RoleService().get_default_role(db=db, name="Admin")
-    role_event_planner = RoleService().get_default_role(
+    role_event_planner: RoleService = RoleService().get_default_role(
         db=db, name="Event Planner"
     )
     role_guest = RoleService().get_default_role(db=db, name="Guest Manager")

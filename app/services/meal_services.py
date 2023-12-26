@@ -336,8 +336,10 @@ def create_meal_tag(
 
     return MealTagSchema(
         id=meal_tag_data.id,
+        name=tag["name"],
         organization_tag_id=meal_tag_data.organization_tag_id,
         meal_id=meal_tag_data.meal_id,
+        created_at=tag["created_at"],
     )
 
 

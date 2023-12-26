@@ -64,8 +64,10 @@ class MealTagSchema(BaseModel):  # type: ignore
     """Represents the base schema for an Meal Tag."""
 
     id: str
+    name: str
     organization_tag_id: str
     meal_id: str
+    created_at: datetime
 
 
 class MealSortOrder(str, Enum):

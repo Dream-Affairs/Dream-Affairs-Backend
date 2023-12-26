@@ -174,11 +174,11 @@ def get_all_meals(
         message="Meals retrieved successfully.",
         data=jsonable_encoder(
             get_meal_service(
-                offset,
-                limit,
-                order,
-                db,
-                sort_by,
+                offset=offset,
+                limit=limit,
+                order=order,
+                db=db,
+                sort_by=sort_by,
                 meal_category_id=meal_category_id,
                 ishidden=ishidden,
                 organization_id=auth.member.organization_id,
