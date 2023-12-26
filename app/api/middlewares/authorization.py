@@ -99,11 +99,7 @@ def is_org_authorized(
     """
     try:
         emxsidqw = req.cookies["emxsidqw"]
-        if emxsidqw is None:
-            raise CustomException(
-                status_code=401,
-                message="Unauthorized",
-            )
+
     except KeyError as e:
         raise CustomException(
             status_code=401,
@@ -122,7 +118,7 @@ def is_org_authorized(
     if member_instance is None:
         raise CustomException(
             status_code=401,
-            message="Unauthorized",
+            message="Unauthorized: not a member of this event",
         )
     auth.member = AuthorizeOrganizationSchema(
         id=member_instance.id,
