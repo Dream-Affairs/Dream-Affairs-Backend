@@ -7,10 +7,12 @@ from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
+from app.api.middlewares.authorization import Authorize, is_org_authorized
 from app.api.responses.custom_responses import CustomResponse
 from app.api.schemas.meal_schema import (
     MealCategorySchema,
     MealSchema,
+    MealSortBy,
     MealSortOrder,
 )
 from app.database.connection import get_db
@@ -21,17 +23,17 @@ from app.services.meal_services import (
     delete_meal_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
-from app.services.meal_services import get_meal_service
+from app.services.meal_services import get_meal_service, hide_meal_service
 
-BASE_URL = "/{org_id}/meal-management"
+BASE_URL = "/meal-management"
 
 router = APIRouter(prefix=BASE_URL, tags=["Meal Management"])
 
 
 @router.post("/meal-category")
 def create_meal_category(
-    org_id: str,
     meal_category: MealCategorySchema,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> Any:
     """This endpoint allows the creation of a new meal category under a
@@ -52,7 +54,7 @@ def create_meal_category(
     """
     try:
         new_meal_category = create_mc_service(
-            org_id, schema=meal_category, db=db
+            org_id=auth.member.organization_id, schema=meal_category, db=db
         )
 
     except Exception as e:
@@ -67,7 +69,8 @@ def create_meal_category(
 
 @router.get("/meal-category")
 def get_all_meal_category(
-    org_id: str, db: Session = Depends(get_db)
+    auth: Authorize = Depends(is_org_authorized),
+    db: Session = Depends(get_db),
 ) -> CustomResponse:
     """Retrieves all Meal Categories associated with a specific organization.
 
@@ -93,7 +96,7 @@ def get_all_meal_category(
             - meals (List[Meal]): The list of meals associated with category.
     """
     try:
-        category_list = get_all(org_id, db)
+        category_list = get_all(org_id=auth.member.organization_id, db=db)
 
     except Exception as e:
         raise e
@@ -109,6 +112,7 @@ def get_all_meal_category(
 def create_meal(
     meal_category_id: str,
     create_meal_schema: MealSchema,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> Any:
     """Creates a new meal entry for a specified meal category.
@@ -137,7 +141,10 @@ def create_meal(
 
     try:
         response, exception = create_meal_service(
-            meal_category_id, create_meal_schema, db=db
+            org_id=auth.member.organization_id,
+            meal_category_id=meal_category_id,
+            meal_schema=create_meal_schema,
+            db=db,
         )
         if exception:
             # Raise the captured exception to handle it at a higher level
@@ -151,12 +158,13 @@ def create_meal(
 
 @router.get("/meal")
 def get_all_meals(
+    sort_by: MealSortBy,
     order: MealSortOrder,
     limit: int = 20,
     offset: int = 0,
     meal_category_id: Optional[str] = None,
-    organization_id: Optional[str] = None,
     ishidden: Optional[bool] = False,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> CustomResponse:
     """This is the meal endpoint to get al meal."""
@@ -166,20 +174,27 @@ def get_all_meals(
         message="Meals retrieved successfully.",
         data=jsonable_encoder(
             get_meal_service(
-                offset,
-                limit,
-                order,
-                db,
-                organization_id,
-                meal_category_id,
-                ishidden,
+                offset=offset,
+                limit=limit,
+                order=order,
+                db=db,
+                sort_by=sort_by,
+                meal_category_id=meal_category_id,
+                ishidden=ishidden,
+                organization_id=auth.member.organization_id,
             )
         ),
     )
 
 
 @router.delete("/meal/{meal_id}")
-def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
+def delete_meal(
+    meal_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
     """Delete a meal entry for a specified meal category.
 
     This endpoint deletes a meal
@@ -206,11 +221,46 @@ def delete_meal(meal_id: str, db: Session = Depends(get_db)) -> CustomResponse:
     )
 
 
+@router.put("/meal/{meal_id}")
+def hide_meal(
+    meal_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Hide's a meal for a specified meal category.
+
+    This endpoint hides a meal
+
+    Args:
+        meal_id (str): The ID of the meal to be Hidden.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing a response that the meal
+        has been hidden. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        # auth.member.organization_id
+        hide_meal_service(meal_id, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Has Been Successfully Hidden",
+    )
+
+
 @router.post("/meal-tag")
 def add_meal_tag(
-    org_id: str,
     meal_id: str,
     tag_name: str,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> Any:
     """This endpoint allows the addition of a meal tag to an existing meal. The
@@ -228,7 +278,12 @@ def add_meal_tag(
             category's details
     """
     try:
-        new_meal_tag = create_meal_tag(org_id, meal_id, tag_name, db=db)
+        new_meal_tag = create_meal_tag(
+            org_id=auth.member.organization_id,
+            meal_id=meal_id,
+            tag_name=tag_name,
+            db=db,
+        )
 
     except Exception as e:
         raise e
