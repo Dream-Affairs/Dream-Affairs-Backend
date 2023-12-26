@@ -24,6 +24,8 @@ from app.core.config import settings
 from app.database.connection import get_db_unyield
 from app.services.permission_services import ORG_ADMIN_PERMISSION
 from app.services.roles_services import create_default_roles
+
+# from app.api.models.plan_models import Plan
 from description import TEXT
 
 # ============ Sentry Initialization ============= #
@@ -117,6 +119,7 @@ async def startup_event():
         db = get_db_unyield()
         ORG_ADMIN_PERMISSION.create_permissions(db)
         create_default_roles(db)
+        # Plan.create_default_plans(db)
 
 
 if __name__ == "__main__":

@@ -46,7 +46,10 @@ async def create_organization(
 
     if (
         db.query(Organization)
-        .filter(Organization.name == organization_name)
+        .filter(
+            Organization.name == organization_name,
+            Organization.owner == account_id,
+        )
         .first()
     ):
         raise CustomException(
@@ -88,6 +91,16 @@ async def create_organization(
         organization_role_id=org_role.id,
         account_id=account_id,
     )
+
+    org_member_instance = OrganizationMember(
+        id=uuid4().hex,
+        account_id=account_id,
+        organization_role_id=org_role.id,
+        organization_id=org.id,
+    )
+    db.add(org_member_instance)
+    db.commit()
+    db.refresh(org)
     return {
         "organization_id": org.id,
         "name": org.name,

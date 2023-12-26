@@ -173,17 +173,6 @@ class Organization(Base):  # type: ignore
         cascade="all,delete",
         uselist=False,
     )
-    # plan = relationship(
-    #     "OrganizationPlan",
-    #     back_populates="organization",
-    #     lazy="joined",
-    #     cascade="all,delete",
-    # )
-    # tables = relationship(
-    #     "OrganizationTable",
-    #     back_populates="organization",
-    #     cascade="all,delete",
-    # )
 
 
 class OrganizationDetail(Base):  # type: ignore

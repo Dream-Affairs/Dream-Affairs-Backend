@@ -49,5 +49,11 @@ class Settings:
         default="https://dream-affairs-frontend-dev.vercel.app",
     )
 
+    PLAN_BASIC_PRICE = config("PLAN_BASIC_PRICE", default=0.00, cast=float)
+    PLAN_PREMIUM_PRICE = config(
+        "PLAN_PREMIUM_PRICE", default=10.00, cast=float
+    )
+    PLAN_CORE_PRICE = config("PLAN_CORE_PRICE", default=50.00, cast=float)
+
 
 settings = Settings()

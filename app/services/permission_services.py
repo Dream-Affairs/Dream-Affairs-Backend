@@ -365,6 +365,16 @@ class PermissionManager(BaseModel):  # type: ignore
                     .first()
                 )
                 if permission:
+                    # check if name, description, and
+                    # permission_class are the same
+                    if (
+                        permission.name == v.name
+                        and permission.description == v.description
+                        and permission.permission_class == v.permission_class
+                    ):
+                        # The permission already exists, so
+                        # it does not need to be updated
+                        continue
                     # The permission already exists, so it needs to be updated
                     permissions_to_update.append(
                         {
@@ -386,24 +396,13 @@ class PermissionManager(BaseModel):  # type: ignore
                     )
 
         # Use bulk_insert_mappings and refresh to insert and update permissions
-        print("updating existing permissions...")
-        db.bulk_update_mappings(Permission, permissions_to_update)
-        print("inserting new permissions...")
-        db.bulk_insert_mappings(Permission, permissions_to_insert)
+        if len(permissions_to_update) > 0:
+            print("updating existing permissions...")
+            db.bulk_update_mappings(Permission, permissions_to_update)
 
-        # Refresh all permissions
-        for _, value in self:
-            for _, v in value:
-                permission = (
-                    db.query(Permission)
-                    .filter(
-                        Permission.permission_class == v.permission_class,
-                        Permission.name == v.name,
-                    )
-                    .first()
-                )
-                if permission:
-                    db.refresh(permission)
+        if len(permissions_to_insert) > 0:
+            print("inserting new permissions...")
+            db.bulk_insert_mappings(Permission, permissions_to_insert)
 
         db.commit()
         db.close()

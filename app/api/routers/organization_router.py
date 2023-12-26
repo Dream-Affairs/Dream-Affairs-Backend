@@ -61,7 +61,7 @@ async def create_user_organization(
 
 
 @router.get("/all")
-async def get_user_organizations(
+async def get_all_user_organizations(
     db: Session = Depends(get_db),  # pylint: disable=unused-argument
     auth: Authorize = Depends(  # pylint: disable=unused-argument
         is_authenticated
