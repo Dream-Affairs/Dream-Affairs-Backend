@@ -180,6 +180,7 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
 
 
 def gifts_filter(
+    org_id: str,
     params: FilterGiftSchema,
     db: Session,
 ) -> tuple[Any, Any]:
@@ -187,15 +188,13 @@ def gifts_filter(
     parameter based org_id provided.
 
     Args:
+        org_id : str,
         params(FilterGiftSchema):
-            org_id : str,
             filter_parameter: str,
             filter_by_date:bool,
             start_date: datetime,
             end_date: datetime
-
         db (Session): The database session.
-
     Returns:
         Tuple: [None,Exception] or [Response,None]
     """
@@ -203,7 +202,7 @@ def gifts_filter(
     base_query = db.query(Gift).filter_by(
         is_deleted=False,
         is_gift_hidden=False,
-        organization_id=params.organization_id,
+        organization_id=org_id,
     )
 
     if base_query.count() == 0:
