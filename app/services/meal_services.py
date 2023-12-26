@@ -124,6 +124,7 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
 
 
 def create_meal_service(
+    org_id: str,
     meal_category_id: str,
     meal_schema: MealSchema,
     db: Session,
@@ -161,6 +162,7 @@ def create_meal_service(
     meal_item = meal_schema.model_dump()
     meal_item["meal_category_id"] = meal_category_id
     meal_item["id"] = uuid4().hex
+    meal_item["organization_id"] = org_id
 
     # Compiling attributes to make up a meal model
     new_meal = Meal(**meal_item)
@@ -194,28 +196,30 @@ def get_meal_service(
     limit: int,
     order: str,
     db: Session,
-    organization_id: Optional[str] = None,
+    sort_by: str,
+    organization_id: str,
     meal_category_id: Optional[str] = None,
     ishidden: Optional[bool] = False,
 ) -> Any:
     """Get all meals in the database."""
-    if meal_category_id is not None:
+    if sort_by == "meal category":
+        if meal_category_id is None:
+            raise CustomException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="Please parse in a Meal category ID",
+            )
         query = db.query(Meal).filter(
             Meal.meal_category_id == meal_category_id,
             Meal.is_hidden == ishidden,
         )
 
-    if organization_id is not None:
+    if sort_by == "organization":
         query = db.query(Meal).filter(
             Meal.organization_id == organization_id, Meal.is_hidden == ishidden
         )
 
-    if organization_id is None and meal_category_id is None:
-        print("Hello there: 1")
+    if sort_by == "all":
         query = db.query(Meal).filter(Meal.is_hidden == ishidden)
-
-    # if ishidden is True:
-    #     query = query.filter(Meal.is_hidden == ishidden)
 
     # Order the query
     if order == "desc":
@@ -296,18 +300,7 @@ def create_meal_tag(
     )
 
     if not existing_tag:
-        org_tag_data = OrganizationTag(
-            id=uuid4().hex,
-            organization_id=org_id,
-            name=tag_name.lower(),
-            tag_type="dietary",
-        )
-
-        db.add(org_tag_data)
-        db.commit()
-        db.refresh(org_tag_data)
-
-        tag: OrganizationTag = jsonable_encoder(org_tag_data)
+        tag: OrganizationTag = create_org_tag(org_id, tag_name, "dietary", db)
 
         tag_id = tag["id"]
 
@@ -323,7 +316,6 @@ def create_meal_tag(
             )
             .first()
         )
-        # print(jsonable_encoder(unique_meal_tag))
         if unique_meal_tag:
             raise CustomException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -344,6 +336,29 @@ def create_meal_tag(
 
     return MealTagSchema(
         id=meal_tag_data.id,
+        name=tag["name"],
         organization_tag_id=meal_tag_data.organization_tag_id,
         meal_id=meal_tag_data.meal_id,
+        created_at=tag["created_at"],
     )
+
+
+def create_org_tag(
+    org_id: int, tag_name: str, tag_type: str, db: Session
+) -> OrganizationTag:
+    """This Endpoint is creates an organization tag."""
+
+    org_tag_data = OrganizationTag(
+        id=uuid4().hex,
+        organization_id=org_id,
+        name=tag_name.lower(),
+        tag_type=tag_type,
+    )
+
+    db.add(org_tag_data)
+    db.commit()
+    db.refresh(org_tag_data)
+
+    tag: OrganizationTag = jsonable_encoder(org_tag_data)
+
+    return tag
