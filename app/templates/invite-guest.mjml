@@ -7,10 +7,10 @@
            <mj-section padding="29px 84px 0">
            <mj-column width="100%">
             <mj-image src="./assets/inviteguest.png" alt="" width="519px" height="218px" padding="0"/>
-           </mj-column>  
+           </mj-column>
        </mj-section>
         <!-- Main Content -->
-        <mj-section padding="0px 84px"> 
+        <mj-section padding="0px 84px">
             <mj-column width="100%">
                  <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
 CHINONYE & JOHN
@@ -18,23 +18,23 @@ CHINONYE & JOHN
         <mj-text  color="#48195A" padding="56.5px 0 0">
         <div style="font-size: 14px; font-weight=400; text-align: center" >
         <p>Hello [Guest Name]</p>
-        </div>     
+        </div>
         </mj-text>
             </mj-column>
         </mj-section>
      <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
-      <mj-column width="100%">          
+      <mj-column width="100%">
          <mj-text color="#111" padding="0">
          <div style="font-size: 14px; font-weight=400; text-align: center">
-         <p>We hope this message finds you well. We are delighted to invite you to our wedding and share this special moment with us.</p> 
+         <p>We hope this message finds you well. We are delighted to invite you to our wedding and share this special moment with us.</p>
          <p style="line-height=24px; padding-bottom: 20px">Wedding Date: 30th October, 2024</p>
          <p style="line-height=24px; padding-bottom: 20px">Location: Eko Hotel, Lekki Phase 1, Lagos Nigeria</p>
          <p style="line-height=24px; padding-bottom: 20px">Church Wedding Time: 9:00am</p>
          <p style="line-height=24px; padding-bottom: 20px">Reception Time: 11:00am</p>
          <p style="line-height=24px; padding-bottom: 20px"><strong>RSVP ACCESS CODE: </strong> {{code}}</p>
          <p>To view more details and stay updated on the wedding, please visit our wedding website</p>
-         </div>     
-         </mj-text>    
+         </div>
+         </mj-text>
                </mj-column>
        </mj-section>
         <mj-section padding="0 84px">
@@ -48,10 +48,10 @@ CHINONYE & JOHN
         <mj-section padding="0 84px" >
             <mj-column width="100%">
             <mj-text padding="0">
-                <div style="text-align: center"> 
+                <div style="text-align: center">
                 <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
                 </div>
-            </mj-text>           
+            </mj-text>
             </mj-column>
         </mj-section>
       <mj-section padding="0 54px ">

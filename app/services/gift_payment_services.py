@@ -9,14 +9,12 @@ from sqlalchemy.orm import Session
 from app.api.models.gift_models import BankDetail, LinkDetail, WalletDetail
 from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.gift_payment_schemas import (
-    BankSchema,
-    LinkSchema,
-    WalletSchema,
-)
+from app.api.schemas.gift_schemas import BankSchema, LinkSchema, WalletSchema
 
 
-def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
+def add_bank_account(
+    org_id: str, bank_details: BankSchema, db: Session
+) -> CustomResponse:
     """Add  bank detatils to the the organization provided.
 
     Args:
@@ -28,20 +26,8 @@ def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
         return CustomeResponse
     """
 
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == bank_details.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": bank_details.organization_id},
-        )
-
     bank_detail = bank_details.model_dump()
+    bank_detail["organization_id"] = org_id
 
     # bankdetail base query
     bank_instance = db.query(BankDetail)
@@ -119,7 +105,9 @@ def add_bank_account(bank_details: BankSchema, db: Session) -> CustomResponse:
         ) from exception
 
 
-def add_wallet(wallet_details: WalletSchema, db: Session) -> CustomResponse:
+def add_wallet(
+    org_id: str, wallet_details: WalletSchema, db: Session
+) -> CustomResponse:
     """Add  wallet detatils to the the organization provided.
 
     Args:
@@ -131,21 +119,8 @@ def add_wallet(wallet_details: WalletSchema, db: Session) -> CustomResponse:
         return CustomeResponse
     """
 
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == wallet_details.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": wallet_details.organization_id},
-        )
-
     wallet_detail = wallet_details.model_dump()
-
+    wallet_detail["organization_id"] = org_id
     # walletdetail base query
     wallet_instance = db.query(WalletDetail)
 
@@ -222,33 +197,19 @@ def add_wallet(wallet_details: WalletSchema, db: Session) -> CustomResponse:
         ) from exception
 
 
-def add_payment_link(link_details: LinkSchema, db: Session) -> CustomResponse:
+def add_payment_link(
+    org_id: str, link_details: LinkSchema, db: Session
+) -> CustomResponse:
     """Add  link detatils to the the organization provided.
 
     Args:
         link_details(LinkSchema):
-
         db (Session): The database session.
-
     Returns:
         return CustomeResponse
     """
-
-    # Check if organization exists
-    organization = (
-        db.query(Organization)
-        .filter(Organization.id == link_details.organization_id)
-        .first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": link_details.organization_id},
-        )
-
     link_detail = link_details.model_dump()
-
+    link_detail["organization_id"] = org_id
     # linkdetail base query
     link_instance = db.query(LinkDetail)
 
@@ -398,17 +359,6 @@ def get_accounts(
     Returns:
         return CustomeResponse
     """
-    # Check if organization exists
-    organization = (
-        db.query(Organization).filter(Organization.id == org_id).first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": org_id},
-        )
-
     # no handy solution to query and join 3 tables
     if filter_by == "all":
         payment_details = jsonable_encoder(
@@ -478,15 +428,13 @@ def get_accounts(
 
 
 def update_bank(
-    payment_id: str, bank_details: BankSchema, db: Session
+    org_id: str, payment_id: str, bank_details: BankSchema, db: Session
 ) -> CustomResponse:
     """Update  bank detatils of the the organization provided.
 
     Args:
         bank_details(BankSchema):
-
         db (Session): The database session.
-
     Returns:
         return CustomeResponse
     """
@@ -501,6 +449,7 @@ def update_bank(
             data={"payment_account_id": payment_id},
         )
     _data = bank_details.model_dump()
+    _data["organization_id"] = org_id
 
     # check if default exist
     default_exist = db.query(BankDetail).filter_by(is_default=True).first()
@@ -555,7 +504,7 @@ def update_bank(
 
 
 def update_wallet(
-    payment_id: str, wallet_details: WalletSchema, db: Session
+    org_id: str, payment_id: str, wallet_details: WalletSchema, db: Session
 ) -> CustomResponse:
     """Update  wallet detatils of the the organization provided.
 
@@ -578,6 +527,7 @@ def update_wallet(
             data={"payment_account_id": payment_id},
         )
     _data = wallet_details.model_dump()
+    _data["organization_id"] = org_id
 
     # check if default exist
     default_exist = db.query(WalletDetail).filter_by(is_default=True).first()
@@ -632,15 +582,13 @@ def update_wallet(
 
 
 def update_link(
-    payment_id: str, link_details: LinkSchema, db: Session
+    org_id: str, payment_id: str, link_details: LinkSchema, db: Session
 ) -> CustomResponse:
     """Update  link detatils of the the organization provided.
 
     Args:
         link_details(linkSchema):
-
         db (Session): The database session.
-
     Returns:
         return CustomeResponse
     """
@@ -655,6 +603,7 @@ def update_link(
             data={"payment_account_id": payment_id},
         )
     _data = link_details.model_dump()
+    _data["organization_id"] = org_id
 
     # check if default exist
     default_exist = db.query(LinkDetail).filter_by(is_default=True).first()

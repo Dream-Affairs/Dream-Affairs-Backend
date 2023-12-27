@@ -14,7 +14,6 @@ from app.api.routers.checklist_router import router as checklist_router
 from app.api.routers.dashboard_router import router as dashboard_router
 from app.api.routers.email_router import router as email_router
 from app.api.routers.file_router import router as file_router
-from app.api.routers.gift_payment_router import router as payment_router
 from app.api.routers.gift_router import router as gift_router
 from app.api.routers.meal_router import router as meal_router
 from app.api.routers.organization_router import router as organization_router
@@ -72,9 +71,6 @@ v1_router.include_router(
 )
 v1_router.include_router(
     checklist_router,
-)
-v1_router.include_router(
-    payment_router,
 )
 
 
