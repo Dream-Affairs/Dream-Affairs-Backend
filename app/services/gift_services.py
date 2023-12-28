@@ -15,6 +15,7 @@ from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
     AddCashGift,
     AddProductGift,
+    EditCashGift,
     EditProductGift,
     FilterGiftSchema,
 )
@@ -324,4 +325,64 @@ def add_cash_gift(
         raise CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="Failed to add gift",
+        ) from exc
+
+
+def edit_cash_gift(
+    gift_id: str,
+    gift_item: EditCashGift,
+    db: Session,
+) -> CustomResponse:
+    """Edit Cash funds gift.
+
+    Args:
+        gift_id,
+        gift_item (Dict): The gift data to be updated,
+        db (Session): The database session.
+
+    Returns:
+        raise an exception
+        return a CustomResponse
+    """
+    # Check if gift exists
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+    if not gift_instance:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Gift not found",
+            data={"gift_id": gift_id},
+        )
+
+    update_cash_item = gift_item.model_dump(exclude=["payment_options"])
+    update_options = (
+        db.query(PaymentOption)
+        .filter(PaymentOption.gift_id == gift_id)
+        .first()
+    )
+
+    try:
+        for key, value in update_cash_item.items():
+            setattr(gift_instance, key, value)
+        db.commit()
+        db.refresh(gift_instance)
+
+        for key, value in gift_item.payment_options.__dict__.items():
+            setattr(update_options, key, value)
+        db.commit()
+        db.refresh(update_options)
+
+        # commit and refresh again to return updated details
+        db.commit()
+        db.refresh(gift_instance)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Gift successfully added",
+            data=jsonable_encoder(gift_instance, exclude=["organization"]),
+        )
+    except Exception as exc:
+        db.rollback()
+        raise CustomException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to update gift",
         ) from exc
