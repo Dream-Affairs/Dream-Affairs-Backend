@@ -22,6 +22,7 @@ from app.services.meal_services import (
     create_meal_tag,
     delete_meal_service,
     delete_meal_tag_service,
+    get_all_meal_tag_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
 from app.services.meal_services import get_meal_service, hide_meal_service
@@ -294,6 +295,22 @@ def add_meal_tag(
         data=jsonable_encoder(new_meal_tag),
     )
 
+
+@router.get("/meal-tag")
+def get_all_meal_tag(
+    meal_id=str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """This is the meal endpoint to get al meal."""
+
+    return CustomResponse(
+        status_code=200,
+        message="Meals retrieved successfully.",
+        data=jsonable_encoder(get_all_meal_tag_service(meal_id, db=db)),
+    )
 
 
 @router.delete("/meal-tag/{meal_tag_id}")
