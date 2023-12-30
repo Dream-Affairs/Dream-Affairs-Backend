@@ -21,6 +21,7 @@ from app.services.meal_services import (
     create_meal_service,
     create_meal_tag,
     delete_meal_service,
+    delete_meal_tag_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
 from app.services.meal_services import get_meal_service, hide_meal_service
@@ -244,7 +245,6 @@ def hide_meal(
     """
 
     try:
-        # auth.member.organization_id
         hide_meal_service(meal_id, db=db)
 
     except Exception as e:
@@ -292,4 +292,39 @@ def add_meal_tag(
         status_code=201,
         message="Meal Tag Successfully Added",
         data=jsonable_encoder(new_meal_tag),
+    )
+
+
+
+@router.delete("/meal-tag/{meal_tag_id}")
+def remove_tag(
+    meal_tag_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Remove a meal tag from a meal.
+
+    This endpoint deletes a meal_tag from a meal
+
+    Args:
+        meal_tag_id (str): The ID of the meal to be deleted.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing information about the
+        deleted tag if successful. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        delete_meal_tag_service(meal_tag_id, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Tag Has Been Successfully Deleted",
     )
