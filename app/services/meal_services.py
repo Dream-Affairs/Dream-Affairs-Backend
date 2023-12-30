@@ -486,8 +486,6 @@ def delete_meal_tag_service(meal_tag_id: str, db: Session) -> bool:
         db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
     )
 
-    print(existing_tag)
-
     if not existing_tag:
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
