@@ -123,6 +123,27 @@ def get_meal_categories(org_id: str, db: Session) -> list[dict[str, Any]]:
     return meal_category_list
 
 
+def fetch_meal_category_by_id(
+    meal_category_id: str, db: Session
+) -> MealCategory:
+    """Gets a meal categories that exist from the ID provided."""
+
+    # Retrieve all records from the MealCategory table
+    meal_category = (
+        db.query(MealCategory)
+        .filter(MealCategory.id == meal_category_id)
+        .first()
+    )
+
+    if not meal_category:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Meal not found",
+        )
+
+    return meal_category
+
+
 def create_meal_service(
     org_id: str,
     meal_category_id: str,
@@ -267,6 +288,20 @@ meal_category_id={meal_category_id}&ishidden={ishidden}&limit=\
             for item in meals
         ],
     }
+
+
+def fetch_meal_by_id(meal_id: str, db: Session) -> Meal:
+    """Gets a meal categories that exist from the ID provided."""
+
+    meal = db.query(Meal).filter(Meal.id == meal_id).first()
+
+    if not meal:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Meal not found",
+        )
+
+    return meal
 
 
 def delete_meal_service(meal_id: str, db: Session) -> bool:
@@ -423,6 +458,26 @@ def get_all_meal_tag_service(
     return {"total": total, "tags": tag_list}
 
 
+def fetch_meal_tag_by_id(meal_tag_id: str, db: Session) -> MealTag:
+    """Gets a meal tag with the ID provided."""
+
+    meal_tag = db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
+
+    if not meal_tag:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Meal Tag not found",
+        )
+
+    tag = (
+        db.query(OrganizationTag)
+        .filter(OrganizationTag.id == meal_tag.organization_tag_id)
+        .first()
+    )
+
+    return tag.name, meal_tag
+
+
 def delete_meal_tag_service(meal_tag_id: str, db: Session) -> bool:
     """Delete a meal from the meal database."""
 
@@ -430,8 +485,6 @@ def delete_meal_tag_service(meal_tag_id: str, db: Session) -> bool:
     existing_tag: MealTag = (
         db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
     )
-
-    print(existing_tag)
 
     if not existing_tag:
         raise CustomException(
