@@ -12,6 +12,7 @@ from app.api.schemas.gift_schemas import (
     AddCashGift,
     AddProductGift,
     BankSchema,
+    EditCashGift,
     EditProductGift,
     FilterAcountsEnum,
     FilterGiftSchema,
@@ -35,6 +36,7 @@ from app.services.gift_services import (
     add_cash_gift,
     add_product_gift_,
     delete_a_gift,
+    edit_cash_gift,
     edit_product_gift_,
     fetch_gift,
     gifts_filter,
@@ -91,35 +93,45 @@ async def add_gift(
     )
 
 
-@router.patch("/{gift_type}/{gift_id}")
+@router.put("/{gift_type}/{gift_id}")
 async def update_gift(
     gift_type: GiftType,
     gift_id: str,
-    product_request: EditProductGift,
     db: Session = Depends(get_db),
     auth: Authorize = Depends(  # pylint: disable=unused-argument
         is_org_authorized
     ),
+    product_request: Optional[EditProductGift] = None,
+    cash_request: Optional[EditCashGift] = None,
 ) -> Any:
     """Update a gift in Registry.
 
     Request:
-        Method: PATCH;
+        Method: PUT;
         gift_type: must be either physical or cash
         gift_id: the ID of the gift to be updated;
         gift_item(schema): Request Body containing the details of the
-            gift to be updated.;
+            gift to be updated. ;
     Response: Returns CustomResponse with 201 status code and
         `data` which is a dictionary containing gift details.;
     Exception:
         CustomException: If something goes wrong.
     """
-    if gift_type.value == "physical":
-        response, exception = edit_product_gift_(product_request, gift_id, db)
+    if gift_type.value == "physical" and product_request:
+        response, exception = edit_product_gift_(gift_id, product_request, db)
         if exception:
             raise exception
 
         return response
+    if gift_type.value == "cash" and cash_request:
+        try:
+            updated_gift_details = edit_cash_gift(gift_id, cash_request, db)
+        except Exception as e:
+            raise e
+        return updated_gift_details
+    raise CustomException(
+        status_code=status.HTTP_400_BAD_REQUEST, message="Bad Request"
+    )
 
 
 @router.get("/{gift_id}")
@@ -214,7 +226,7 @@ async def get_all_gifts(
     return response
 
 
-@router.post("/gift/payment/option/{payment_type}")
+@router.post("/payment/option/{payment_type}")
 async def add_gift_payment_details(
     payment_type: PaymentType,
     db: Session = Depends(get_db),
@@ -328,7 +340,7 @@ async def get_payment_accounts(
     return payment_accounts
 
 
-@router.post("/gift/payment/option/{payment_type}/{payment_account_id}")
+@router.post("/payment/option/{payment_type}/{payment_account_id}")
 async def update_gift_payment_details(
     payment_type: PaymentType,
     payment_account_id: str,

@@ -1,6 +1,7 @@
 """This module provides functions for handling registry/gift related
 operations."""
 
+import json
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -64,8 +65,8 @@ def add_product_gift_(
 
 
 def edit_product_gift_(
-    gift_item: EditProductGift,
     gift_id: str,
+    gift_item: EditProductGift,
     db: Session,
 ) -> tuple[Any, Any]:
     """Edit product gift  associated with user/organization.
@@ -353,31 +354,45 @@ def edit_cash_gift(
             data={"gift_id": gift_id},
         )
 
-    update_cash_item = gift_item.model_dump(exclude=["payment_options"])
-    update_options = (
-        db.query(PaymentOption)
-        .filter(PaymentOption.gift_id == gift_id)
-        .first()
+    # dump and load the model objects as python dicts
+    update_cash_gift = json.loads(
+        gift_item.model_dump_json(
+            exclude_none=True, exclude=["payment_options"]
+        )
     )
+    _payment_options = json.loads(gift_item.model_dump_json())
 
     try:
-        for key, value in update_cash_item.items():
+        for key, value in update_cash_gift.items():
             setattr(gift_instance, key, value)
         db.commit()
-        db.refresh(gift_instance)
 
-        for key, value in gift_item.payment_options.__dict__.items():
-            setattr(update_options, key, value)
+        # update the Options table accordingly
+        # first, delete the previous option(s)
+        # then,insert afresh
+
+        (
+            db.query(PaymentOption)
+            .filter(PaymentOption.gift_id == gift_id)
+            .delete()
+        )
         db.commit()
-        db.refresh(update_options)
-
+        for option in _payment_options["payment_options"]:
+            payment_option = PaymentOption(
+                **option,
+                id=uuid4().hex,
+                gift_id=gift_id,
+            )
+            db.add(payment_option)
+            db.commit()
+            db.refresh(payment_option)
         # commit and refresh again to return updated details
         db.commit()
         db.refresh(gift_instance)
 
         return CustomResponse(
             status_code=status.HTTP_201_CREATED,
-            message="Gift successfully added",
+            message="Gift successfully Updated",
             data=jsonable_encoder(gift_instance, exclude=["organization"]),
         )
     except Exception as exc:
