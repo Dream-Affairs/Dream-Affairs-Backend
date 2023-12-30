@@ -22,6 +22,9 @@ from app.services.meal_services import (
     create_meal_tag,
     delete_meal_service,
     delete_meal_tag_service,
+    fetch_meal_by_id,
+    fetch_meal_category_by_id,
+    fetch_meal_tag_by_id,
     get_all_meal_tag_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
@@ -110,6 +113,43 @@ def get_all_meal_category(
     )
 
 
+@router.get("/meal-category/{meal_category_id}")
+def get_meal_category_by_id(
+    meal_category_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+):
+    """Retrieve Meal Categories by ID associated with a specific organization.
+
+    This endpoint fetches a existing meal categories associated with the
+    specified organization from the database.
+
+    Args:
+        meal_category_id (str): The unique Identifier of the meal Category
+
+    Returns:
+        CustomResponse: Custom response containing the meal category associated
+        with the organization.
+    """
+
+    try:
+        category = fetch_meal_category_by_id(
+            meal_category_id=meal_category_id,
+            db=db,
+        )
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=200,
+        message="Meal Category Successfully fetched",
+        data=jsonable_encoder(category),
+    )
+
+
 @router.post("/meal")
 def create_meal(
     meal_category_id: str,
@@ -186,6 +226,40 @@ def get_all_meals(
                 organization_id=auth.member.organization_id,
             )
         ),
+    )
+
+
+@router.get("/meal/{meal_id}")
+def get_meal_by_id(
+    meal_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+):
+    """Retrieve Meal by ID associated with a specific Meal Category.
+
+    Args:
+        meal_id (str): The unique Identifier of the meal
+
+    Returns:
+        CustomResponse: Custom response containing the meal associated
+        with the organization.
+    """
+
+    try:
+        meal = fetch_meal_by_id(
+            meal_id=meal_id,
+            db=db,
+        )
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=200,
+        message="Meal Successfully fetched",
+        data=jsonable_encoder(meal),
     )
 
 
@@ -308,8 +382,42 @@ def get_all_meal_tag(
 
     return CustomResponse(
         status_code=200,
-        message="Meals retrieved successfully.",
+        message="All Meal tag retrieved successfully.",
         data=jsonable_encoder(get_all_meal_tag_service(meal_id, db=db)),
+    )
+
+
+@router.get("/meal-tag/{meal_tag_id}")
+def get_meal_tag_by_id(
+    meal_tag_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+):
+    """Retrieve Meal Tag by ID associated with a specific Meal.
+
+    Args:
+        meal_tag_id (str): The unique Identifier of the meal
+
+    Returns:
+        CustomResponse: Custom response containing the meal_tag associated
+        with the Meal.
+    """
+
+    try:
+        meal = fetch_meal_tag_by_id(
+            meal_tag_id=meal_tag_id,
+            db=db,
+        )
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=200,
+        message="Tag Successfully fetched",
+        data=jsonable_encoder(meal),
     )
 
 
