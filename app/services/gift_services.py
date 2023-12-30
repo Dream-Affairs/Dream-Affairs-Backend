@@ -11,7 +11,6 @@ from sqlalchemy.exc import InternalError
 from sqlalchemy.orm import Session
 
 from app.api.models.gift_models import Gift, PaymentOption
-from app.api.models.organization_models import Organization
 from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
     AddCashGift,
@@ -19,37 +18,25 @@ from app.api.schemas.gift_schemas import (
     EditProductGift,
     FilterGiftSchema,
 )
-from app.services.account_services import fake_authenticate
 
 
 def add_product_gift_(
     gift_item: AddProductGift,
-    member_id: str,
+    organization_id: str,
     db: Session,
 ) -> tuple[Any, Any]:
     """Add Physical gift to the associated organization.
 
     Args:
         gift_item (Dict): The gift data to be added.
-
         db (Session): The database session.
-
     Returns:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse
     """
-    member_org_id = fake_authenticate(member_id, db)
-
-    if not member_org_id:
-        exception = CustomException(
-            status_code=status.HTTP_404_NOT_FOUND, message="Invalid member_id"
-        )
-        return None, exception
-
-    org_id = member_org_id
 
     gift_item = gift_item.model_dump()
-    gift_item["organization_id"] = org_id
+    gift_item["organization_id"] = organization_id
 
     new_gift = Gift(**gift_item, id=uuid4().hex)
 
@@ -85,7 +72,6 @@ def edit_product_gift_(
     Args:
         gift_item(Dict): The gift data to be updated.
         db (Session): The database session.
-
     Returns:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse
@@ -129,7 +115,6 @@ def fetch_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     Args:
         gift_id(str): The specific gift ID
         db (Session): The database session.
-
     Returns:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse containing gift data.
@@ -162,7 +147,6 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
     Args:
         gift_id(str): The specific gift ID
         db (Session): The database session.
-
     Returns:
         List: [None,Exception] or [Respoonse,None]. return an exception
         or a CustomResponse containing gift data.
@@ -196,6 +180,7 @@ def delete_a_gift(gift_id: str, db: Session) -> tuple[Any, Any]:
 
 
 def gifts_filter(
+    org_id: str,
     params: FilterGiftSchema,
     db: Session,
 ) -> tuple[Any, Any]:
@@ -203,27 +188,27 @@ def gifts_filter(
     parameter based org_id provided.
 
     Args:
+        org_id : str,
         params(FilterGiftSchema):
-            org_id : str,
             filter_parameter: str,
             filter_by_date:bool,
             start_date: datetime,
             end_date: datetime
-
         db (Session): The database session.
-
     Returns:
         Tuple: [None,Exception] or [Response,None]
     """
     # instance of a base query
     base_query = db.query(Gift).filter_by(
-        is_deleted=False, is_gift_hidden=False, organization_id=params.org_id
+        is_deleted=False,
+        is_gift_hidden=False,
+        organization_id=org_id,
     )
 
     if base_query.count() == 0:
         exception = CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
-            message="Invalid Org_id",
+            message="Nothing found!",
         )
         return None, exception
 
@@ -300,23 +285,11 @@ def add_cash_gift(
 
     Args:
         gift_item (Dict): The gift data to be added.
-
         db (Session): The database session.
-
     Returns:
         raise an exception
         return a CustomResponse
     """
-    # Check if organization exists
-    organization = (
-        db.query(Organization).filter(Organization.id == org_id).first()
-    )
-    if not organization:
-        raise CustomException(
-            status_code=404,
-            message="Organization not found",
-            data={"organization_id": org_id},
-        )
 
     cash_gift_item = gift_item.model_dump(exclude=["payment_options"])
     cash_gift_item["organization_id"] = org_id

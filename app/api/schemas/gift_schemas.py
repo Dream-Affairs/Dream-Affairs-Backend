@@ -6,8 +6,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from app.api.schemas.gift_payment_schemas import PaymentOption
-
 
 class GiftType(str, Enum):
     """Represents the enum for accepted gift type."""
@@ -30,6 +28,21 @@ class FilterParamEnum(str, Enum):
     AVAILABLE = "available"
     RESERVED = "reserved"
     PURCHASED = "purchased"
+
+
+class PaymentType(str, Enum):
+    """Represents the enum for payment type."""
+
+    BANK = "bank"
+    WALLET = "wallet"
+    LINK = "link"
+
+
+class FilterAcountsEnum(str, Enum):
+    """Represents the enum for filtering payment accounts."""
+
+    ALL = "all"
+    DEFAULT = "default"
 
 
 class GiftSchema(BaseModel):  # type: ignore
@@ -71,11 +84,42 @@ class EditProductGift(AddProductGift):
 class FilterGiftSchema(BaseModel):  # type: ignore
     """Represents the schema for filtering gifts."""
 
-    org_id: str
     filter_parameter: FilterParamEnum = FilterParamEnum.ALL
     filter_by_date: bool | None = False
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+
+class BankSchema(BaseModel):  # type: ignore
+    """Represents the schema for bank account details."""
+
+    name: str
+    account_name: str
+    account_number: str
+    is_default: bool | None = False
+
+
+class WalletSchema(BaseModel):  # type: ignore
+    """Represents the schema for wallet details."""
+
+    name: str
+    wallet_tag: str
+    is_default: bool | None = False
+
+
+class LinkSchema(BaseModel):  # type: ignore
+    """Represents the schema for payment link details."""
+
+    name: str
+    payment_link: str
+    is_default: bool | None = False
+
+
+class PaymentOption(BaseModel):  # type: ignore
+    """Represent the schema for a gift payment option."""
+
+    payment_type: PaymentType
+    payment_option_id: str
 
 
 class AddCashGift(GiftSchema):

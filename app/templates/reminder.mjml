@@ -7,10 +7,10 @@
            <mj-section padding="29px 84px 0">
            <mj-column width="100%">
             <mj-image src="./assets/reminder.png" alt="" width="519px" height="218px" padding="0"/>
-           </mj-column>  
+           </mj-column>
        </mj-section>
         <!-- Main Content -->
-        <mj-section padding="0px 84px"> 
+        <mj-section padding="0px 84px">
             <mj-column width="100%">
                  <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
 CHINONYE & JOHN
@@ -20,25 +20,25 @@ CHINONYE & JOHN
         <p>Hello [First Name],</p>
         <p> We hope this message finds you well. We are thrilled to remind you that the big day is just around the corner, and we can't wait to celebrate with all of you!</p>
         <p>s we prepare for our special day, we wanted to provide you with a few essential details to ensure everything goes smoothly.</p>
-        </div>     
+        </div>
         </mj-text>
             </mj-column>
         </mj-section>
      <mj-section background-url="./assets/bg.png" background-size="cover" background-repeat="no-repeat" padding="0 84px">
-      <mj-column width="100%">          
+      <mj-column width="100%">
          <mj-text color="#111" padding="0">
-         <div style="font-size: 14px; font-weight=400; text-align: center"> 
+         <div style="font-size: 14px; font-weight=400; text-align: center">
          <p style="line-height=24px; padding-bottom: 20px"><strong>Wedding Date:</strong> 30th October, 2024</p>
          <p style="line-height=24px; padding-bottom: 20px"><strong>Location:</strong>  Eko Hotel, Lekki Phase 1, Lagos Nigeria</p>
-         <p> 
+         <p>
          <p style="line-height=24px; padding-bottom: 20px"><strong>Church Wedding Time:</strong>9:00am</p>
          <p style="line-height=24px; padding-bottom: 20px"><strong>Reception Time:</strong> 11:00am</p>
          <p style="line-height=24px; padding-bottom: 20px">If you have any questions or need further information, please don't hesitate to reach out to us. You can contact us at [080675222356].</p>
          <p style="line-height=24px; padding-bottom: 20px">Thank you for being a part of our journey. We look forward to celebrating with you on our special day!</p>
           <p>Warmest regards, <br>
             Chinonye & John</p>
-         </div>     
-         </mj-text>    
+         </div>
+         </mj-text>
                </mj-column>
        </mj-section>
         <mj-section padding="0 84px">
@@ -52,10 +52,10 @@ CHINONYE & JOHN
         <mj-section padding="0 84px" >
             <mj-column width="100%">
             <mj-text padding="0">
-                <div style="text-align: center"> 
+                <div style="text-align: center">
                 <p>Get the DreamAffairs app to plan your own wedding and stay up-to-date with details on the go.</p>
                 </div>
-            </mj-text>           
+            </mj-text>
             </mj-column>
         </mj-section>
         <mj-section padding="0 54px ">
