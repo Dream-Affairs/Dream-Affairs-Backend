@@ -20,6 +20,7 @@ from app.services.meal_services import (
     create_mc_service,
     create_meal_service,
     create_meal_tag,
+    delete_meal_category_service,
     delete_meal_service,
     delete_meal_tag_service,
     fetch_meal_by_id,
@@ -147,6 +148,40 @@ def get_meal_category_by_id(
         status_code=200,
         message="Meal Category Successfully fetched",
         data=jsonable_encoder(category),
+    )
+
+
+@router.delete("/meal-category/{meal_category_id}")
+def delete_meal_category(
+    meal_category_id: str,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Delete a meal category entry for a specified Organization.
+
+    This endpoint deletes a meal category
+
+    Args:
+        meal_category_id (str): The ID of the meal category to be deleted.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing information about the
+        deleted meal category. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        delete_meal_category_service(meal_category_id, db=db)
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Has Been Successfully Deleted",
     )
 
 

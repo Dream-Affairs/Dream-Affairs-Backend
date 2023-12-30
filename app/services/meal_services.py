@@ -144,6 +144,28 @@ def fetch_meal_category_by_id(
     return meal_category
 
 
+def delete_meal_category_service(meal_category_id: str, db: Session) -> bool:
+    """Delete a meal from the meal database."""
+
+    # check if the meal exists
+    existing_meal_cat = (
+        db.query(MealCategory)
+        .filter(MealCategory.id == meal_category_id)
+        .first()
+    )
+
+    if existing_meal_cat:
+        db.delete(existing_meal_cat)
+        db.commit()
+    else:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="The meal_category_id provided doesn't exist",
+        )
+
+    return True
+
+
 def create_meal_service(
     org_id: str,
     meal_category_id: str,
