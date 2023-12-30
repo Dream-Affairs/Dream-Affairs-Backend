@@ -77,7 +77,6 @@ python-decouple==3.8
 python-dotenv==1.0.0
 python-jose==3.3.0
 python-multipart==0.0.6
-pywin32==306
 PyYAML==6.0.1
 rave-python==1.4.0
 requests==2.31.0
