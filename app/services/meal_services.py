@@ -382,19 +382,64 @@ def create_org_tag(
     return tag
 
 
+def get_all_meal_tag_service(
+    meal_id: str,
+    db: Session,
+) -> Any:
+    """Get all meals in the database."""
+
+    existing_meal = db.query(Meal).filter(Meal.id == meal_id).first()
+
+    if not existing_meal:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Meal not found",
+        )
+
+    tags = db.query(MealTag).filter(MealTag.meal_id == meal_id).all()
+
+    tag_list: list[MealTagSchema] = []
+
+    for tag in tags:
+        query = (
+            db.query(OrganizationTag)
+            .filter_by(id=tag.organization_tag_id)
+            .first()
+        )
+
+        if query:
+            # Create an instance of MealTagSchema and append it to tag_list
+            meal_tag_schema = MealTagSchema(
+                id=tag.id,
+                name=query.name,
+                organization_tag_id=tag.organization_tag_id,
+                meal_id=tag.meal_id,
+                created_at=query.created_at,
+            )
+            tag_list.append(meal_tag_schema)
+
+    total = len(tag_list)
+
+    return {"total": total, "tags": tag_list}
+
+
 def delete_meal_tag_service(meal_tag_id: str, db: Session) -> bool:
     """Delete a meal from the meal database."""
 
     # check if the meal exists
-    existing_tag = db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
+    existing_tag: MealTag = (
+        db.query(MealTag).filter(MealTag.id == meal_tag_id).first()
+    )
 
-    if existing_tag:
-        db.delete(existing_tag)
-        db.commit()
-    else:
+    print(existing_tag)
+
+    if not existing_tag:
         raise CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message="The meal_tag_id provided doesn't exist",
         )
+
+    db.delete(existing_tag)
+    db.commit()
 
     return True
