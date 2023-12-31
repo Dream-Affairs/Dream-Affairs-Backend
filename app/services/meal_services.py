@@ -1,6 +1,7 @@
 """This module contains function that ensure a Meal is created properly."""
 
-from typing import Any, Optional
+from datetime import datetime
+from typing import Any, Dict, Optional
 from uuid import uuid4
 
 from fastapi import status
@@ -12,7 +13,7 @@ from sqlalchemy.sql.expression import desc
 from app.api.models.meal_models import Meal, MealCategory, MealTag
 from app.api.models.organization_models import Organization, OrganizationTag
 from app.api.responses.custom_responses import CustomException, CustomResponse
-from app.api.schemas.meal_schema import MealSchema, MealTagSchema
+from app.api.schemas.meal_schema import MealResponse, MealSchema, MealTagSchema
 
 
 def create_mc_service(org_id: str, schema: MealCategory, db: Session) -> Any:
@@ -324,6 +325,36 @@ def fetch_meal_by_id(meal_id: str, db: Session) -> Meal:
         )
 
     return meal
+
+
+def update_meal_service(
+    meal_id: str,
+    db: Session,
+    **kwargs: Dict[str, Any],
+) -> Any:
+    """Update a meal."""
+    meal_instance = db.query(Meal).filter_by(id=meal_id).first()
+    if meal_instance:
+        meal_instance.updated_at = datetime.utcnow()
+        for key, value in kwargs.items():
+            setattr(meal_instance, key, value)
+        db.commit()
+        return MealResponse(
+            id=meal_instance.id,
+            created_at=meal_instance.created_at,
+            name=meal_instance.name,
+            description=meal_instance.description,
+            is_hidden=meal_instance.is_hidden,
+            quantity=meal_instance.quantity,
+            image_url=meal_instance.image_url,
+            meal_category_id=meal_instance.meal_category_id,
+            organization_id=meal_instance.organization_id,
+            updated_at=meal_instance.updated_at,
+        )
+    return CustomException(
+        status_code=404,
+        message="Meal not found",
+    )
 
 
 def delete_meal_service(meal_id: str, db: Session) -> bool:

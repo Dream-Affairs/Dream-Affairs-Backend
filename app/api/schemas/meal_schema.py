@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel
 
@@ -41,6 +41,16 @@ class MealSchema(BaseModel):  # type: ignore
     is_hidden: Optional[bool] = False
     image_url: str
     quantity: int = 0
+
+
+class MealResponse(MealSchema):
+    """Represents the schema for a created Meal Category."""
+
+    id: str
+    meal_category_id: str
+    organization_id: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class TagType(str, Enum):
@@ -83,3 +93,9 @@ class MealSortBy(str, Enum):
     ALL = "all"
     ORGANIZATION = "organization"
     MEAL_CATEGORY = "meal category"
+
+
+class MealUpdate(BaseModel):  # type: ignore
+    """Schema for updating a checklist."""
+
+    kwargs: Dict[str, Any]

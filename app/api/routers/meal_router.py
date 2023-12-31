@@ -14,6 +14,7 @@ from app.api.schemas.meal_schema import (
     MealSchema,
     MealSortBy,
     MealSortOrder,
+    MealUpdate,
 )
 from app.database.connection import get_db
 from app.services.meal_services import (
@@ -29,7 +30,11 @@ from app.services.meal_services import (
     get_all_meal_tag_service,
 )
 from app.services.meal_services import get_meal_categories as get_all
-from app.services.meal_services import get_meal_service, hide_meal_service
+from app.services.meal_services import (
+    get_meal_service,
+    hide_meal_service,
+    update_meal_service,
+)
 
 BASE_URL = "/meal-management"
 
@@ -295,6 +300,45 @@ def get_meal_by_id(
         status_code=200,
         message="Meal Successfully fetched",
         data=jsonable_encoder(meal),
+    )
+
+
+@router.put("/meal/{meal_id}")
+def update_meal(
+    meal_id: str,
+    req: MealUpdate,
+    auth: Authorize = Depends(  # pylint: disable=unused-argument
+        is_org_authorized
+    ),
+    db: Session = Depends(get_db),
+) -> CustomResponse:
+    """Hide's a meal for a specified meal category.
+
+    This endpoint hides a meal
+
+    Args:
+        meal_id (str): The ID of the meal to be Hidden.
+        db (Session): The database session. (Dependency)
+
+    Returns:
+        CustomResponse: A CustomResponse containing a response that the meal
+        has been hidden. Raises CustomException if an error occurs
+        during the process.
+    """
+
+    try:
+        update_meal_service(
+            meal_id,
+            db=db,
+            **req.kwargs,
+        )
+
+    except Exception as e:
+        raise e
+
+    return CustomResponse(
+        status_code=201,
+        message="Meal Has Been Successfully Hidden",
     )
 
 
