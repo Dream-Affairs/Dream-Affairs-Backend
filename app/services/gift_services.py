@@ -1,6 +1,7 @@
 """This module provides functions for handling registry/gift related
 operations."""
 
+import json
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -15,6 +16,7 @@ from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.gift_schemas import (
     AddCashGift,
     AddProductGift,
+    EditCashGift,
     EditProductGift,
     FilterGiftSchema,
 )
@@ -63,8 +65,8 @@ def add_product_gift_(
 
 
 def edit_product_gift_(
-    gift_item: EditProductGift,
     gift_id: str,
+    gift_item: EditProductGift,
     db: Session,
 ) -> tuple[Any, Any]:
     """Edit product gift  associated with user/organization.
@@ -324,4 +326,78 @@ def add_cash_gift(
         raise CustomException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             message="Failed to add gift",
+        ) from exc
+
+
+def edit_cash_gift(
+    gift_id: str,
+    gift_item: EditCashGift,
+    db: Session,
+) -> CustomResponse:
+    """Edit Cash funds gift.
+
+    Args:
+        gift_id,
+        gift_item (Dict): The gift data to be updated,
+        db (Session): The database session.
+
+    Returns:
+        raise an exception
+        return a CustomResponse
+    """
+    # Check if gift exists
+    gift_instance = db.query(Gift).filter(Gift.id == gift_id).first()
+    if not gift_instance:
+        raise CustomException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            message="Gift not found",
+            data={"gift_id": gift_id},
+        )
+
+    # dump and load the model objects as python dicts
+    update_cash_gift = json.loads(
+        gift_item.model_dump_json(
+            exclude_none=True, exclude=["payment_options"]
+        )
+    )
+    _payment_options = json.loads(gift_item.model_dump_json())
+
+    try:
+        for key, value in update_cash_gift.items():
+            setattr(gift_instance, key, value)
+        db.commit()
+
+        # update the Options table accordingly
+        # first, delete the previous option(s)
+        # then,insert afresh
+
+        (
+            db.query(PaymentOption)
+            .filter(PaymentOption.gift_id == gift_id)
+            .delete()
+        )
+        db.commit()
+        for option in _payment_options["payment_options"]:
+            payment_option = PaymentOption(
+                **option,
+                id=uuid4().hex,
+                gift_id=gift_id,
+            )
+            db.add(payment_option)
+            db.commit()
+            db.refresh(payment_option)
+        # commit and refresh again to return updated details
+        db.commit()
+        db.refresh(gift_instance)
+
+        return CustomResponse(
+            status_code=status.HTTP_201_CREATED,
+            message="Gift successfully Updated",
+            data=jsonable_encoder(gift_instance, exclude=["organization"]),
+        )
+    except Exception as exc:
+        db.rollback()
+        raise CustomException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message="Failed to update gift",
         ) from exc

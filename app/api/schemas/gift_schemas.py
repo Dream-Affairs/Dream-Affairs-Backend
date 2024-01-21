@@ -134,3 +134,14 @@ class AddCashGift(GiftSchema):
         """Repersents the config model for this Schema."""
 
         from_attributes = True
+
+
+class EditCashGift(AddCashGift):
+    """Represents the schema for updating cash funds gift."""
+
+    is_gift_hidden: bool
+
+    class Config:
+        """Repersents the config model for this Schema."""
+
+        from_attributes = True
