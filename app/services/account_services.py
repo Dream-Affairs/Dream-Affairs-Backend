@@ -123,7 +123,7 @@ def create_account(
         subject="Welcome to Dream Affairs",
         recipient_email=user.email,
         template="_email_verification.html",
-        db=db,
+        # db=db,
         kwargs={"name": user.first_name, "verification_link": url},
     )
 
