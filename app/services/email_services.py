@@ -293,10 +293,9 @@ def log_email(
 def send_email_api(
     subject: str,
     recipient_email: str,
-    organization_id: str,
     template: str,
     kwargs: Dict[str, Any],
-    db: Session,
+    # db: Session,
 ) -> str:
     """This function is used to send an email to the recipient.
 
@@ -312,7 +311,7 @@ def send_email_api(
     """
 
     # count number of links in email
-    count = len([key for key in kwargs if "_link" in key])
+    len([key for key in kwargs if "_link" in key])
 
     data: Dict[str, Any] = Email.send_mail(
         subject=subject,
@@ -322,23 +321,11 @@ def send_email_api(
         body_html=generate_html(template, kwargs=kwargs),
     )
     if data["success"] is True:
-        status = "sent"
-        reason = "Email sent successfully"
+        pass
     else:
-        status = "failed"
-        reason = data.get("error", "")
+        data.get("error", "")
 
-    return log_email(
-        message_id=data.get("data")["messageid"],  # type: ignore
-        organization_id=organization_id,
-        subject=subject,
-        recipient=recipient_email,
-        template=template,
-        status=status,
-        number_of_links_in_email=count,
-        reason=reason,
-        db=db,
-    )
+    return "success"
 
 
 def subscribe_email_service(
