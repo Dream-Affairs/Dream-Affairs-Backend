@@ -16,6 +16,9 @@ from app.api.routers.email_router import router as email_router
 from app.api.routers.file_router import router as file_router
 from app.api.routers.gift_router import router as gift_router
 from app.api.routers.meal_router import router as meal_router
+from app.api.routers.organization_guest_router import (
+    router as organization_guest_router,
+)
 from app.api.routers.organization_router import router as organization_router
 from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
@@ -72,7 +75,9 @@ v1_router.include_router(
 v1_router.include_router(
     checklist_router,
 )
-
+v1_router.include_router(
+    organization_guest_router,
+)
 
 app = FastAPI(
     title="Dream Affairs API",

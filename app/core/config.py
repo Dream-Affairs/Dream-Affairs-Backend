@@ -21,7 +21,7 @@ class Settings:
     AUTH_SECRET_KEY = config("AUTH_SECRET_KEY", cast=str)
     HASH_ALGORITHM = config("HASH_ALGORITHM")
     ACCESS_TOKEN_EXPIRE_MINUTES = config(
-        "ACCESS_TOKEN_EXPIRE_MINUTES", default=10080, cast=int
+        "ACCESS_TOKEN_EXPIRE_MINUTES", default=1000, cast=int
     )
     PRD_SENTRY_DSN = config("PRD_SENTRY_DSN", default="")
     DEV_SENTRY_DSN = config("DEV_SENTRY_DSN", default="")

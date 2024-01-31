@@ -26,13 +26,7 @@ from app.api.models.gift_models import (  # noqa: F401
     PaymentOption,
     WalletDetail,
 )
-
-# from app.api.models.guest_models import (  # noqa: F401
-#     Guest,
-#     Guest_Plus_One,
-#     Guest_Table,
-#     GuestTags,
-# )
+from app.api.models.guest_models import Guest, GuestTags  # noqa: F401
 from app.api.models.meal_models import (  # noqa: F401
     Meal,
     MealCategory,
@@ -210,6 +204,9 @@ class OrganizationDetail(Base):  # type: ignore
         ForeignKey("organization.id", ondelete="CASCADE"),
         nullable=False,
     )
+    guest_count = Column(Integer, default=35)
+    table_count = Column(Integer, default=7)
+    seat_per_table = Column(Integer, default=5)
     event_location = Column(
         String,
     )
@@ -494,9 +491,9 @@ class OrganizationTag(Base):  # type: ignore
     meal_tags = relationship(
         "MealTag", back_populates="organization_tag", cascade="all,delete"
     )
-    # guest_tags = relationship(
-    #     "GuestTags", back_populates="organization_tag", cascade="all,delete"
-    # )
+    guest_tags = relationship(
+        "GuestTags", back_populates="organization_tag", cascade="all,delete"
+    )
 
 
 class Checklist(Base):  # type: ignore
@@ -569,3 +566,41 @@ class Checklist(Base):  # type: ignore
         lazy="joined",
     )
     organization = relationship("Organization", back_populates="checklist")
+
+
+class OrganizationTable(Base):
+    """
+    OrganizationTable:
+      This class is used to create the organization_table table.
+
+      Args:
+        Base: This is the base class from which all the models inherit.
+
+      Attributes:
+        id: This is the primary key of the table.
+        name: This is the name of the table.
+        organization_id: This is the foreign key of the organization table.
+        assigned_guest_count: This is the number of guests assigned to the \
+          table.
+        available_guest_count: This is the number of guests available for the \
+          table.
+        total_available_seats: This is the total number of seats available \
+          for the table.
+        created_at: This is the date and time when the organization table \
+          was created.
+        updated_at: This is the date and time when the organization table \
+          was updated.
+      """
+
+    __tablename__ = "table_group"
+    id = Column(String, primary_key=True, default=uuid4().hex)
+    name = Column(String, nullable=False)
+    organization_id = Column(String, ForeignKey("organization.id"))
+    assigned_table_count = Column(Integer, default=0)
+    available_table_count = Column(Integer, default=0)
+    total_available_seats = Column(Integer, default=0)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+    guests = relationship("Guest", back_populates="group")
