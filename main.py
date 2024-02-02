@@ -22,6 +22,7 @@ from app.api.routers.organization_guest_router import (
 from app.api.routers.organization_router import router as organization_router
 from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
+from app.api.routers.table_tag_routers import router as table_tag_router
 from app.core.config import settings
 from app.database.connection import get_db_unyield
 from app.services.permission_services import ORG_ADMIN_PERMISSION
@@ -77,6 +78,9 @@ v1_router.include_router(
 )
 v1_router.include_router(
     organization_guest_router,
+)
+v1_router.include_router(
+    table_tag_router,
 )
 
 app = FastAPI(
