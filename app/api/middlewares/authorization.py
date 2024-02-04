@@ -70,7 +70,12 @@ def is_authenticated(
             message="Unkown user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
+    if not account.is_verified:
+        raise CustomException(
+            status_code=401,
+            message="Account not verified",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     # check if the organization member exists
     authorize.account = AccountAuthorized(
         id=account.id,

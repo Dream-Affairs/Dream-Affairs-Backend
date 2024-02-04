@@ -21,9 +21,7 @@ from app.services.account_services import (
     verify_account_service,
 )
 
-BASE_URL = "/auth"
-
-router = APIRouter(prefix=BASE_URL, tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/signup")
@@ -32,20 +30,96 @@ def signup(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Create a new user account.
+    """# Create a new user account.
 
-    Args:
-        user (AccountSchema): The user account information.
-        db (Session): The database session. (Dependency)
-        status_code (int): The HTTP status code to return. (Default: 201)
-        response_model (AccountResponse): The response model for the created
-            account.
+    This endpoint creates a new user account and returns a success message if
+    the account is created successfully.
 
-    Returns:
-        AccountResponse: The created user account.
+    ## Args:
 
-    Raises:
-        HTTPException: If the passwords do not match.
+    - `user (AccountSchema)`: The user account information.
+    - `db (Session)`: The database session. (Dependency)
+    - `status_code (int)`: The HTTP status code to return. (Default: 201)
+    - `response_model (AccountResponse)`: The response model for the created
+        account.
+
+    ## Returns:
+
+    - `AccountResponse`: The created user account.
+
+    ## Raises:
+
+    - CustomException
+
+    ## Examples:
+
+    ```curl
+    curl -X 'POST'
+      'http://localhost:8000/auth/signup'
+        -H 'accept: application/json'
+        -H 'Content-Type: application/json'
+        -d '{
+        "email": "
+        "password": "password",
+        "confirm_password": "password",
+        "first_name": "John",
+        "last_name": "Doe"
+        }'
+    ```
+
+    ```python
+    import requests
+
+    url = "http://localhost:8000/auth/signup"
+
+    payload = {
+        "email": "email@example.com",
+        "password": "password",
+        "confirm_password": "password",
+        "first_name": "John",
+        "last_name": "Doe"
+    }
+
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.request("POST", url, headers=headers, json=payload)
+
+    print(response.text)
+    ```
+
+    Response:
+
+    ```json
+
+    {
+        "status_code": 201,
+        "message": "Account created successfully",
+        "data": ""
+    }
+    ```
+
+    Error Response:
+    ```json
+    {
+        "status_code": 400,
+        "detail": "Passwords do not match"
+    }
+    ```
+    ```json
+    {
+        "status_code": 400,
+        "detail": "user already exists"
+    }
+    ```
+    ```json
+    {
+        "status_code": 500,
+        "detail": "failed to create user account"
+    }
+    ```
     """
 
     if user.password != user.confirm_password:
@@ -68,69 +142,340 @@ def login(
     user_credentials: AccountLogin,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Log in a user and generate an access token.
+    """# Login to an existing user account.
 
-    Args:
-        user_credentials: The user's login credentials.
-        db (Session): The database session.
+    This endpoint logs a user into their account and returns a success message
+    if the login is successful.
 
-    Returns:
-        dict: A dictionary containing the access token and token type.
+    ## Args:
 
-    Raises:
-        HTTPException: If the provided credentials are invalid.
+    - `user_credentials (AccountLogin)`: The user account credentials.
+    - `db (Session)`: The database session. (Dependency)
+    - `status_code (int)`: The HTTP status code to return. (Default: 200)
+    - `response_model (AccountResponse)`: The response model for the created
+        account.
+
+    ## Returns:
+
+    - `AccountResponse`: The created user account.
+
+    ## Raises:
+
+    - CustomException
+
+    ## Examples:
+
+    ```curl
+    curl -X 'POST'
+        'http://localhost:8000/auth/login'
+        -H 'accept: application/json'
+        -H 'Content-Type: application/json'
+        -d '{
+        "email": "example@email.com",
+        "password": "password"
+        }'
+    ```
+
+    Python Example:
+    ```python
+    import requests
+
+    url = "http://localhost:8000/auth/login"
+
+    payload = {
+        "email": "example@email.com",
+        "password": "password"
+    }
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.request("POST", url, headers=headers, json=payload)
+
+    print(response.text)
+    ```
+
+    Response:
+
+        ```json
+        {
+            "status_code": 200,
+            "message": "Login successful",
+            "data": {
+                "token": "<token>",
+                is_2fa_enabled: false,
+                is_verified: true
+            }
+        }
+        ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "detail": "Invalid email or password"
+    }
+    ```
     """
-    return login_service(db, user_credentials)
+    res, err = login_service(db, user_credentials)
+
+    if err:
+        raise err
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK, message="Login successful", data=res
+    )
 
 
 @router.post("/verify-account")
 def verify_account(
     token_data: VerifyAccountTokenData, db: Session = Depends(get_db)
 ) -> CustomResponse:
-    """Reset the password for an account.
+    """# Verify a user account.
 
-    Args:
-        token_data: The data associated with the reset password token.
-        db: The database session.
+    This endpoint verifies a user account and returns a success message if the
+    account is verified successfully.
 
-    Returns:
-        The result of the `reset_password_service` function.
+    ## Args:
+
+    - `token_data (VerifyAccountTokenData)`: The data associated with the
+        account verification token.
+    - `db (Session)`: The database session. (Dependency)
+    - `status_code (int)`: The HTTP status code to return. (Default: 200)
+    - `response_model (AccountResponse)`: The response model for the created
+        account.
+
+    ## Returns:
+
+    - `AccountResponse`: The created user account.
+
+    ## Raises:
+
+    - CustomException
+
+    ## Examples:
+
+        ```curl
+        curl -X 'POST'
+            'http://localhost:8000/auth/verify-account'
+            -H 'accept: application/json'
+            -H 'Content-Type: application/json'
+            -d '{
+            "token": "<token>"
+            }'
+        ```
+    Python Example:
+    ```python
+    import requests
+
+    url = "http://localhost:8000/auth/verify-account"
+
+    payload = {
+        "token": "<token>"
+    }
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.request("POST", url, headers=headers, json=payload)
+
+    print(response.text)
+    ```
+    Response:
+    ```json
+    {
+        "status_code": 200,
+        "message": "Account verified successfully",
+        "data": ""
+    }
+    ```
+    Error Response:
+    ```json
+    {
+        "status_code": 400,
+        "detail": "Invalid or expired token"
+    }
+    ```
     """
 
-    return verify_account_service(token_data, db)
+    _, err = verify_account_service(token_data, db)
+
+    if err:
+        raise err
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Account verified successfully",
+    )
 
 
 @router.post("/forgot-password")
 def user_forgot_password(
     user_data: ForgotPasswordData,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Handles the request to initiate the password reset process for a user.
+    """# Send a reset password email.
 
-    Args:
-        request: The incoming request object.
-        user_email: The email address of the user.
-        db: The database session.
+    This endpoint sends a reset password email to the user and returns a
+    success message if the email is sent successfully.
 
-    Returns:
-        The result of the forgot password service.
+    ## Args:
+
+    - `user_data (ForgotPasswordData)`: The user account email.
+    - `db (Session)`: The database session. (Dependency)
+    - `status_code (int)`: The HTTP status code to return. (Default: 200)
+    - `response_model (AccountResponse)`: The response model for the created
+        account.
+
+    ## Returns:
+
+    - `message`: The result of the `forgot_password_service` function.
+
+    ## Raises:
+
+    - CustomException
+
+    ## Examples:
+
+    ```curl
+    curl -X 'POST'
+        'http://localhost:8000/auth/forgot-password'
+        -H 'accept: application/json'
+        -H 'Content-Type: application/json'
+        -d '{
+        "email": "example@email.com"
+        }'
+    ```
+    Python Example:
+    ```python
+    import requests
+
+    url = "http://localhost:8000/auth/forgot-password"
+
+    payload = {
+        "email": "example@email.com"
+    }
+
+    headers = {
+        "accept": "application/json",
+        "Content-Type": "application/json"
+    }
+
+    response = requests.request("POST", url, headers=headers, json=payload)
+
+    print(response.text)
+    ```
+
+    Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Reset password email sent successfully",
+        "data": "An email has been sent to your email address with
+          instructions on how to reset your password"
+    }
+    ```
+    Error Response:
+    ```json
+    {
+        "status_code": 400,
+        "detail": "User not found"
+    }
+    ```
     """
+    res, err = forgot_password_service(user_data, background_tasks, db)
 
-    return forgot_password_service(user_data, db)
+    if err:
+        raise err
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK,
+        message="Reset password email sent successfully",
+        data=res,
+    )
 
 
 @router.post("/reset-password")
 def reset_password(
     token_data: ResetPasswordData, db: Session = Depends(get_db)
 ) -> CustomResponse:
-    """Reset the password for an account.
+    """# Reset a user's password.
 
-    Args:
-        token_data: The data associated with the reset password token.
-        db: The database session.
+    This endpoint resets a user's password and returns a success message if the
+    password is reset successfully.
 
-    Returns:
-        The result of the `reset_password_service` function.
+    ## Args:
+
+    - `token_data (ResetPasswordData)`: The data associated with the reset
+        password token.
+    - `db (Session)`: The database session. (Dependency)
+    - `status_code (int)`: The HTTP status code to return. (Default: 200)
+    - `response_model (str)`: The response model for the created account.
+
+    ## Returns:
+
+    - `message`: The result of the `reset_password_service` function.
+
+    ## Raises:
+
+    - CustomException
+
+    ## Examples:
+
+    ```curl
+    curl -X 'POST'
+        'http://localhost:8000/auth/reset-password'
+        -H 'accept: application/json'
+        -H 'Content-Type: application/json'
+        -d '{
+            token: "<token>",
+            password: "password",
+            confirm_password: "password"
+        }'
+    ```
+    Http:
+    ```http
+    POST /auth/reset-password HTTP/1.1
+    Host: localhost:8000
+    Content-Type: application/json
+    accept: application/json
+
+    {
+        "token": "<token>",
+        "password": "password",
+        "confirm_password": "password"
+    }
+
+    ```
+
+    Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Password reset successful"
+    }
+    ```
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "detail": "Invalid or expired token"
+    }
+    ```
     """
 
-    return reset_password_service(token_data, db)
+    _, err = reset_password_service(token_data, db)
+
+    if err:
+        raise err
+
+    return CustomResponse(
+        status_code=status.HTTP_200_OK, message="Password reset successful"
+    )

@@ -14,9 +14,10 @@ from sqlalchemy.orm import Session
 
 from app.api.middlewares.jwt_bearer import HTTPAuthorizationCredentials
 from app.api.models.account_models import Account, Auth
-from app.api.responses.custom_responses import CustomException, CustomResponse
+from app.api.responses.custom_responses import CustomException
 from app.api.schemas.account_schemas import (
     AccountLogin,
+    AccountLoginResponse,
     AccountSignup,
     ForgotPasswordData,
     ResetPasswordData,
@@ -34,16 +35,53 @@ ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def authenticate_user(user: Account):
-    """Authenticate user and generate access token.
+def authenticate_user(
+    user: Account,
+) -> Tuple[AccountLoginResponse, CustomException]:
+    """
+    Authenticate user:
+
+    This function authenticates a user and generates an access token
+    that allows the user to access protected endpoints.
+
+    The function takes a user object and a database session as arguments.
+    It generates an access token for the user and returns the token and
+    user verification status.
 
     Args:
-        user: The user object.
-        db: The database session.
+
+    - user: The user object.
+    - db: The database session.
 
     Returns:
-        CustomResponse: The response containing the access
-            token and token type.
+
+    - Tuple[AccountLoginResponse, CustomException]: A tuple containing the
+        user verification status and the access token, or a\
+              CustomException
+        if the user credentials are invalid.
+
+    Example:
+
+    ```python
+    from app.api.models.account_models import Account
+    from app.api.schemas.account_schemas import AccountLoginResponse
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import authenticate_user
+
+    user = Account(
+        id="123",
+        email="example@email.com",
+        first_name="John",
+        password_hash="hashed_password",
+        is_verified=True,
+        is_2fa_enabled=False,
+    )
+    res, err = authenticate_user(user)
+    if err:
+        raise err
+
+    print(res)
+    ```
     """
     if user:
         access_token = generate_token(
@@ -53,34 +91,65 @@ def authenticate_user(user: Account):
             expire_mins=settings.ACCESS_TOKEN_EXPIRE_MINUTES,
         )
 
-        return CustomResponse(
-            status_code=status.HTTP_200_OK,
-            data={
-                "user": {
-                    "is_verified": user.is_verified,
-                },
-                "access_token": access_token,
-            },
+        return (
+            AccountLoginResponse(
+                is_verified=user.is_verified,
+                token=access_token,
+                is_2fa_enabled=user.is_2fa_enabled,
+            ).model_dump(),
+            None,
         )
-
-    return CustomResponse(
+    return None, CustomException(
         status_code=status.HTTP_404_NOT_FOUND,
-        message="User not found",
+        message="Invalid credentials",
     )
 
 
 def create_account(
     user: AccountSignup, background_tasks: BackgroundTasks, db: Session
-) -> Any:
-    """Create a new user account and associated authentication record.
+) -> Tuple[bool, CustomException]:
+    """
+    Create account:
+
+    This function creates a new user account and sends a verification email
+    to the user.
+
+    The function takes a user object, a background task, and a database
+    session as arguments. It creates a new user account, generates a
+    verification token, and sends a verification email to the user.
 
     Args:
-        user (AccountSignup): The user account data.
-        db (Session): The database session.
+
+    - user: The user object.
+    - background_tasks: The background task.
+    - db: The database session.
 
     Returns:
-        bool: True if the user account and authentication record were
-            successfully created, False otherwise.
+
+    - Tuple[bool, CustomException]: A tuple containing a boolean indicating
+        the success of the account creation and a CustomException if the
+        account creation fails.
+
+    Example:
+
+    ```python
+    from app.api.models.account_models import Account
+    from app.api.schemas.account_schemas import AccountSignup
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import create_account
+
+    user = AccountSignup(
+        email="example@email.com",
+        first_name="John",
+        password="password",
+        provider="email",
+    )
+
+    res, err = create_account(user)
+    if err:
+        raise err
+
+    print(res)
     """
 
     existing_user = (
@@ -130,94 +199,166 @@ def create_account(
     return True, None
 
 
-def verify_account_service(
-    token_data: VerifyAccountTokenData, db: Session
-) -> CustomResponse:
-    """Verify an account using a verify account token.
+def login_service(
+    db: Session, user_credentials: AccountLogin
+) -> Tuple[AccountLoginResponse, CustomException]:
+    """
+    Login service:
+
+    This function authenticates a user and generates an access token
+    that allows the user to access protected endpoints.
+
+    The function takes a user object and a database session as arguments.
+    It generates an access token for the user and returns the token and
+    user verification status.
 
     Args:
-        token_data (VerifyAccountTokenData): The data associated with
-            the verify account token.
-        db (Session): The database session.
+
+    - user: The user object.
+    - db: The database session.
 
     Returns:
-        CustomResponse: The response containing a "message" key indicating the
-            success of the verified account.
 
-    Raises:
-        CustomException: If wrong token context, the token is invalid
-        or expired, or the account is not found.
+    - Tuple[AccountLoginResponse, CustomException]: A tuple containing the
+        user verification status and the access token, or a\
+                CustomException
+        if the user credentials are invalid.
+
+    Example:
+
+    ```python
+    from app.api.models.account_models import Account
+    from app.api.schemas.account_schemas import AccountLoginResponse
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import authenticate_user
+
+    user = AccountLogin(
+        email="example@email.com",
+        password="password",
+        provider="email",
+    )
+    res, err = login_service(db, user)
+    if err:
+        raise err
+
+    print(res)
+    ```
+    """
+
+    user = get_account_by_email(db, user_credentials.email)
+
+    if user is not None:
+        if user_credentials.provider == "google" or verify_password(
+            user_credentials.password, user.password_hash
+        ):
+            return authenticate_user(user)
+
+    return None, CustomException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        message="Invalid credentials",
+    )
+
+
+def verify_account_service(
+    token_data: VerifyAccountTokenData, db: Session
+) -> Tuple[str, CustomException]:
+    """
+    Verify account service:
+
+    This function verifies a user account using a verification token.
+
+    The function takes a verification token and a database session as
+    arguments. It verifies the user account and returns a message indicating
+    the success of the verification.
+
+    Args:
+
+    - token_data: The data associated with the verification token.
+    - db: The database session.
+
+    Returns:
+
+    - Tuple[str, CustomException]: A tuple containing a message indicating
+
+    Example:
+
+    ```python
+    from app.api.models.account_models import Account
+    from app.api.schemas.account_schemas import VerifyAccountTokenData
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import verify_account_service
+
+    token = VerifyAccountTokenData(
+        token
+    )
+    res, err = verify_account_service(token, db)
+    if err:
+        raise err
+
+    print(res)
+    ```
     """
 
     account_id, context = decode_token(token_data.token)
 
     if context != "verify-account":
-        raise CustomException(
+        return None, CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message="Invalid token",
         )
 
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
-        raise CustomException(
+        return None, CustomException(
             status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
         )
 
     account.is_verified = True
-    add_to_db(db, account)
+    db.commit()
 
-    return CustomResponse(
-        status_code=status.HTTP_200_OK, message="Verification successful"
-    )
-
-
-def login_service(
-    db: Session, user_credentials: AccountLogin
-) -> CustomResponse:
-    """Authenticates a user and generates an access token.
-
-    Args:
-        db: The database session.
-        user_crdentials: The user credentials.
-
-    Returns:
-        CustomResponse: The response containing the access
-            token and token type.
-
-    Raises:
-        CustomException: If the user credentials are invalid.
-    """
-
-    user = get_account_by_email(db, user_credentials.email)
-
-    if user_credentials.provider == "google":
-        return authenticate_user(user)
-
-    if user and verify_password(user_credentials.password, user.password_hash):
-        return authenticate_user(user)
-
-    raise CustomException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        message="Invalid credentials",
-    )
+    return "Success", None
 
 
 def forgot_password_service(
-    user_data: ForgotPasswordData, db: Session
-) -> CustomResponse:
-    """The function retrieves the user account, generates a password reset
-    token and URL.
+    user_data: ForgotPasswordData,
+    background_tasks: BackgroundTasks,
+    db: Session,
+) -> Tuple[str, CustomException]:
+    """
+    Forgot password service:
+
+    This function initiates the password reset process for a user.
+
+    The function takes a user email and a database session as arguments.
+    It generates a reset password token and sends a reset password email to
+    the user.
 
     Args:
-        user_data: The data required for the forgot password request.
-        db: The database session.
+
+    - user_data: The user email.
+    - db: The database session.
 
     Returns:
-        CustomResponse: The response indicating the status of the \
-        forgot password request.
 
-    Raises:
-        CustomException: If an unexpected error occurs.
+    - Tuple[str, CustomException]: A message indicating the success of the
+        password reset, or a CustomException if the account is not found.
+
+    Example:
+
+    ```python
+    from app.api.schemas.account_schemas import ForgotPasswordData
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import forgot_password_service
+
+    user = ForgotPasswordData(
+        email="example@email.com",
+    )
+    res, err = forgot_password_service(user, db)
+    if err:
+        raise err
+
+    print(res)
+    ```
     """
 
     account = (
@@ -232,22 +373,20 @@ def forgot_password_service(
 ?token={access_token}"
         print(url)  # temporary
 
-        try:
-            # send reset password email
-            # send_reset_password_mail(
-            #     recipient_email=user_email,
-            #     user=user,
-            #     url=url
-            # )
-            return CustomResponse(
-                status_code=200,
-                message=f"An email has been sent to {user_data.email} with a \
-                link for password reset.",
-            )
-        except ValueError as e:
-            print(e)
+        # fix later send reset password email
+        background_tasks.add_task(
+            # send_email_api,
+            # subject="Password Reset",
+            # recipient_email=user_data.email,
+            # template="_reset_password.html",
+            # # db=db,
+            # kwargs={"name": account.first_name, "reset_link": url},
+        )
+        msg = f"""
+An email has been sent to {user_data.email} with a link for password reset."""
+        return msg
 
-    raise CustomException(
+    return CustomException(
         status_code=status.HTTP_404_NOT_FOUND,
         message="No account found with that email",
     )
@@ -255,24 +394,46 @@ def forgot_password_service(
 
 def reset_password_service(
     token_data: ResetPasswordData, db: Session
-) -> CustomResponse:
-    """Reset the password for an account using a reset password token.
+) -> Tuple[str, CustomException]:
+    """
+    Reset password service:
+
+    This function resets the password for a user account.
+
+    The function takes a reset password token and a database session as
+    arguments. It resets the user account password and returns a message
 
     Args:
-        token_data (ResetPasswordData): The data associated with
-            the reset password token.
-        db (Session): The database session.
+
+    - token_data: The data associated with the reset password token.
+    - db: The database session.
 
     Returns:
-        dict: A dictionary with a "message" key indicating the
-            success of the password reset.
 
-    Raises:
-        CustomException: If the passwords do not match, the token is invalid
-        or expired, or the account is not found.
+    - Tuple[str, CustomException]: A message indicating the success of the
+        password reset, or a CustomException if the token is invalid.
+
+    Example:
+
+    ```python
+    from app.api.schemas.account_schemas import ResetPasswordData
+    from app.api.responses.custom_responses import CustomException
+    from app.services.account_services import reset_password_service
+
+    token = ResetPasswordData(
+        token,
+        password,
+        confirm_password
+    )
+    res, err = reset_password_service(token, db)
+    if err:
+        raise err
+
+    print(res)
+    ```
     """
     if token_data.password != token_data.confirm_password:
-        raise CustomException(
+        return None, CustomException(
             status_code=status.HTTP_400_BAD_REQUEST,
             message="Passwords do not match",
         )
@@ -280,25 +441,23 @@ def reset_password_service(
     account_id, context = decode_token(token_data.token)
 
     if context != "reset-password":
-        raise CustomException(
+        return None, CustomException(
             status_code=status.HTTP_404_NOT_FOUND,
             message="Invalid or expired link",
         )
 
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
-        raise CustomException(
+        return None, CustomException(
             status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
         )
 
     # Set the new password
     hashed_password = hash_password(token_data.password)
     account.password_hash = hashed_password
-    add_to_db(db, account)
+    db.commit()
 
-    return CustomResponse(
-        status_code=status.HTTP_200_OK, message="Password reset successful"
-    )
+    return "success", None
 
 
 def hash_password(password: str) -> Any:
@@ -330,7 +489,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def generate_token(
     data: Dict[str, Any],
     expire_mins: int,
-) -> Any:
+) -> str:
     """Create an access token.
 
     Args:
@@ -352,20 +511,9 @@ def generate_token(
 def decode_token(
     token: HTTPAuthorizationCredentials, is_authenticate: bool = False
 ) -> Dict[str, Any] | Tuple[str, str]:
-    """Decode a JWT token and retrieve the account ID.
+    """Decode a token.
 
     Args:
-        token: The JWT token to decode.
-        credentials_exception: The exception to raise if the account
-            ID is not found.
-
-    Returns:
-        str: The decoded account ID.
-
-    Raises:
-        credentials_exception: If the account ID is not found in the decoded
-            token.
-        JWTError: If an error occurs during JWT decoding.
     """
     token = decode_data(token.credentials).split("Bearer ")[0]
     try:
@@ -446,7 +594,11 @@ def get_account_by_email(db: Session, email: str) -> Account:
     Returns:
         Account: The account object.
     """
-    return db.query(Account).filter(Account.email == email).first()
+    user = db.query(Account).filter(Account.email == email).first()
+
+    if user is not None:
+        return user
+    return None
 
 
 def encode_data(data: Any) -> str:
@@ -461,13 +613,13 @@ def encode_data(data: Any) -> str:
     return base64.b64encode(str(data).encode("ascii")).decode("ascii")
 
 
-def decode_data(data: Any) -> Any:
+def decode_data(data: Any) -> bytes:
     """Decode a base64 string into a dictionary of data.
 
     Args:
         data (str): The data to decode.
 
     Returns:
-        Any: The decoded data.
+        bytes: The decoded data.
     """
     return base64.b64decode(data).decode("ascii")
