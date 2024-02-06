@@ -23,8 +23,9 @@ from app.api.routers.organization_router import router as organization_router
 from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
 from app.api.routers.table_tag_routers import router as table_tag_router
-from app.core.config import settings
+from app.core.config import logging, settings
 from app.database.connection import get_db_unyield
+from app.services.log_services import LoggingMiddleware
 from app.services.permission_services import ORG_ADMIN_PERMISSION
 from app.services.roles_services import create_default_roles
 
@@ -93,7 +94,6 @@ app = FastAPI(
 
 app.add_exception_handler(HTTPException, custom_http_exception_handler)
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -101,6 +101,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(LoggingMiddleware, logger=logging.getLogger(__name__))
 
 
 @v1_router.get("/health")
@@ -113,9 +114,6 @@ def health() -> CustomResponse:
     )
 
 
-app.include_router(v1_router)
-
-
 @app.on_event("startup")
 async def startup_event():
     """Create default roles on startup."""
@@ -126,6 +124,8 @@ async def startup_event():
         create_default_roles(db)
         # Plan.create_default_plans(db)
 
+
+app.include_router(v1_router)
 
 if __name__ == "__main__":
     uvicorn.run(app="main:app", port=8000, reload=True)

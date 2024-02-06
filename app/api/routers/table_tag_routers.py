@@ -16,7 +16,7 @@ from app.services.tables_tag_services import (
 
 router = APIRouter(
     prefix="/table_tag",
-    responses={404: {"description": "Not found"}},
+    tags=["Table_Tag"],
 )
 
 

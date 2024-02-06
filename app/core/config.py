@@ -1,5 +1,9 @@
 """This module is used for configuration of the application's settings."""
 
+import logging
+import logging.config
+import sys
+
 from decouple import config
 
 
@@ -55,5 +59,55 @@ class Settings:
     )
     PLAN_CORE_PRICE = config("PLAN_CORE_PRICE", default=50.00, cast=float)
 
+    LOG_FILE = config("LOG_FILE", default="app.log")
+
 
 settings = Settings()
+
+logging_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+            "format": "%(asctime)s %(levelname)s \
+            %(name)s %(module)s %(funcName)s %(lineno)d %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
+            "formatter": "json",
+        },
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": settings.LOG_FILE,
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": ["file"],
+        "propagate": True,
+        "formatter": "json",
+    },
+    "loggers": {
+        "uvicorn": {
+            "level": "INFO",
+            "handlers": ["file"],
+            "propagate": True,
+            "formatter": "json",
+        },
+        "fastapi": {
+            "level": "INFO",
+            "handlers": ["file"],
+            "propagate": True,
+            "formatter": "json",
+        },
+    },
+}
+
+logging.config.dictConfig(logging_config)
