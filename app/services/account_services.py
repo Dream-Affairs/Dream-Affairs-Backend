@@ -654,7 +654,8 @@ def extract_token(token):
     if isinstance(token, HTTPAuthorizationCredentials):
         token = token.credentials
         token = decode_data(token)
-
+    else:
+        token = decode_data(token)
     token = token.split("Bearer ")[0]
 
     return token
