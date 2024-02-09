@@ -13,11 +13,11 @@
         <mj-section padding="0px 84px">
             <mj-column width="100%">
                  <mj-text color="#48195A" padding="37.5px 0 0" font-weight="600" align="center" font-size="32px" padding-bottom="0px">
-CHINONYE & JOHN
+{{event_name}}
         </mj-text>
         <mj-text  color="#48195A" padding="56.5px 0 0">
         <div style="font-size: 14px; font-weight=400; text-align: center" >
-        <p>Hello [Guest Name]</p>
+        <p>Hello {{guest_name}} </p>
         </div>
         </mj-text>
             </mj-column>
@@ -27,11 +27,11 @@ CHINONYE & JOHN
          <mj-text color="#111" padding="0">
          <div style="font-size: 14px; font-weight=400; text-align: center">
          <p>We hope this message finds you well. We are delighted to invite you to our wedding and share this special moment with us.</p>
-         <p style="line-height=24px; padding-bottom: 20px">Wedding Date: 30th October, 2024</p>
-         <p style="line-height=24px; padding-bottom: 20px">Location: Eko Hotel, Lekki Phase 1, Lagos Nigeria</p>
-         <p style="line-height=24px; padding-bottom: 20px">Church Wedding Time: 9:00am</p>
-         <p style="line-height=24px; padding-bottom: 20px">Reception Time: 11:00am</p>
-         <p style="line-height=24px; padding-bottom: 20px"><strong>RSVP ACCESS CODE: </strong> {{code}}</p>
+         <p style="line-height=24px; padding-bottom: 20px">Wedding Date:{{wedding_date}}</p>
+         <p style="line-height=24px; padding-bottom: 20px">Location:{{wedding_location}}</p>
+         <p style="line-height=24px; padding-bottom: 20px">Church Wedding Time: {{church_wedding_time}} </p>
+         <p style="line-height=24px; padding-bottom: 20px">Reception Time: {{reception_time}} </p>
+         <p style="line-height=24px; padding-bottom: 20px"><strong>RSVP ACCESS CODE: </strong> {{RSVP_code}}</p>
          <p>To view more details and stay updated on the wedding, please visit our wedding website</p>
          </div>
          </mj-text>
