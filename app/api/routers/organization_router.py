@@ -1,5 +1,5 @@
 """This module defines the router for the role endpoints."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm.session import Session
 
 from app.api.middlewares.authorization import (
@@ -7,7 +7,7 @@ from app.api.middlewares.authorization import (
     is_authenticated,
     is_org_authorized,
 )
-from app.api.responses.custom_responses import CustomResponse
+from app.api.responses.custom_responses import CustomException, CustomResponse
 from app.api.schemas.organization_schemas import (
     InviteMemberSchema,
     OrganizationCreate,
@@ -22,6 +22,7 @@ from app.services.organization_services import (
     get_members,
     get_organization,
     invite_member,
+    resend_invite,
     suspend_member,
     update_organization_details,
 )
@@ -32,24 +33,68 @@ router = APIRouter(prefix="/organization", tags=["Organization"])
 @router.post("")
 async def create_user_organization(
     req: OrganizationCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     auth: Authorize = Depends(is_authenticated),
 ) -> CustomResponse:
-    """Create an organization.
+    """# Create an organization.
 
-    Args:
-        req (OrganizationCreate): Organization details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint creates an organization and assigns the authenticated
+    user as the owner.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: Organization details
+    - req `(OrganizationCreate)`: Organization details
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+
+    ## Returns:
+
+    - `CustomResponse`: Organization details
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'POST'
+    'http://localhost:8000/organization'
+    -H 'accept: application/json'
+    -H 'Content-Type: application/json'
+    -d '{
+    "name": "Organization Name",
+    "description": "Organization Description"
+    }'
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 201,
+        "message": "Organization created successfully",
+        "data": {
+            "id": "organization_id",
+            "name": "Organization Name",
+            "description": "Organization Description",
+            "owner_id": "owner_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Organization could not be created"
+    }
+    ```
     """
     try:
         organization_details = await create_organization(
-            db, auth.account.id, req
+            db, auth.account.id, req, background_tasks
         )
     except Exception as e:
         raise e
@@ -67,17 +112,58 @@ async def get_all_user_organizations(
         is_authenticated
     ),
 ) -> CustomResponse:
-    """Get an organization.
+    """# Get all organizations.
 
-    Args:
-        account_id (str): Account ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint retrieves all organizations that the authenticated
+    user is a member of.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: List of organizations
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+
+    ## Returns:
+
+    - `CustomResponse`: List of organizations
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'GET'
+    'http://localhost:8000/organization/all'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Organization retrieved successfully",
+        "data": [
+            {
+                "id": "organization_id",
+                "name": "Organization Name",
+                "description": "Organization Description",
+                "owner_id": "owner_id"
+            }
+        ]
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Organization could not be retrieved"
+    }
+    ```
     """
     return CustomResponse(
         status_code=200,
@@ -93,17 +179,57 @@ async def get_user_organization(
         is_org_authorized
     ),
 ):
-    """Get an organization.
+    """# Get an organization.
 
-    Args:
-        account_id (str): Account ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint retrieves an organization that the authenticated
+    user is a member of.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: List of organizations
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: Organization details
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'GET'
+    'http://localhost:8000/organization'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Organization retrieved successfully",
+        "data": {
+            "id": "organization_id",
+            "name": "Organization Name",
+            "description": "Organization Description",
+            "owner_id": "owner_id"
+        }
+    }
+
+    ```
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Organization could not be retrieved"
+    }
+    ```
     """
     return CustomResponse(
         status_code=200,
@@ -121,18 +247,62 @@ async def update_user_organization(
     db: Session = Depends(get_db),
     auth: Authorize = Depends(is_authenticated),
 ) -> CustomResponse:
-    """Update an organization.
+    """# Update an organization.
 
-    Args:
-        organization_id (str): Organization ID
-        req (OrganizationUpdate): Organization details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint updates an organization that the authenticated
+    user is a member of.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: Organization details
+    - req `(OrganizationUpdate)`: Organization details
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+
+    ## Returns:
+
+    - `CustomResponse`: Organization details
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'PUT'
+    'http://localhost:8000/organization'
+    -H 'accept: application/json'
+    -H 'Content-Type: application/json'
+    -H 'Authorization'
+    -d '{
+    "name": "Organization Name",
+    "description": "Organization Description"
+    }'
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Organization updated successfully",
+        "data": {
+            "id": "organization_id",
+            "name": "Organization Name",
+            "description": "Organization Description",
+            "owner_id": "owner_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Organization could not be updated"
+    }
+    ```
     """
     try:
         organization_details = update_organization_details(db, req, auth)
@@ -147,59 +317,141 @@ async def update_user_organization(
 
 @router.delete("")
 async def delete_user_organization(
-    email: str,
-    auth: Authorize = Depends(is_authenticated),
+    background_tasks: BackgroundTasks,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Delete an organization.
-    PLEASE NOTE THAT THIS IS FOR TESTING PURPOSES ONLY!!!
-    Args:
-        organization_id (str): Organization ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
-
-    Raises:
-        CustomException: If organization does not exist
-
-    Returns:
-        CustomResponse: Organization details
     """
-    if email != "hngxa31@gmail.com":
-        return CustomResponse(
-            status_code=401,
-            message="You are not authorized to perform this action",
-            data="",
+    NOTE: This endpoint is not recommended for use in production.
+    # Delete an organization.
+
+    This endpoint deletes an organization that the authenticated
+    user is a member of.
+
+    ## Args:
+
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: Organization details
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'DELETE'
+    'http://localhost:8000/organization'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Organization deleted successfully"
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Organization could not be deleted"
+    }
+    ```
+    """
+
+    if not delete_organization(
+        db, auth.member.organization_id, background_tasks
+    ):
+        raise CustomException(
+            status_code=400,
+            message="Organization could not be deleted",
         )
-    try:
-        delete_organization(db, auth.member.organization_id)
-    except Exception as e:
-        raise e
     return CustomResponse(
         status_code=200,
         message="Organization deleted successfully",
-        data="",
     )
 
 
 @router.post("/invite")
 async def invite_new_member(
     invite: InviteMemberSchema,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    auth: Authorize = Depends(is_authenticated),
+    auth: Authorize = Depends(is_org_authorized),
 ) -> CustomResponse:
-    """Invite a new member.
+    """# Invite a new member.
 
-    Args:
-        role (InviteMember): Member details
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint invites a new member to an organization.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: Role details
+    - invite `(InviteMemberSchema)`: Invite details
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: Invite details
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'POST'
+    'http://localhost:8000/organization/invite'
+    -H 'accept: application/json'
+    -H 'Content-Type: application/json'
+    -H 'Authorization'
+    -d '{
+    "name": "Name",
+    "email": "example@email.com",
+    "role_id": "role_id"
+    }'
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Invite sent successfully",
+        "data": {
+            "id": "invite_id",
+            "name": "Name",
+            "email": "email",
+            "role_id": "role_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Invite could not be sent"
+    }
+    ```
     """
     try:
-        member_details = invite_member(db, invite, auth.member.organization_id)
+        member_details = invite_member(
+            db, invite, auth.member.organization_id, background_tasks
+        )
     except Exception as e:
         raise e
     return CustomResponse(
@@ -212,18 +464,60 @@ async def invite_new_member(
 @router.get("/members")
 async def get_organization_members(
     db: Session = Depends(get_db),
-    auth: Authorize = Depends(is_authenticated),
+    auth: Authorize = Depends(is_org_authorized),
 ) -> CustomResponse:
-    """Get all organization members.
+    """# Get organization members.
 
-    Args:
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint retrieves all members of an organization.
 
-    Raises:
-        CustomException: If organization does not exist
+    ## Args:
 
-    Returns:
-        CustomResponse: List of invites
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: List of members
+
+    ## Raises:
+
+    - `CustomException`: If organization does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'GET'
+    'http://localhost:8000/organization/members'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Members retrieved successfully",
+        "data": [
+            {
+                "id": "member_id",
+                "name": "Name",
+                "email": "email",
+                "role_id": "role_id"
+            }
+        ]
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Members could not be retrieved"
+    }
+    ```
     """
     try:
         invites = await get_members(db, auth.member.organization_id)
@@ -242,17 +536,54 @@ async def accept_invitation(
     invite_token: str,
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Accept an invite.
+    """# Accept an invitation.
 
-    Args:
-        invite_token (str): Invite token
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint accepts an invitation to join an organization.
 
-    Raises:
-        CustomException: If token is invalid
+    ## Args:
 
-    Returns:
-        CustomResponse: Member details
+    - invite_token `(str)`: Invite token
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+
+    ## Returns:
+
+    - `CustomResponse`: Member details
+
+    ## Raises:
+
+    - `CustomException`: If token is invalid
+
+    ## Example:
+
+    ```curl
+    curl -X 'GET'
+    'http://localhost:8000/organization/invite/accept/invite_token'
+    -H 'accept: application/json'
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Invite accepted successfully",
+        "data": {
+            "id": "member_id",
+            "name": "Name",
+            "email": "email",
+            "role_id": "role_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Invite could not be accepted"
+    }
+    ```
     """
     try:
         member_details = accept_invite(db, invite_token)
@@ -265,27 +596,140 @@ async def accept_invitation(
     )
 
 
+@router.get("/invite/{email}")
+async def resend_invitation(
+    email: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    auth: Authorize = Depends(is_org_authorized),
+) -> CustomResponse:
+    """# Resend an invitation.
+
+    This endpoint resends an invitation to join an organization.
+
+    ## Args:
+
+    - email `(str)`: Email
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: Invite details
+
+    ## Raises:
+
+    - `CustomException`: If token is invalid
+
+    ## Example:
+
+    ```curl
+    curl -X 'GET'
+    'http://localhost:8000/organization/invite/email'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Invite sent successfully",
+        "data": {
+            "id": "invite_id",
+            "name": "Name",
+            "email": "email",
+            "role_id": "role_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Invite could not be sent"
+    }
+    ```
+    """
+    try:
+        invite_details = resend_invite(
+            db, email, auth.member.organization_id, background_tasks
+        )
+    except Exception as e:
+        raise e
+    return CustomResponse(
+        status_code=200,
+        message="Invite sent successfully",
+        data=invite_details,
+    )
+
+
 @router.patch("/{member_id}")
 async def suspend_unsuspend_membership(
     member_id: str,
-    auth: Authorize = Depends(is_authenticated),
+    background_tasks: BackgroundTasks,
+    auth: Authorize = Depends(is_org_authorized),
     db: Session = Depends(get_db),
 ) -> CustomResponse:
-    """Suspend and unsuspend a member.
+    """# Suspend a member.
 
-    Args:
-        member_id (str): Member ID
-        db (Session, optional): Database session. Defaults to Depends(get_db).
+    This endpoint suspends a member from an organization.
 
-    Raises:
-        CustomException: If token is invalid
+    ## Args:
 
-    Returns:
-        CustomResponse: Member details
+    - member_id `(str)`: Member ID
+    - db `(Session, optional)`: Database session. Defaults to Depends(get_db).
+    - token `(str)`: Authentication token
+    - organization_id `(str)``[cookies]`: Organization ID
+
+    ## Returns:
+
+    - `CustomResponse`: Member details
+
+    ## Raises:
+
+    - `CustomException`: If member does not exist
+
+    ## Example:
+
+    ```curl
+    curl -X 'PATCH'
+    'http://localhost:8000/organization/member_id'
+    -H 'accept: application/json'
+    -H 'Authorization
+    ```
+
+    ## Response:
+
+    ```json
+    {
+        "status_code": 200,
+        "message": "Member suspended successfully",
+        "data": {
+            "id": "member_id",
+            "name": "Name",
+            "email": "email",
+            "role_id": "role_id"
+        }
+    }
+    ```
+
+    Error Response:
+
+    ```json
+    {
+        "status_code": 400,
+        "message": "Member could not be suspended"
+    }
+    ```
     """
     try:
         member_details = suspend_member(
-            db, auth.member.organization_id, member_id
+            db, auth.member.organization_id, member_id, background_tasks
         )
     except Exception as e:
         raise e

@@ -113,7 +113,7 @@
                     line-height: 19.6px;
                   "
                 >
-                  Hi john,<br /><br />
+                  Hi {{kwargs.name}},<br /><br />
                   <a
                     href="mailto:mrkalujohn@gmail.Ccom"
                     style="
@@ -123,13 +123,15 @@
                     "
                     >{{kwargs.organization_owner_email}}</a
                   >
-                  invited you to edit and manage your<br />
-                  event planning tools together.<br /><br />
-                  As an editor, you have complete control of what your
+                  invited you to edit and manage their<br />
+                  event planning tools with the role {{kwargs.role}} for their event {{kwargs.organization_name}} together.<br /><br />
+                  As an editor, you have complete control of what their
                   website<br />
-                  looks like, in addition to the ability of managing your
+                  looks like, in addition to the ability of managing their
                   guest<br />
                   list, invitations, and RSVPs.
+
+                  This invitation will expire in {{kwargs.expiry_time}}. Please click the
                 </p>
               </div>
               <a

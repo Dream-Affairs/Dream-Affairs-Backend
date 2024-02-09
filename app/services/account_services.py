@@ -651,11 +651,10 @@ def extract_token(token):
 
     - str: The extracted token.
     """
-    token = decode_data(token)
     if isinstance(token, HTTPAuthorizationCredentials):
         token = token.credentials
+        token = decode_data(token)
 
-    if isinstance(token, list):
-        token = token.split("Bearer ")[0]
+    token = token.split("Bearer ")[0]
 
     return token

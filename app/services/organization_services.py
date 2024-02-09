@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 from uuid import uuid4
 
+from fastapi import BackgroundTasks
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import asc
@@ -22,12 +23,16 @@ from app.api.schemas.organization_schemas import (
     OrganizationUpdate,
 )
 from app.core.config import settings
-from app.services.account_services import hash_password
+from app.services.account_services import generate_token, hash_password
+from app.services.email_services import send_email_api
 from app.services.roles_services import RoleService
 
 
 async def create_organization(
-    db: Session, account_id: str, organization: OrganizationCreate
+    db: Session,
+    account_id: str,
+    organization: OrganizationCreate,
+    background_tasks: BackgroundTasks,
 ) -> Dict[str, Any]:
     """Create an organization.
 
@@ -101,6 +106,17 @@ async def create_organization(
     db.add(org_member_instance)
     db.commit()
     db.refresh(org)
+
+    background_tasks.add_task(
+        send_email_api,
+        subject="Event created",
+        recipient_email=org_member_instance.account.email,
+        template="_event_created.html",
+        kwargs={
+            "name": org_member_instance.account.first_name,
+            "organization_name": org.name,
+        },
+    )
     return {
         "organization_id": org.id,
         "name": org.name,
@@ -332,7 +348,10 @@ def update_organization_details(
 
 
 def invite_member(
-    db: Session, member: InviteMemberSchema, organization_id: str
+    db: Session,
+    member: InviteMemberSchema,
+    organization_id: str,
+    background_tasks: BackgroundTasks,
 ) -> Dict[str, Any]:
     """Invite a new member to an organization.
 
@@ -372,21 +391,6 @@ def invite_member(
             data={"role_id": member.role_id},
         )
 
-    # Check if email has already been invited
-    member_exists = (
-        db.query(OrganizationMember)
-        .filter(OrganizationMember.organization_id == organization_id)
-        .filter(OrganizationMember.account.has(email=member.email))
-        .first()
-    )
-
-    if member_exists:
-        raise CustomException(
-            status_code=400,
-            message="Member has already been invited",
-            data={"email": member.email},
-        )
-
     # Check if member has an account
     member_account = (
         db.query(Account).filter(Account.email == member.email).first()
@@ -397,7 +401,7 @@ def invite_member(
         # split name to get first and last name
         name = member.name.split(" ")
         first_name = name[0]
-        last_name = name[1] if len(name) > 1 else None
+        last_name = name[1] if len(name) > 1 else ""
 
         try:
             acc_id = uuid4().hex
@@ -422,7 +426,13 @@ def invite_member(
                 id=uuid4().hex,
                 account_id=acc_id,
                 organization_id=organization_id,
-                invite_token=uuid4().hex,
+                invite_token=generate_token(
+                    data={
+                        "account_id": acc_id,
+                        "organization_id": organization_id,
+                    },
+                    expire_mins=4320,
+                ),
             )
             db.add(invite)
 
@@ -438,7 +448,53 @@ def invite_member(
             db.refresh(account)
             db.refresh(member_account)
             db.refresh(invite)
+    else:
+        # Check if member has already accepted invite
+        invite = (
+            db.query(InviteMember)
+            .filter(InviteMember.account_id == member_account.id)
+            .filter(InviteMember.organization_id == organization_id)
+            .first()
+        )
+        if invite is not None:
+            raise CustomException(
+                status_code=400,
+                message="Member has already been invited",
+                data={"email": member.email},
+            )
 
+        # Invite member
+        invite = InviteMember(
+            id=uuid4().hex,
+            account_id=member_account.id,
+            organization_id=organization_id,
+            invite_token=generate_token(
+                data={
+                    "account_id": member_account.id,
+                    "organization_id": organization_id,
+                },
+                expire_mins=4320,
+            ),
+        )
+        db.add(invite)
+        db.commit()
+
+    invite_url = f"{settings.FRONT_END_HOST}/\
+        organization/invite/accept/{invite.invite_token}"
+    background_tasks.add_task(
+        send_email_api,
+        subject=f"Invitation to join {organization.name}",
+        recipient_email=member.email,
+        template="_email_invitation_for_collaboration.html",
+        kwargs={
+            "name": member_account.first_name,
+            "organization_owner_email": organization.account.email,
+            "organization_name": organization.name,
+            "role": role.role.name,
+            "invitation_url": invite_url,
+            "expiry_time": "3 days",
+        },
+    )
     return {
         "id": member_account.id,
         "name": member.name,
@@ -446,6 +502,94 @@ def invite_member(
         "role": role.role.name,
         "organization": organization.name,
     }
+
+
+def resend_invite(
+    db: Session,
+    email: str,
+    organization_id: str,
+    background_tasks: BackgroundTasks,
+) -> Dict[str, Any]:
+    """Resend an invite.
+
+    Args:
+        db (Session): Database session
+        email (str): Email
+        organization_id (str): Organization ID
+
+    Raises:
+        CustomException: If organization does not exist
+        CustomException: If member does not exist
+
+    Returns:
+        dict: Invite details
+    """
+    # Check if organization exists
+    organization = check_organization_exists(
+        db, organization_id=organization_id
+    )
+    if not organization:
+        raise CustomException(
+            status_code=404,
+            message="Organization not found",
+            data={"organization_id": organization_id},
+        )
+
+    # Check if member exists
+    member = (
+        db.query(OrganizationMember)
+        .filter(OrganizationMember.organization_id == organization_id)
+        .filter(OrganizationMember.account.has(email=email))
+        .first()
+    )
+    if not member:
+        raise CustomException(
+            status_code=404,
+            message="Member not found",
+            data={"email": email},
+        )
+
+    # Check if member has already accepted invite
+    invite = (
+        db.query(InviteMember)
+        .filter(InviteMember.account_id == member.account_id)
+        .filter(InviteMember.organization_id == organization_id)
+        .first()
+    )
+    if invite.is_accepted:
+        raise CustomException(
+            status_code=400,
+            message="Invite has already been accepted",
+            data={"email": email},
+        )
+
+    # Resend invite
+    invite.invite_token = generate_token(
+        data={
+            "account_id": member.account_id,
+            "organization_id": organization_id,
+        },
+        expire_mins=4320,
+    )
+    db.commit()
+
+    invite_url = f"{settings.FRONT_END_HOST}/organization/\
+        invite/accept/{invite.invite_token}"
+    background_tasks.add_task(
+        send_email_api,
+        subject=f"Invitation to join {organization.name}",
+        recipient_email=member.account.email,
+        template="_email_invitation_for_collaboration.html",
+        kwargs={
+            "name": member.account.first_name,
+            "organization_owner_email": organization.account.email,
+            "organization_name": member.organization.name,
+            "role": member.member_role.role.name,
+            "invitation_url": invite_url,
+            "expiry_time": "3 days",
+        },
+    )
+    return "success"
 
 
 def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
@@ -505,16 +649,12 @@ def accept_invite(db: Session, invite_token: str) -> Dict[str, Any]:
         raise CustomException(
             status_code=500,
             message="Failed to accept invite",
-            data={"invite_token": invite_token},
         ) from exc
 
     return {
-        "id": member.id,
-        "name": f"{member.account.first_name} {member.account.last_name}",
         "email": member.account.email,
         "role": role.role.name,
         "organization": member.organization.name,
-        "invite_token": member.invite_token,
         "is_accepted": member.is_accepted,
     }
 
@@ -523,6 +663,7 @@ def suspend_member(
     db: Session,
     organization_id: str,
     member_id: str,
+    background_tasks: BackgroundTasks,
 ) -> Dict[str, Any]:
     """Suspend and unsuspends a member.
 
@@ -587,13 +728,28 @@ def suspend_member(
     try:
         member.is_suspended = not member.is_suspended
         db.commit()
-        db.refresh(member)
+
+        background_tasks.add_task(
+            send_email_api,
+            subject="Account Suspended"
+            if member.is_suspended
+            else "Account Unsuspended",
+            recipient_email=member.account.email,
+            template="_event_member_suspend_unsuspend.html",
+            kwargs={
+                "name": member.account.first_name,
+                "organization_name": organization.name,
+                "is_suspended": member.is_suspended,
+            },
+        )
     except Exception as exc:
         raise CustomException(
             status_code=500,
             message="Failed to suspend member",
             data={"member_id": member_id},
         ) from exc
+    finally:
+        db.refresh(member)
 
     return {
         "id": member.id,
@@ -604,7 +760,9 @@ def suspend_member(
     }
 
 
-def delete_organization(db: Session, organization_id: str) -> Dict[str, Any]:
+def delete_organization(
+    db: Session, organization_id: str, background_tasks: BackgroundTasks
+) -> bool:
     """Delete an organization.
 
     Args:
@@ -627,19 +785,23 @@ def delete_organization(db: Session, organization_id: str) -> Dict[str, Any]:
             data={"organization_id": organization_id},
         )
 
-    try:
-        db.delete(organization)
+    db.delete(organization)
 
-        db.commit()
+    db.commit()
 
-    except Exception as exc:
-        raise CustomException(
-            status_code=500,
-            message="Failed to delete organization",
-            data={"organization_id": organization.id},
-        ) from exc
-
-    return "success"
+    if check_organization_exists(db, organization_id):
+        background_tasks.add_task(
+            send_email_api,
+            subject="Event deleted",
+            recipient_email=organization.account.email,
+            template="_event_deleted.html",
+            kwargs={
+                "name": organization.account.first_name,
+                "organization_name": organization.name,
+            },
+        )
+        return True
+    return False
 
 
 def check_organization_exists(
