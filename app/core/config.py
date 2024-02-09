@@ -1,7 +1,5 @@
 """This module is used for configuration of the application's settings."""
 
-import logging
-import logging.config
 import sys
 
 from decouple import config
@@ -110,4 +108,4 @@ logging_config = {
     },
 }
 
-logging.config.dictConfig(logging_config)
+# logging.config.dictConfig(logging_config)

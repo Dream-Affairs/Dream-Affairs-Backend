@@ -23,9 +23,10 @@ from app.api.routers.organization_router import router as organization_router
 from app.api.routers.role_router import router as role_router
 from app.api.routers.sso_router import router as sso_router
 from app.api.routers.table_tag_routers import router as table_tag_router
-from app.core.config import logging, settings
+from app.core.config import settings
 from app.database.connection import get_db_unyield
-from app.services.log_services import LoggingMiddleware
+
+# from app.services.log_services import LoggingMiddleware
 from app.services.permission_services import ORG_ADMIN_PERMISSION
 from app.services.roles_services import create_default_roles
 
@@ -101,7 +102,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(LoggingMiddleware, logger=logging.getLogger(__name__))
+# app.add_middleware(LoggingMiddleware, logger=logging.getLogger(__name__))
 
 
 @v1_router.get("/health")
