@@ -10,7 +10,6 @@ from app.api.schemas.account_schemas import (
     AccountSignup,
     ForgotPasswordData,
     ResetPasswordData,
-    VerifyAccountTokenData,
 )
 from app.database.connection import get_db
 from app.services.account_services import (
@@ -231,7 +230,7 @@ def login(
 
 @router.post("/verify-account")
 def verify_account(
-    token_data: VerifyAccountTokenData, db: Session = Depends(get_db)
+    token: str, db: Session = Depends(get_db)
 ) -> CustomResponse:
     """# Verify a user account.
 
@@ -301,7 +300,7 @@ def verify_account(
     ```
     """
 
-    _, err = verify_account_service(token_data, db)
+    _, err = verify_account_service(token, db)
 
     if err:
         raise err
@@ -402,7 +401,9 @@ def user_forgot_password(
 
 @router.post("/reset-password")
 def reset_password(
-    token_data: ResetPasswordData, db: Session = Depends(get_db)
+    token_data: ResetPasswordData,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ) -> CustomResponse:
     """# Reset a user's password.
 
@@ -471,7 +472,7 @@ def reset_password(
     ```
     """
 
-    _, err = reset_password_service(token_data, db)
+    _, err = reset_password_service(token_data, db, background_tasks)
 
     if err:
         raise err

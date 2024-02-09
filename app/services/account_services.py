@@ -22,7 +22,6 @@ from app.api.schemas.account_schemas import (
     ForgotPasswordData,
     ResetPasswordData,
     TokenData,
-    VerifyAccountTokenData,
 )
 from app.core.config import settings
 from app.services.email_services import send_email_api
@@ -260,7 +259,7 @@ def login_service(
 
 
 def verify_account_service(
-    token_data: VerifyAccountTokenData, db: Session
+    token_data: str, db: Session
 ) -> Tuple[str, CustomException]:
     """
     Verify account service:
@@ -299,7 +298,7 @@ def verify_account_service(
     ```
     """
 
-    account_id, context = decode_token(token_data.token)
+    account_id, context = decode_token(token_data)
 
     if context != "verify-account":
         return None, CustomException(
@@ -312,7 +311,11 @@ def verify_account_service(
         return None, CustomException(
             status_code=status.HTTP_404_NOT_FOUND, message="Account not found"
         )
-
+    if account.is_verified:
+        return None, CustomException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Account already verified",
+        )
     account.is_verified = True
     db.commit()
 
@@ -371,29 +374,30 @@ def forgot_password_service(
         )
         url = f"{settings.FRONT_END_HOST}/auth/reset-password\
 ?token={access_token}"
-        print(url)  # temporary
 
         # fix later send reset password email
         background_tasks.add_task(
-            # send_email_api,
-            # subject="Password Reset",
-            # recipient_email=user_data.email,
-            # template="_reset_password.html",
-            # # db=db,
-            # kwargs={"name": account.first_name, "reset_link": url},
+            send_email_api,
+            subject="Password Reset",
+            recipient_email=user_data.email,
+            template="_email_forgot_password.html",
+            # db=db,
+            kwargs={"name": account.first_name, "reset_link": url},
         )
         msg = f"""
 An email has been sent to {user_data.email} with a link for password reset."""
-        return msg
+        return msg, None
 
-    return CustomException(
+    return None, CustomException(
         status_code=status.HTTP_404_NOT_FOUND,
         message="No account found with that email",
     )
 
 
 def reset_password_service(
-    token_data: ResetPasswordData, db: Session
+    token_data: ResetPasswordData,
+    db: Session,
+    background_tasks: BackgroundTasks,
 ) -> Tuple[str, CustomException]:
     """
     Reset password service:
@@ -457,6 +461,14 @@ def reset_password_service(
     account.password_hash = hashed_password
     db.commit()
 
+    background_tasks.add_task(
+        send_email_api,
+        subject="Password Reset",
+        recipient_email=account.email,
+        template="_email_reset_password.html",
+        # db=db,
+        kwargs={"name": account.first_name},
+    )
     return "success", None
 
 
@@ -515,7 +527,7 @@ def decode_token(
 
     Args:
     """
-    token = decode_data(token.credentials).split("Bearer ")[0]
+    token = extract_token(token)
     try:
         data = jwt.decode(
             token,
@@ -623,3 +635,27 @@ def decode_data(data: Any) -> bytes:
         bytes: The decoded data.
     """
     return base64.b64decode(data).decode("ascii")
+
+
+def extract_token(token):
+    """
+    Extract token:
+
+    The function takes a token and extracts the token from the request.
+
+    Args:
+
+    - token: The token.
+
+    Returns:
+
+    - str: The extracted token.
+    """
+    token = decode_data(token)
+    if isinstance(token, HTTPAuthorizationCredentials):
+        token = token.credentials
+
+    if isinstance(token, list):
+        token = token.split("Bearer ")[0]
+
+    return token
