@@ -93,43 +93,6 @@ def search_guests(
     )
 
 
-# @router.post("/import")
-# def import_guests(
-#     file: UploadFile = File(...),
-#     auth: Authorize = Depends(is_org_authorized),
-#     db: Session = Depends(get_db),
-# ):
-#     """
-#     import_guests:
-#         This method is used to import the guests.
-
-#     Args:
-#         db: This is the SQLAlchemy Session object.
-
-#     Returns:
-#         List[Guest]: This is the list of guests.
-#     """
-#     return file
-
-
-# @router.get("/export")
-# def export_guests(
-#     auth: Authorize = Depends(is_org_authorized),
-#     db: Session = Depends(get_db),
-# ):
-#     """
-#     export_guests:
-#         This method is used to export the guests.
-
-#     Args:
-#         db: This is the SQLAlchemy Session object.
-
-#     Returns:
-#         List[Guest]: This is the list of guests.
-#     """
-#     return ""
-
-
 @router.put("/update/{guest_id}")
 def update_guest(
     guest_id: str,

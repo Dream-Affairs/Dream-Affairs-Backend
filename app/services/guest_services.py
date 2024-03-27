@@ -2,6 +2,7 @@
 
 import secrets
 import string
+import uuid
 from typing import List
 from uuid import uuid4
 
@@ -60,6 +61,16 @@ def add_guest(
 
     if guest.tags is not None:
         for tag in guest.tags:
+            # check if tag is uuid
+
+            try:
+                uuid.UUID(tag)
+            except ValueError as e:
+                print(e)
+                raise CustomException(
+                    message="Invalid tag id",
+                    status_code=400,
+                ) from e
             if (
                 db.query(OrganizationTag)
                 .filter(OrganizationTag.id == tag)
@@ -238,8 +249,7 @@ def search_organization_guests(
 
     if len(guests) == 0:
         raise CustomException(
-            message="No guests found",
-            status_code=404,
+            message="No guests found", status_code=404, data=[]
         )
     return CustomResponse(
         message="Guests fetched successfully",

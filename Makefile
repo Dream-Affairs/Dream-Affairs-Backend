@@ -1,6 +1,6 @@
 .PHONY:
 
-message ?= "update database"
+
 
 # Usage message
 help:
@@ -15,7 +15,7 @@ help:
 	@echo "  pre-commit   - Setup and pre-commit hooks"
 
 upgrade:
-	alembic revision --autogenerate -m $(message)
+	alembic revision --autogenerate -m "$(msg)"
 	alembic upgrade head
 
 downgrade:
