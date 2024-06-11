@@ -48,7 +48,7 @@ Mako==1.2.4
 MarkupSafe==2.1.3
 mccabe==0.7.0
 mjml==0.11.0
-msal==1.25.0
+msal==1.28.0
 msal-extensions==1.0.0
 mypy==1.6.1
 mypy-extensions==1.0.0
